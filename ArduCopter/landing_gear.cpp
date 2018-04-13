@@ -19,8 +19,10 @@ void Copter::landinggear_update()
        (control_mode == AUTO && auto_mode == Auto_Land) ||
        (control_mode == AUTO && auto_mode == Auto_RTL && (rtl_state == RTL_LoiterAtHome || rtl_state == RTL_Land || rtl_state == RTL_FinalDescent))) {
         landinggear.set_position(AP_LandingGear::LandingGear_Deploy_And_Keep_Deployed);
-    }
+    } else if (inertial_nav.get_altitude() > 1.0f) {
 
+        landinggear.set_position(AP_LandingGear::LandingGear_Retract);
+    }
     // send event message to datalog if status has changed
     if (landinggear.deployed() != last_deploy_status) {
         if (landinggear.deployed()) {
