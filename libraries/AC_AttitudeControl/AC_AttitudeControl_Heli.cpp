@@ -334,6 +334,14 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
     roll_out = roll_pd + roll_i + roll_ff;
     pitch_out = pitch_pd + pitch_i + pitch_ff;
 
+    if (_sweep_input==2){
+        if (_sweep_axis==1) {
+            roll_out = roll_out + _sweep_output;
+        } else if (_sweep_axis==2){
+            pitch_out = pitch_out + _sweep_output;
+        }
+    }
+
     // constrain output and update limit flags
     if (fabsf(roll_out) > AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX) {
         roll_out = constrain_float(roll_out,-AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX,AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX);
@@ -412,6 +420,10 @@ float AC_AttitudeControl_Heli::rate_target_to_motor_yaw(float rate_yaw_actual_ra
     // add feed forward
     yaw_out = pd + i + vff;
 
+    if (_sweep_axis==3 && _sweep_input==2){
+        yaw_out = yaw_out + _sweep_output;
+    }
+
     // constrain output and update limit flag
     if (fabsf(yaw_out) > AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX) {
         yaw_out = constrain_float(yaw_out,-AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX,AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX);
@@ -433,6 +445,11 @@ void AC_AttitudeControl_Heli::set_throttle_out(float throttle_in, bool apply_ang
     _throttle_in = throttle_in;
     update_althold_lean_angle_max(throttle_in);
     _motors.set_throttle_filter_cutoff(filter_cutoff);
+
+    if (_sweep_axis==4 && _sweep_input==2){
+        throttle_in = throttle_in + _sweep_output;
+    }
+
     _motors.set_throttle(throttle_in);
     // Clear angle_boost for logging purposes
     _angle_boost = 0.0f;
