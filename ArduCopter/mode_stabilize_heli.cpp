@@ -63,6 +63,13 @@ void Copter::ModeStabilize_Heli::run()
     // get pilot's desired throttle
     pilot_throttle_scaled = copter.input_manager.get_pilot_desired_collective(channel_throttle->get_control_in());
 
+    // Set automated frequency sweep flag based on channel 6
+    if (RC_Channels::rc_channel(CH_6)->get_radio_in() > 1500) {
+        attitude_control->set_sweep_flag(true);
+    } else {
+        attitude_control->set_sweep_flag(false);
+    }
+
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 
