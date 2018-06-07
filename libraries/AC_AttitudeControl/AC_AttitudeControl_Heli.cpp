@@ -149,6 +149,34 @@ const AP_Param::GroupInfo AC_AttitudeControl_Heli::var_info[] = {
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     AP_GROUPINFO("PIRO_COMP",    5, AC_AttitudeControl_Heli, _piro_comp_enabled, 0),
+
+    // @Param: ACRO_RLL_KP
+    // @DisplayName: Acro Passthrough KP gain
+    // @Description: Acro Passthrough KP gain
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    AP_GROUPINFO("ACRO_RLL_KP",    6, AC_AttitudeControl_Heli, _acro_passthru_rll_kp, 0),
+
+    // @Param: ACRO_RLL_KD
+    // @DisplayName: Acro Passthrough KD gain
+    // @Description: Acro Passthrough KD gain
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    AP_GROUPINFO("ACRO_RLL_KD",    7, AC_AttitudeControl_Heli, _acro_passthru_rll_kd, 0),
+
+    // @Param: ACRO_PIT_KP
+    // @DisplayName: Acro Passthrough KP gain
+    // @Description: Acro Passthrough KP gain
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    AP_GROUPINFO("ACRO_PIT_KP",    8, AC_AttitudeControl_Heli, _acro_passthru_pit_kp, 0),
+
+    // @Param: ACRO_PIT_KD
+    // @DisplayName: Acro Passthrough KD gain
+    // @Description: Acro Passthrough KD gain
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    AP_GROUPINFO("ACRO_PIT_KD",    9, AC_AttitudeControl_Heli, _acro_passthru_pit_kd, 0),
     
     AP_GROUPEND
 };
@@ -249,12 +277,29 @@ void AC_AttitudeControl_Heli::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cd
 void AC_AttitudeControl_Heli::rate_controller_run()
 {	
     Vector3f gyro_latest = _ahrs.get_gyro_latest();
+    float filter_signal;
+    float derivative;
 
     // call rate controllers and send output to motors object
     // if using a flybar passthrough roll and pitch directly to motors
     if (_flags_heli.flybar_passthrough) {
-        _motors.set_roll(_passthrough_roll/4500.0f);
-        _motors.set_pitch(_passthrough_pitch/4500.0f);
+
+        filter_signal = roll_derivative_filter.apply(gyro_latest.x - _gyro_nm1.x, _dt);
+        derivative = filter_signal;
+        if (_dt > 0.0f) {
+            derivative = derivative / _dt;
+        }
+        float roll_out = _passthrough_roll/4500.0f - derivative * _acro_passthru_rll_kd- gyro_latest.x * _acro_passthru_rll_kp;
+
+        filter_signal = pitch_derivative_filter.apply(gyro_latest.y - _gyro_nm1.y, _dt);
+        derivative = filter_signal;
+        if (_dt > 0.0f) {
+            derivative = derivative / _dt;
+        }
+        float pitch_out = _passthrough_pitch/4500.0f - derivative * _acro_passthru_pit_kd - gyro_latest.y * _acro_passthru_pit_kp;
+        _motors.set_roll(roll_out);
+        _motors.set_pitch(pitch_out);
+        _gyro_nm1 = gyro_latest;
     } else {
         rate_bf_to_motor_roll_pitch(gyro_latest, _rate_target_ang_vel.x, _rate_target_ang_vel.y);
     }

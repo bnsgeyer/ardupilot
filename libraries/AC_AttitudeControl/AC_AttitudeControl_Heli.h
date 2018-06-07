@@ -25,6 +25,7 @@
 #define AC_ATTITUDE_HELI_ANGLE_LIMIT_THROTTLE_MAX   0.95f    // Heli's use 95% of max collective before limiting frame angle
 #define AC_ATTITUDE_HELI_RATE_INTEGRATOR_LEAK_RATE  0.02f
 #define AC_ATTITUDE_HELI_RATE_RP_FF_FILTER          10.0f
+#define AC_ATTITUDE_HELI_RATE_RP_D_FILTER           10.0f
 #define AC_ATTITUDE_HELI_RATE_Y_VFF_FILTER          10.0f
 #define AC_ATTITUDE_HELI_HOVER_ROLL_TRIM_DEFAULT    300
 #define AC_ATTITUDE_HELI_ACRO_OVERSHOOT_ANGLE_RAD   ToRad(30.0f)
@@ -42,7 +43,9 @@ public:
         _pid_rate_yaw(AC_ATC_HELI_RATE_YAW_P, AC_ATC_HELI_RATE_YAW_I, AC_ATC_HELI_RATE_YAW_D, AC_ATC_HELI_RATE_YAW_IMAX, AC_ATC_HELI_RATE_YAW_FILT_HZ, dt, AC_ATC_HELI_RATE_YAW_FF),
         pitch_feedforward_filter(AC_ATTITUDE_HELI_RATE_RP_FF_FILTER),
         roll_feedforward_filter(AC_ATTITUDE_HELI_RATE_RP_FF_FILTER),
-        yaw_velocity_feedforward_filter(AC_ATTITUDE_HELI_RATE_Y_VFF_FILTER)
+        yaw_velocity_feedforward_filter(AC_ATTITUDE_HELI_RATE_Y_VFF_FILTER),
+        pitch_derivative_filter(AC_ATTITUDE_HELI_RATE_RP_D_FILTER),
+        roll_derivative_filter(AC_ATTITUDE_HELI_RATE_RP_D_FILTER)
         {
             AP_Param::setup_object_defaults(this, var_info);
 
@@ -154,12 +157,19 @@ private:
     // controller, in radians in the vehicle body frame of reference.
     Vector3f            _att_error_rot_vec_rad;
 
+    Vector3f            _gyro_nm1;
+
     // parameters
     AP_Int8         _piro_comp_enabled;             // Flybar present or not.  Affects attitude controller used during ACRO flight mode
     AP_Int16        _hover_roll_trim;               // Angle in centi-degrees used to counter tail rotor thrust in hover
     AC_HELI_PID     _pid_rate_roll;
     AC_HELI_PID     _pid_rate_pitch;
     AC_HELI_PID     _pid_rate_yaw;
+    AP_Float        _acro_passthru_pit_kp;
+    AP_Float        _acro_passthru_pit_kd;
+    AP_Float        _acro_passthru_rll_kp;
+    AP_Float        _acro_passthru_rll_kd;
+
     
     // LPF filters to act on Rate Feedforward terms to linearize output.
     // Due to complicated aerodynamic effects, feedforwards acting too fast can lead
@@ -168,5 +178,7 @@ private:
     LowPassFilterFloat roll_feedforward_filter;
     LowPassFilterFloat yaw_velocity_feedforward_filter;
     LowPassFilterFloat yaw_acceleration_feedforward_filter;
+    LowPassFilterFloat pitch_derivative_filter;
+    LowPassFilterFloat roll_derivative_filter;
 
 };
