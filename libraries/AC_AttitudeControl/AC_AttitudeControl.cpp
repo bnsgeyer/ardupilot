@@ -187,6 +187,20 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("SWEEP_INPUT", 26, AC_AttitudeControl, _sweep_input, 0),
 
+    // @Param: SWEEP_FADE_I
+    // @DisplayName: Time to fade in sweep
+    // @Description: Length of fade in, in seconds
+    // @Range: 0 40
+    // @User: Advanced
+    AP_GROUPINFO("SWEEP_FADE_I", 23, AC_AttitudeControl, _sweep_fadein, 1.0f),
+
+    // @Param: SWEEP_FADE_O
+    // @DisplayName: Time to fade out sweep
+    // @Description: Length of fade out, in seconds
+    // @Range: 0 40
+    // @User: Advanced
+    AP_GROUPINFO("SWEEP_FADE_O", 24, AC_AttitudeControl, _sweep_fadeout, 1.0f),
+
     AP_GROUPEND
 };
 
@@ -1077,10 +1091,13 @@ float AC_AttitudeControl::auto_sweep()
     float kSweep;
     float wSweep;
     float sweepInput;
+    float SweepFadeAmplitude=1;
 
-    float TrecLowFreq = floorf(2*M_PI/_sweep_min_freq);
+    float TrecLowFreq = 2 * floorf(2 * M_PI / (_sweep_min_freq)); // two cycles at min freq.
     float loopCounterLowFreq = floorf(TrecLowFreq/dtSweep);
     float loopCounterMaxSweep = floorf(_sweep_length/dtSweep);
+    float loopCounterFadeIn = floorf(_sweep_fadein / dtSweep);
+    float loopCounterFadeOut = floorf(_sweep_fadeout / dtSweep);
 
     if (_sweep_flag && loopCounterSweep==0) {
         thetaSweep = 0;
@@ -1101,8 +1118,26 @@ float AC_AttitudeControl::auto_sweep()
         } else {
             thetaSweep = 0;
         }
+
+    	//Add fading functionality
+    	if (loopCounterSweep > 0) {
+    		if (loopCounterSweep < loopCounterFadeIn)
+    			SweepFadeAmplitude = (float)loopCounterSweep / loopCounterFadeIn;
+    		else if ( (loopCounterSweep >= loopCounterFadeIn)
+    				&&  ( loopCounterSweep <= (loopCounterMaxSweep - loopCounterFadeOut))) {
+    			SweepFadeAmplitude = 1;
+    		} else if (loopCounterSweep
+    				> (loopCounterMaxSweep - loopCounterFadeOut)) {
+    			SweepFadeAmplitude = 1
+    					- ((float) loopCounterSweep - loopCounterMaxSweep
+    							+ loopCounterFadeOut) / loopCounterFadeOut;
+    		}
+    	} else {
+    		SweepFadeAmplitude = 1;
+    	}
+
         if (_sweep_input==1 || _sweep_input==2){
-            sweepInput = _sweep_amplitude*sinf(thetaSweep);
+            sweepInput = SweepFadeAmplitude *_sweep_amplitude*sinf(thetaSweep);
         } else {
             sweepInput = 0;
         }
