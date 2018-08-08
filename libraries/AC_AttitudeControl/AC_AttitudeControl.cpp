@@ -183,7 +183,7 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @DisplayName: Sweep Input
     // @Description: Automated Sweep Input point in code
     // @Range: 0 2
-    // @Values: 0:Disabled, 1:Disturbance rejection, 2:broken loop
+    // @Values: 0:Disabled, 1:Disturbance rejection, 2:broken loop, 3:pilot input
     // @User: Advanced
     AP_GROUPINFO("SWEEP_INPUT", 26, AC_AttitudeControl, _sweep_input, 0),
 
@@ -325,6 +325,14 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
             _attitude_target_euler_angle.y = _attitude_target_euler_angle.y + _sweep_output;
         } else if (_sweep_axis==3) {
             _attitude_target_euler_angle.z = _attitude_target_euler_angle.z + _sweep_output;
+        }
+    } else if (_sweep_input==3) {
+        if (_sweep_axis==1){
+            euler_roll_angle = euler_roll_angle + _sweep_output;
+        } else if (_sweep_axis==2) {
+            euler_pitch_angle = euler_pitch_angle + _sweep_output;
+        } else if (_sweep_axis==3) {
+            euler_yaw_rate = euler_yaw_rate + _sweep_output;
         }
     }
 
