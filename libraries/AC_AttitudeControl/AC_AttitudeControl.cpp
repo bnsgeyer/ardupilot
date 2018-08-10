@@ -255,11 +255,11 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
         }
     } else if (_sweep_input==3) {
         if (_sweep_axis==1){
-            euler_roll_angle = euler_roll_angle + _sweep_output;
+            euler_roll_angle += _sweep_output;
         } else if (_sweep_axis==2) {
-            euler_pitch_angle = euler_pitch_angle + _sweep_output;
+            euler_pitch_angle += _sweep_output;
         } else if (_sweep_axis==3) {
-            euler_yaw_rate = euler_yaw_rate + _sweep_output;
+            euler_yaw_rate += _sweep_output;
         }
     }
 
@@ -889,7 +889,7 @@ float AC_AttitudeControl::auto_sweep()
         } else {
             thetaSweep = 0;
         }
-        if (_sweep_input==1 || _sweep_input==2){
+        if (_sweep_input==1 || _sweep_input==2 || _sweep_input==3){
             sweepInput = _sweep_amplitude*sinf(thetaSweep);
         } else {
             sweepInput = 0;
