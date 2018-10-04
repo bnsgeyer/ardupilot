@@ -1144,7 +1144,7 @@ float AC_AttitudeControl::auto_sweep()
     		SweepFadeAmplitude = 1;
     	}
 
-        if (_sweep_input==1 || _sweep_input==2){
+        if (_sweep_input==1 || _sweep_input==2 || _sweep_input==3){
             sweepInput = SweepFadeAmplitude *_sweep_amplitude*sinf(thetaSweep);
         } else {
             sweepInput = 0;
