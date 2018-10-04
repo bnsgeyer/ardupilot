@@ -192,14 +192,14 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @Description: Length of fade in, in seconds
     // @Range: 0 40
     // @User: Advanced
-    AP_GROUPINFO("SWEEP_FADE_I", 23, AC_AttitudeControl, _sweep_fadein, 1.0f),
+    AP_GROUPINFO("SWEEP_FADE_I", 27, AC_AttitudeControl, _sweep_fadein, 1.0f),
 
     // @Param: SWEEP_FADE_O
     // @DisplayName: Time to fade out sweep
     // @Description: Length of fade out, in seconds
     // @Range: 0 40
     // @User: Advanced
-    AP_GROUPINFO("SWEEP_FADE_O", 24, AC_AttitudeControl, _sweep_fadeout, 1.0f),
+    AP_GROUPINFO("SWEEP_FADE_O", 28, AC_AttitudeControl, _sweep_fadeout, 1.0f),
 
     AP_GROUPEND
 };
