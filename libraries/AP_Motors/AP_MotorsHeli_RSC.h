@@ -76,6 +76,12 @@ public:
     // set_collective. collective for throttle curve calculation
     void        set_collective(float collective) { _collective_in = collective; }
 
+    // set_sweep_flag
+    void  set_throttle_sweep_flag(bool throttle_swp) { _throttle_sweep = throttle_swp; }
+
+    // set_sweep_output
+    void  set_throttle_sweep_output(float sweep_out) { _sweep_output = sweep_out; }
+
     // output - update value to send to ESC/Servo
     void        output(RotorControlState state);
 
@@ -100,6 +106,8 @@ private:
     float           _thrcrv_poly[4][4];         // spline polynomials for throttle curve interpolation
     uint16_t        _power_slewrate = 0;        // slewrate for throttle (percentage per second)
     float           _collective_in;             // collective in for throttle curve calculation, range 0-1.0f
+    bool            _throttle_sweep = false;    // flag for determining if sweep is running
+    float           _sweep_output;              // output for frequency sweep
 
     // update_rotor_ramp - slews rotor output scalar between 0 and 1, outputs float scalar to _rotor_ramp_output
     void            update_rotor_ramp(float rotor_ramp_input, float dt);

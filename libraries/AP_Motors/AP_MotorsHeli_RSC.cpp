@@ -87,8 +87,12 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
                 _control_output = _idle_output + (_rotor_ramp_output * (_desired_speed - _idle_output));
             } else if (_control_mode == ROTOR_CONTROL_MODE_OPEN_LOOP_POWER_OUTPUT) {
                 // throttle output from throttle curve based on collective position
-                    float desired_throttle = calculate_desired_throttle(_collective_in);
+                float desired_throttle = calculate_desired_throttle(_collective_in);
+                if (_throttle_sweep) {
+                    _control_output = _idle_output + (_rotor_ramp_output * (desired_throttle - _idle_output + _sweep_output));
+                } else {
                     _control_output = _idle_output + (_rotor_ramp_output * (desired_throttle - _idle_output));
+                }
             }
             break;
     }

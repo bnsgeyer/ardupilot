@@ -66,6 +66,12 @@ public:
     // servo_test - move servos through full range of movement
     void servo_test() override;
 
+    // set_sweep_flag
+    void  set_throttle_sweep_flag(bool throttle_swp) { _rotor.set_throttle_sweep_flag(throttle_swp); }
+
+    // set_sweep_output
+    void  set_throttle_sweep_output(float sweep_out) { _rotor.set_throttle_sweep_output(sweep_out); }
+
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo var_info[];
 

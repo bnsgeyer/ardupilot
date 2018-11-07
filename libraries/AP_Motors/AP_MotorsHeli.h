@@ -133,6 +133,12 @@ public:
 
     float get_throttle_hover() const { return 0.5f; }
 
+    // set_sweep_flag
+    virtual void  set_throttle_sweep_flag(bool throttle_swp) = 0;
+
+    // set_sweep_output
+    virtual void  set_throttle_sweep_output(float sweep_out) = 0;
+
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo var_info[];
 

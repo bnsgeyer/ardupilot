@@ -102,6 +102,12 @@ public:
     // parameter_check - returns true if helicopter specific parameters are sensible, used for pre-arm check
     bool parameter_check(bool display_msg) const override;
 
+    // set_sweep_flag
+    void  set_throttle_sweep_flag(bool throttle_swp) { _main_rotor.set_throttle_sweep_flag(throttle_swp); }
+
+    // set_sweep_output
+    void  set_throttle_sweep_output(float sweep_out) { _main_rotor.set_throttle_sweep_output(sweep_out); }
+
     // var_info
     static const struct AP_Param::GroupInfo var_info[];
 
