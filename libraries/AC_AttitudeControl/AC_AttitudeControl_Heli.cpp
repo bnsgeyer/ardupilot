@@ -449,6 +449,13 @@ void AC_AttitudeControl_Heli::set_throttle_out(float throttle_in, bool apply_ang
     if (_sweep_axis==4 && _sweep_input==2){
         throttle_in = throttle_in + _sweep_output;
     }
+    if (_sweep_axis==5 && _sweep_input==2 && _sweep_flag) {
+        ((AP_MotorsHeli&)_motors).set_throttle_sweep_flag(true);
+        ((AP_MotorsHeli&)_motors).set_throttle_sweep_output(_sweep_output);
+    } else {
+        ((AP_MotorsHeli&)_motors).set_throttle_sweep_flag(false);
+        ((AP_MotorsHeli&)_motors).set_throttle_sweep_output(0.0f);
+    }
 
     _motors.set_throttle(throttle_in);
     // Clear angle_boost for logging purposes

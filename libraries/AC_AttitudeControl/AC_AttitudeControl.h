@@ -431,10 +431,10 @@ protected:
     AP_Int16            _sweep_length;
 
     // Length of fade in for automated sweep
-     AP_Float			_sweep_fadein;
+    AP_Float		_sweep_fadein;
 
-     //Length of fade out for automated sweep
-     AP_Float 			_sweep_fadeout;
+    //Length of fade out for automated sweep
+    AP_Float 		_sweep_fadeout;
 
     // flags used to determine if sweep is running
     bool                _sweep_flag;
