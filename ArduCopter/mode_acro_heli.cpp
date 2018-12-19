@@ -88,6 +88,13 @@ void Copter::ModeAcro_Heli::run()
             yaw_in = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
         }
 
+        // Set automated frequency sweep flag based on channel 6
+        if (RC_Channels::rc_channel(CH_6)->get_radio_in() > 1500) {
+            attitude_control->set_sweep_flag(true);
+        } else {
+            attitude_control->set_sweep_flag(false);
+        }
+
         // run attitude controller
         attitude_control->passthrough_bf_roll_pitch_rate_yaw(roll_in, pitch_in, yaw_in);
     }
