@@ -165,6 +165,14 @@ void AC_AttitudeControl_Heli::passthrough_bf_roll_pitch_rate_yaw(float roll_pass
     _passthrough_pitch = pitch_passthrough;
     _passthrough_yaw = degrees(yaw_rate_bf_rads)*100.0f;
 
+    if (_sweep_input==2 || _sweep_input==3){
+        if (_sweep_axis==1) {
+            _passthrough_roll = _passthrough_roll + _sweep_output * 4500.0f;
+        } else if (_sweep_axis==2){
+            _passthrough_pitch = _passthrough_pitch + _sweep_output * 4500.0f;
+        }
+    }
+
     // set rate controller to use pass through
     _flags_heli.flybar_passthrough = true;
 
