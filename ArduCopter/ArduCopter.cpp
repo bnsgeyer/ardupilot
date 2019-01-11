@@ -320,6 +320,7 @@ void Copter::fourhundred_hz_logging()
     if (should_log(MASK_LOG_ATTITUDE_FAST)) {
         Log_Write_Attitude();
     }
+    DataFlash.Log_Write_Sweep(ahrs, *motors, *attitude_control, *pos_control);
 }
 
 // ten_hz_logging_loop

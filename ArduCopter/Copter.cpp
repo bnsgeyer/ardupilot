@@ -35,6 +35,7 @@ Copter::Copter(void)
     inertial_nav(ahrs),
     param_loader(var_info),
     flightmode(&mode_stabilize)
+
 {
     // init sensor error logging flags
     sensor_health.baro = true;
