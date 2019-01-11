@@ -71,7 +71,25 @@ const AP_Param::GroupInfo DataFlash_Class::var_info[] = {
 #define streq(x, y) (!strcmp(x, y))
 
 DataFlash_Class::DataFlash_Class(const AP_Int32 &log_bitmask)
-    : _log_bitmask(log_bitmask)
+    : _log_bitmask(log_bitmask),
+    accel_x_sweep_filter(25.0f),
+    accel_y_sweep_filter(25.0f),
+    accel_z_sweep_filter(25.0f),
+    gyro_x_sweep_filter(25.0f),
+    gyro_y_sweep_filter(25.0f),
+    gyro_z_sweep_filter(25.0f),
+    att_pitch_sweep_filter(25.0f),
+    att_roll_sweep_filter(25.0f),
+    att_yaw_sweep_filter(25.0f),
+    stk_lon_sweep_filter(25.0f),
+    stk_lat_sweep_filter(25.0f),
+    stk_ped_sweep_filter(25.0f),
+    stk_coll_sweep_filter(25.0f),
+    act_lon_sweep_filter(25.0f),
+    act_lat_sweep_filter(25.0f),
+    act_ped_sweep_filter(25.0f),
+    act_coll_sweep_filter(25.0f),
+    input_sweep_filter(25.0f)
 {
     AP_Param::setup_object_defaults(this, var_info);
     if (_instance != nullptr) {

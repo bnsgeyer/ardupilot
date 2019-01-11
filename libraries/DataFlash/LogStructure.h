@@ -921,6 +921,35 @@ struct PACKED log_Rate {
     float   sweep_out;
 };
 
+struct PACKED log_Swp1 {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float   control_roll;
+    float   actuator_roll;
+    float   roll_rate;
+    float   roll_att;
+    float   control_pitch;
+    float   actuator_pitch;
+    float   pitch_rate;
+    float   pitch_att;
+    float   accel_x;
+    float   accel_y;
+    float   sweep_out;
+};
+
+struct PACKED log_Swp2 {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float   control_yaw;
+    float   actuator_yaw;
+    float   yaw_rate;
+    float   yaw_att;
+    float   control_vert;
+    float   actuator_vert;
+    float   accel_z;
+    float   sweep_out;
+};
+
 // #if SBP_HW_LOGGING
 
 struct PACKED log_SbpLLH {
@@ -1406,6 +1435,10 @@ Format characters in the format string for binary log messages
       "GMB3", "Ihhh", "TimeMS,rl_torque_cmd,el_torque_cmd,az_torque_cmd", "s???", "C???" }, \
     { LOG_RATE_MSG, sizeof(log_Rate), \
       "RATE", "Qfffffffffffff",  "TimeUS,RDes,R,ROut,PDes,P,POut,YDes,Y,YOut,ADes,A,AOut,sweep", "skk-kk-kk-oo--", "F?????????BB--" }, \
+    { LOG_SWP1_MSG, sizeof(log_Swp1), \
+      "SWP1", "Qfffffffffff",  "TimeUS,dLat,Rout,GyroX,phi,dLon,Pout,GyroY,theta,AccX,AccY,sweep", "sk-Erk-Eroo-", "F???????????" }, \
+    { LOG_SWP2_MSG, sizeof(log_Swp2), \
+      "SWP2", "Qffffffff",  "TimeUS,dPed,Yout,GyroZ,psi,dColl,Aout,AccZ,sweep", "sk-Erk-o-", "F????????" }, \
     { LOG_RALLY_MSG, sizeof(log_Rally), \
       "RALY", "QBBLLh", "TimeUS,Tot,Seq,Lat,Lng,Alt", "s--DUm", "F--GGB" },  \
     { LOG_VISUALODOM_MSG, sizeof(log_VisualOdom), \
@@ -1550,6 +1583,8 @@ enum LogMessages : uint8_t {
     LOG_GIMBAL2_MSG,
     LOG_GIMBAL3_MSG,
     LOG_RATE_MSG,
+    LOG_SWP1_MSG,
+    LOG_SWP2_MSG,
     LOG_RALLY_MSG,
     LOG_VISUALODOM_MSG,
     LOG_AOA_SSA_MSG,

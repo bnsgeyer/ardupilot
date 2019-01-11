@@ -22,7 +22,6 @@
 
 extern const AP_HAL::HAL& hal;
 
-
 /*
   write a structure format to the log - should be in frontend
  */
@@ -1644,6 +1643,68 @@ void DataFlash_Class::Log_Write_Rate(const AP_AHRS &ahrs,
         sweep_out       : attitude_control.get_sweep()
     };
     WriteBlock(&pkt_rate, sizeof(pkt_rate));
+}
+
+// Write a rate packet
+void DataFlash_Class::Log_Write_Sweep(const AP_AHRS &ahrs,
+                                     const AP_Motors &motors,
+                                     const AC_AttitudeControl &attitude_control,
+                                     const AC_PosControl &pos_control)
+{
+    const AP_InertialSensor &ins = AP::ins();
+    float dt=0.0025f;
+    accel_x_sweep_filter.apply(ins.get_accel(0).x,dt);
+    accel_y_sweep_filter.apply(ins.get_accel(0).y,dt);
+    accel_z_sweep_filter.apply(ins.get_accel(0).z,dt);
+    gyro_x_sweep_filter.apply(ins.get_gyro(0).x,dt);
+    gyro_y_sweep_filter.apply(ins.get_gyro(0).y,dt);
+    gyro_z_sweep_filter.apply(ins.get_gyro(0).z,dt);
+    att_pitch_sweep_filter.apply(ahrs.pitch_sensor,dt);
+    att_roll_sweep_filter.apply(ahrs.roll_sensor,dt);
+    att_yaw_sweep_filter.apply(ahrs.yaw_sensor,dt);
+    stk_lon_sweep_filter.apply(attitude_control.get_pitch_angle_request(),dt);
+    stk_lat_sweep_filter.apply(attitude_control.get_roll_angle_request(),dt);
+    stk_ped_sweep_filter.apply(attitude_control.get_yaw_rate_request(),dt);
+    stk_coll_sweep_filter.apply(attitude_control.get_vert_request(),dt);
+    act_lon_sweep_filter.apply(motors.get_pitch(),dt);
+    act_lat_sweep_filter.apply(motors.get_roll(),dt);
+    act_ped_sweep_filter.apply(motors.get_yaw(),dt);
+    act_coll_sweep_filter.apply(motors.get_throttle(),dt);
+    input_sweep_filter.apply(attitude_control.get_sweep(),dt);
+
+    log_downsample_counter++;
+    if (log_downsample_counter==4) {
+        struct log_Swp1 pkt_swp1 = {
+            LOG_PACKET_HEADER_INIT(LOG_SWP1_MSG),
+            time_us         : AP_HAL::micros64(),
+            control_roll    : stk_lat_sweep_filter.get(),
+            actuator_roll   : act_lat_sweep_filter.get(),
+            roll_rate       : gyro_x_sweep_filter.get(),
+            roll_att        : att_roll_sweep_filter.get(),
+            control_pitch   : stk_lon_sweep_filter.get(),
+            actuator_pitch  : act_lon_sweep_filter.get(),
+            pitch_rate      : gyro_y_sweep_filter.get(),
+            pitch_att       : att_pitch_sweep_filter.get(),
+            accel_x         : accel_x_sweep_filter.get(),
+            accel_y         : accel_y_sweep_filter.get(),
+            sweep_out       : input_sweep_filter.get()
+        };
+        WriteBlock(&pkt_swp1, sizeof(pkt_swp1));
+        struct log_Swp2 pkt_swp2 = {
+            LOG_PACKET_HEADER_INIT(LOG_SWP2_MSG),
+            time_us         : AP_HAL::micros64(),
+            control_yaw     : stk_ped_sweep_filter.get(),
+            actuator_yaw    : act_ped_sweep_filter.get(),
+            yaw_rate        : gyro_z_sweep_filter.get(),
+            yaw_att         : att_yaw_sweep_filter.get(),
+            control_vert    : stk_coll_sweep_filter.get(),
+            actuator_vert   : act_coll_sweep_filter.get(),
+            accel_z         : accel_z_sweep_filter.get(),
+            sweep_out       : input_sweep_filter.get()
+        };
+        WriteBlock(&pkt_swp2, sizeof(pkt_swp2));
+        log_downsample_counter=0;
+    }
 }
 
 // Write rally points

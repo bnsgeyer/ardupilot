@@ -23,6 +23,7 @@
 #include <AP_Beacon/AP_Beacon.h>
 #include <AP_Proximity/AP_Proximity.h>
 #include <AP_InertialSensor/AP_InertialSensor_Backend.h>
+#include <Filter/Filter.h>             // Filter library
 
 #include <stdint.h>
 
@@ -141,6 +142,10 @@ public:
     void Log_Write_Origin(uint8_t origin_type, const Location &loc);
     void Log_Write_RPM(const AP_RPM &rpm_sensor);
     void Log_Write_Rate(const AP_AHRS &ahrs,
+                        const AP_Motors &motors,
+                        const AC_AttitudeControl &attitude_control,
+                        const AC_PosControl &pos_control);
+    void Log_Write_Sweep(const AP_AHRS &ahrs,
                         const AP_Motors &motors,
                         const AC_AttitudeControl &attitude_control,
                         const AC_PosControl &pos_control);
@@ -331,6 +336,27 @@ private:
 
     bool _writes_enabled:1;
 
+// sweep data logging parameters
+    int16_t log_downsample_counter;
+    LowPassFilterFloat accel_x_sweep_filter;
+    LowPassFilterFloat accel_y_sweep_filter;
+    LowPassFilterFloat accel_z_sweep_filter;
+    LowPassFilterFloat gyro_x_sweep_filter;
+    LowPassFilterFloat gyro_y_sweep_filter;
+    LowPassFilterFloat gyro_z_sweep_filter;
+    LowPassFilterFloat att_pitch_sweep_filter;
+    LowPassFilterFloat att_roll_sweep_filter;
+    LowPassFilterFloat att_yaw_sweep_filter;
+    LowPassFilterFloat stk_lon_sweep_filter;
+    LowPassFilterFloat stk_lat_sweep_filter;
+    LowPassFilterFloat stk_ped_sweep_filter;
+    LowPassFilterFloat stk_coll_sweep_filter;
+    LowPassFilterFloat act_lon_sweep_filter;
+    LowPassFilterFloat act_lat_sweep_filter;
+    LowPassFilterFloat act_ped_sweep_filter;
+    LowPassFilterFloat act_coll_sweep_filter;
+    LowPassFilterFloat input_sweep_filter;
+    
     /* support for retrieving logs via mavlink: */
 
     enum transfer_activity_t : uint8_t {
