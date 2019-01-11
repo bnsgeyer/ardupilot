@@ -299,6 +299,12 @@ public:
 
     // enable inverted flight on backends that support it
     virtual void set_inverted_flight(bool inverted) {}
+
+    // Return pilot inputs
+    float get_pitch_angle_request() const { return _pitch_angle_request; }
+    float get_roll_angle_request() const { return _roll_angle_request; }
+    float get_yaw_rate_request() const { return _yaw_rate_request; }
+    float get_vert_request() const { return _vert_request; }
     
     // User settable parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -442,6 +448,12 @@ protected:
 
     // Automated Frequency Sweep current value
     float               _sweep_output;
+
+    // Pilot inputs for sweep logging
+    float               _pitch_angle_request;
+    float               _roll_angle_request;
+    float               _yaw_rate_request;
+    float               _vert_request;
 
     // Automated frequency sweep counter
     uint16_t            loopCounterSweep;

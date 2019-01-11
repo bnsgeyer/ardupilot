@@ -173,6 +173,12 @@ void AC_AttitudeControl_Heli::passthrough_bf_roll_pitch_rate_yaw(float roll_pass
         }
     }
 
+    // record pilot inputs for logging
+    _pitch_angle_request = radians(pitch_passthrough*0.01f);
+    _roll_angle_request = radians(roll_passthrough*0.01f);
+    _yaw_rate_request = yaw_rate_bf_rads;
+
+
     // set rate controller to use pass through
     _flags_heli.flybar_passthrough = true;
 
@@ -464,6 +470,8 @@ void AC_AttitudeControl_Heli::set_throttle_out(float throttle_in, bool apply_ang
         ((AP_MotorsHeli&)_motors).set_throttle_sweep_flag(false);
         ((AP_MotorsHeli&)_motors).set_throttle_sweep_output(0.0f);
     }
+    // log pilot collective request
+    _vert_request = throttle_in;
 
     _motors.set_throttle(throttle_in);
     // Clear angle_boost for logging purposes
