@@ -24,32 +24,7 @@ extern const AP_HAL::HAL& hal;
 const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
     AP_NESTEDGROUPINFO(AP_MotorsHeli, 0),
 
-    // @Param: SV1_POS
-    // @DisplayName: Servo 1 Position
-    // @Description: Angular location of swash servo #1 - only used for H3 swash type
-    // @Range: -180 180
-    // @Units: deg
-    // @User: Standard
-    // @Increment: 1
-    AP_GROUPINFO("SV1_POS", 1, AP_MotorsHeli_Single, _servo1_pos, AP_MOTORS_HELI_SINGLE_SERVO1_POS),
-
-    // @Param: SV2_POS
-    // @DisplayName: Servo 2 Position
-    // @Description: Angular location of swash servo #2 - only used for H3 swash type
-    // @Range: -180 180
-    // @Units: deg
-    // @User: Standard
-    // @Increment: 1
-    AP_GROUPINFO("SV2_POS", 2, AP_MotorsHeli_Single, _servo2_pos, AP_MOTORS_HELI_SINGLE_SERVO2_POS),
-
-    // @Param: SV3_POS
-    // @DisplayName: Servo 3 Position
-    // @Description: Angular location of swash servo #3 - only used for H3 swash type
-    // @Range: -180 180
-    // @Units: deg
-    // @User: Standard
-    // @Increment: 1
-    AP_GROUPINFO("SV3_POS", 3, AP_MotorsHeli_Single, _servo3_pos, AP_MOTORS_HELI_SINGLE_SERVO3_POS),
+    // Indices 1-3 were used by servo position params and should not be used
 
     // @Param: TAIL_TYPE
     // @DisplayName: Tail Type
@@ -63,7 +38,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
     // @Description: Swash Type Setting
     // @Values: 0:H3 CCPM Adjustable, 1:H1 Straight Swash, 2:H3_140 CCPM
     // @User: Standard
-    AP_GROUPINFO("SWASH_TYPE", 5, AP_MotorsHeli_Single, _swash_type, AP_MOTORS_HELI_SINGLE_SWASH_H3),
+    AP_GROUPINFO("SWASH_TYPE", 5, AP_MotorsHeli_Single, _swashplate_type, (int8_t)SWASHPLATE_TYPE_H3),
 
     // @Param: GYR_GAIN
     // @DisplayName: External Gyro Gain
@@ -81,7 +56,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
     // @Units: deg
     // @User: Advanced
     // @Increment: 1
-    AP_GROUPINFO("PHANG", 7, AP_MotorsHeli_Single, _phase_angle, 0),
+    AP_GROUPINFO("PHANG", 7, AP_MotorsHeli_Single, _swash_phase_angle, 0),
 
     // @Param: COLYAW
     // @DisplayName: Collective-Yaw Mixing
@@ -123,7 +98,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
     // @Description: Direction collective moves for positive pitch. 0 for Normal, 1 for Reversed
     // @Values: 0:Normal,1:Reversed
     // @User: Standard
-    AP_GROUPINFO("COL_CTRL_DIR", 19, AP_MotorsHeli_Single, _collective_direction, AP_MOTORS_HELI_SINGLE_COLLECTIVE_DIRECTION_NORMAL),
+    AP_GROUPINFO("COL_CTRL_DIR", 19, AP_MotorsHeli_Single, _swash_coll_dir, (int8_t)COLLECTIVE_DIRECTION_NORMAL),
 
     // parameters up to and including 29 are reserved for tradheli
 
@@ -269,8 +244,11 @@ void AP_MotorsHeli_Single::calculate_scalars()
     // calculate collective mid point as a number from 0 to 1
     _collective_mid_pct = ((float)(_collective_mid-_collective_min))/((float)(_collective_max-_collective_min));
 
-    // calculate factors based on swash type and servo position
-    calculate_roll_pitch_collective_factors();
+    // configure swashplate and update scalars
+    _swashplate.set_swash_type(static_cast<SwashPlateType>((uint8_t)_swashplate_type));
+    _swashplate.set_phase_angle(_swash_phase_angle);
+    _swashplate.set_collective_direction(static_cast<CollectiveDirection>((uint8_t)_swash_coll_dir));
+    _swashplate.calculate_roll_pitch_collective_factors();
 
     // send setpoints to main rotor controller and trigger recalculation of scalars
     _main_rotor.set_control_mode(static_cast<RotorControlMode>(_rsc_mode.get()));
@@ -289,57 +267,6 @@ void AP_MotorsHeli_Single::calculate_scalars()
         _tail_rotor.set_runup_time(0);
         _tail_rotor.set_critical_speed(0);
         _tail_rotor.set_idle_output(0);
-    }
-}
-
-// CCPM Mixers - calculate mixing scale factors by swashplate type
-void AP_MotorsHeli_Single::calculate_roll_pitch_collective_factors()
-{
-    if (_swash_type == AP_MOTORS_HELI_SINGLE_SWASH_H3) {                  //Three-Servo adjustable CCPM mixer factors
-        // aileron factors
-        _rollFactor[CH_1] = cosf(radians(_servo1_pos + 90 - _phase_angle));
-        _rollFactor[CH_2] = cosf(radians(_servo2_pos + 90 - _phase_angle));
-        _rollFactor[CH_3] = cosf(radians(_servo3_pos + 90 - _phase_angle));
-
-        // elevator factors
-        _pitchFactor[CH_1] = cosf(radians(_servo1_pos - _phase_angle));
-        _pitchFactor[CH_2] = cosf(radians(_servo2_pos - _phase_angle));
-        _pitchFactor[CH_3] = cosf(radians(_servo3_pos - _phase_angle));
-
-        // collective factors
-        _collectiveFactor[CH_1] = 1;
-        _collectiveFactor[CH_2] = 1;
-        _collectiveFactor[CH_3] = 1;
-    } else if (_swash_type == AP_MOTORS_HELI_SINGLE_SWASH_H3_140) {       //Three-Servo H3-140 CCPM mixer factors
-        // aileron factors
-        _rollFactor[CH_1] = 1;
-        _rollFactor[CH_2] = -1;
-        _rollFactor[CH_3] = 0;
-
-        // elevator factors
-        _pitchFactor[CH_1] = 1;
-        _pitchFactor[CH_2] = 1;
-        _pitchFactor[CH_3] = -1;
-
-        // collective factors
-        _collectiveFactor[CH_1] = 1;
-        _collectiveFactor[CH_2] = 1;
-        _collectiveFactor[CH_3] = 1;
-    } else {                                                              //H1 straight outputs, no mixing
-        // aileron factors
-        _rollFactor[CH_1] = 1;
-        _rollFactor[CH_2] = 0;
-        _rollFactor[CH_3] = 0;
-
-        // elevator factors
-        _pitchFactor[CH_1] = 0;
-        _pitchFactor[CH_2] = 1;
-        _pitchFactor[CH_3] = 0;
-
-        // collective factors
-        _collectiveFactor[CH_1] = 0;
-        _collectiveFactor[CH_2] = 0;
-        _collectiveFactor[CH_3] = 1;
     }
 }
 
@@ -457,22 +384,10 @@ void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float
     float collective_scalar = ((float)(_collective_max-_collective_min))*0.001f;
     float collective_out_scaled = collective_out * collective_scalar + (_collective_min - 1000)*0.001f;
 
-    // Collective control direction. Swash moves up for negative collective pitch, down for positive collective pitch
-    if (_collective_direction == AP_MOTORS_HELI_SINGLE_COLLECTIVE_DIRECTION_REVERSED){
-        collective_out_scaled = 1 - collective_out_scaled;
-    }
-    float servo1_out = ((_rollFactor[CH_1] * roll_out) + (_pitchFactor[CH_1] * pitch_out))*0.45f + _collectiveFactor[CH_1] * collective_out_scaled;
-    float servo2_out = ((_rollFactor[CH_2] * roll_out) + (_pitchFactor[CH_2] * pitch_out))*0.45f + _collectiveFactor[CH_2] * collective_out_scaled;
-    if (_swash_type == AP_MOTORS_HELI_SINGLE_SWASH_H1) {
-        servo1_out += 0.5f;
-        servo2_out += 0.5f;
-    }
-    float servo3_out = ((_rollFactor[CH_3] * roll_out) + (_pitchFactor[CH_3] * pitch_out))*0.45f + _collectiveFactor[CH_3] * collective_out_scaled;
-
-    // rescale from -1..1, so we can use the pwm calc that includes trim
-    servo1_out = 2*servo1_out - 1;
-    servo2_out = 2*servo2_out - 1;
-    servo3_out = 2*servo3_out - 1;
+    // get servo positions from swashplate library
+    float servo1_out = _swashplate.get_servo_out(CH_1,pitch_out,roll_out,collective_out_scaled);
+    float servo2_out = _swashplate.get_servo_out(CH_2,pitch_out,roll_out,collective_out_scaled);
+    float servo3_out = _swashplate.get_servo_out(CH_3,pitch_out,roll_out,collective_out_scaled);
 
     // actually move the servos.  PWM is sent based on nominal 1500 center.  servo output shifts center based on trim value.
     rc_write_swash(AP_MOTORS_MOT_1, servo1_out);
@@ -572,7 +487,7 @@ void AP_MotorsHeli_Single::servo_test()
 bool AP_MotorsHeli_Single::parameter_check(bool display_msg) const
 {
     // returns false if Phase Angle is outside of range
-    if ((_phase_angle > 30) || (_phase_angle < -30)){
+    if ((_swash_phase_angle > 30) || (_swash_phase_angle < -30)){
         if (display_msg) {
             gcs().send_text(MAV_SEVERITY_CRITICAL, "PreArm: H_PHANG out of range");
         }
