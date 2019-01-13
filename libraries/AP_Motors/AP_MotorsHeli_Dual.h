@@ -23,6 +23,7 @@
 // tandem modes
 #define AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH           0 // swashplate pitch tilt axis
 #define AP_MOTORS_HELI_DUAL_SWASH_AXIS_ROLL            1 // swashplate roll tilt axis
+#define AP_MOTORS_HELI_DUAL_SWASH_AXIS_COLL            1 // swashplate collective axis
 
 // default differential-collective-pitch scaler
 #define AP_MOTORS_HELI_DUAL_DCP_SCALER             0.25f
@@ -96,7 +97,7 @@ protected:
     void update_motor_control(RotorControlState state) override;
 
     // calculate_swashplate_tilt - calculate tilt of each swashplate based on configuration
-    float get_swashplate_tilt (int8_t swash_num, int8_t swash_axis, float pitch_input, float roll_input, float yaw_input);
+    float get_swashplate (int8_t swash_num, int8_t swash_axis, float pitch_input, float roll_input, float yaw_input, float coll_input);
 
     // move_actuators - moves swash plate to attitude of parameters passed in
     void move_actuators(float roll_out, float pitch_out, float coll_in, float yaw_out)  override;

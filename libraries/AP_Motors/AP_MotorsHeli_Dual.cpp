@@ -277,17 +277,17 @@ void AP_MotorsHeli_Dual::calculate_scalars()
     calculate_armed_scalars();
 }
 
-// calculate_swashplate_tilt - calculate tilt of each swashplate based on configuration
-float AP_MotorsHeli_Dual::get_swashplate_tilt (int8_t swash_num, int8_t swash_axis, float pitch_input, float roll_input, float yaw_input)
+// get_swashplate - calculate movement of each swashplate based on configuration
+float AP_MotorsHeli_Dual::get_swashplate (int8_t swash_num, int8_t swash_axis, float pitch_input, float roll_input, float yaw_input, float coll_input)
 {
     float swash_tilt = 0.0f;
     if (_dual_mode == AP_MOTORS_HELI_DUAL_MODE_TRANSVERSE) {
         // roll tilt
         if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_ROLL) {
             if (swash_num == 1) {
-                swash_tilt = _dcp_scaler * roll_input;
+                swash_tilt = 0.0f;
             } else if (swash_num == 2) {
-                swash_tilt = -_dcp_scaler * roll_input;
+                swash_tilt = 0.0f;
             }
         } else if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH) {
         // pitch tilt
@@ -295,6 +295,13 @@ float AP_MotorsHeli_Dual::get_swashplate_tilt (int8_t swash_num, int8_t swash_ax
                 swash_tilt = pitch_input + _yaw_scaler * yaw_input;
             } else if (swash_num == 2) {
                 swash_tilt = pitch_input - _yaw_scaler * yaw_input;
+            }
+        } else if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_COLL) {
+        // collective
+            if (swash_num == 1) {
+                swash_tilt = 0.45f * _dcp_scaler * roll_input + coll_input;
+            } else if (swash_num == 2) {
+                swash_tilt = -0.45f * _dcp_scaler * roll_input + coll_input;
             }
         }
     } else { // AP_MOTORS_HELI_DUAL_MODE_TANDEM
@@ -308,9 +315,16 @@ float AP_MotorsHeli_Dual::get_swashplate_tilt (int8_t swash_num, int8_t swash_ax
         } else if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH) {
         // pitch tilt
             if (swash_num == 1) {
-                swash_tilt = _dcp_scaler * pitch_input;
+                swash_tilt = 0.0f;
             } else if (swash_num == 2) {
-                swash_tilt = _dcp_scaler * pitch_input;
+                swash_tilt = 0.0f;
+            }
+        } else if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_COLL) {
+        // collective
+            if (swash_num == 1) {
+                swash_tilt = -0.45f * _dcp_scaler * pitch_input + coll_input;
+            } else if (swash_num == 2) {
+                swash_tilt = 0.45f * _dcp_scaler * pitch_input + coll_input;
             }
         }
     }
@@ -452,20 +466,22 @@ void AP_MotorsHeli_Dual::move_actuators(float roll_out, float pitch_out, float c
     float servo_out[AP_MOTORS_HELI_DUAL_NUM_SWASHPLATE_SERVOS];
 
     // compute swashplate tilt
-    float swash1_pitch = get_swashplate_tilt(1,AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH,pitch_out,roll_out,yaw_out);
-    float swash1_roll = get_swashplate_tilt(1,AP_MOTORS_HELI_DUAL_SWASH_AXIS_ROLL,pitch_out,roll_out,yaw_out);
-    float swash2_pitch = get_swashplate_tilt(2,AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH,pitch_out,roll_out,yaw_out);
-    float swash2_roll = get_swashplate_tilt(2,AP_MOTORS_HELI_DUAL_SWASH_AXIS_ROLL,pitch_out,roll_out,yaw_out);
+    float swash1_pitch = get_swashplate(1, AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH, pitch_out, roll_out, yaw_out, collective_out_scaled);
+    float swash1_roll = get_swashplate(1, AP_MOTORS_HELI_DUAL_SWASH_AXIS_ROLL, pitch_out, roll_out, yaw_out, collective_out_scaled);
+    float swash1_coll = get_swashplate(1, AP_MOTORS_HELI_DUAL_SWASH_AXIS_COLL, pitch_out, roll_out, yaw_out, collective_out_scaled);
+    float swash2_pitch = get_swashplate(2, AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH, pitch_out, roll_out, yaw_out, collective2_out_scaled);
+    float swash2_roll = get_swashplate(2, AP_MOTORS_HELI_DUAL_SWASH_AXIS_ROLL, pitch_out, roll_out, yaw_out, collective2_out_scaled);
+    float swash2_coll = get_swashplate(1, AP_MOTORS_HELI_DUAL_SWASH_AXIS_COLL, pitch_out, roll_out, yaw_out, collective2_out_scaled);
  
     // get servo positions from swashplate library
-    servo_out[1] = _swashplate1.get_servo_out(CH_1,swash1_pitch,swash1_roll,collective_out_scaled);
-    servo_out[2] = _swashplate1.get_servo_out(CH_2,swash1_pitch,swash1_roll,collective_out_scaled);
-    servo_out[3] = _swashplate1.get_servo_out(CH_3,swash1_pitch,swash1_roll,collective_out_scaled);
+    servo_out[1] = _swashplate1.get_servo_out(CH_1,swash1_pitch,swash1_roll,swash1_coll);
+    servo_out[2] = _swashplate1.get_servo_out(CH_2,swash1_pitch,swash1_roll,swash1_coll);
+    servo_out[3] = _swashplate1.get_servo_out(CH_3,swash1_pitch,swash1_roll,swash1_coll);
 
     // get servo positions from swashplate library
-    servo_out[4] = _swashplate2.get_servo_out(CH_1,swash2_pitch,swash2_roll,collective2_out_scaled);
-    servo_out[5] = _swashplate2.get_servo_out(CH_2,swash2_pitch,swash2_roll,collective2_out_scaled);
-    servo_out[6] = _swashplate2.get_servo_out(CH_3,swash2_pitch,swash2_roll,collective2_out_scaled);
+    servo_out[4] = _swashplate2.get_servo_out(CH_1,swash2_pitch,swash2_roll,swash2_coll);
+    servo_out[5] = _swashplate2.get_servo_out(CH_2,swash2_pitch,swash2_roll,swash2_coll);
+    servo_out[6] = _swashplate2.get_servo_out(CH_3,swash2_pitch,swash2_roll,swash2_coll);
 
 
     // actually move the servos.  PWM is sent based on nominal 1500 center.  servo output shifts center based on trim value.
