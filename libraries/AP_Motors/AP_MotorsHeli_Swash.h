@@ -4,6 +4,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>            // ArduPilot Mega Vector/Matrix math Library
+#include <AP_Param/AP_Param.h>
 
 // servo position defaults
 #define AP_MOTORS_HELI_SWASH_SERVO1_POS                       -60
@@ -14,7 +15,8 @@
 enum SwashPlateType {
     SWASHPLATE_TYPE_H3 = 0,
     SWASHPLATE_TYPE_H1,
-    SWASHPLATE_TYPE_H3_140
+    SWASHPLATE_TYPE_H3_140,
+    SWASHPLATE_TYPE_H3_VAR
 };
 
 // collective direction
@@ -45,6 +47,11 @@ public:
     // set_phase_angle - sets swashplate phase angle
     float get_servo_out(int8_t servo_num, float pitch, float roll, float collective);
 
+    void set_servo1_pos(int16_t servo_pos) { _servo1_pos = servo_pos; }
+    void set_servo2_pos(int16_t servo_pos) { _servo2_pos = servo_pos; }
+    void set_servo3_pos(int16_t servo_pos) { _servo3_pos = servo_pos; }
+
+
 private:
     // internal variables
     SwashPlateType  _swash_type;             // Swashplate type
@@ -53,6 +60,27 @@ private:
     float           _rollFactor[3];
     float           _pitchFactor[3];
     float           _collectiveFactor[3];
-
+    int16_t         _servo1_pos;
+    int16_t         _servo2_pos;
+    int16_t         _servo3_pos;
 
 };
+class SwashInt16Param {
+public:
+    SwashInt16Param(void);
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+    void set_enable(int8_t setenable) {enable = setenable; }
+    int16_t get_servo1_pos() const { return servo1_pos; }
+    int16_t get_servo2_pos() const { return servo2_pos; }
+    int16_t get_servo3_pos() const { return servo3_pos; }
+
+private:
+    AP_Int8 enable;
+    AP_Int16 servo1_pos;
+    AP_Int16 servo2_pos;
+    AP_Int16 servo3_pos;
+
+};
+

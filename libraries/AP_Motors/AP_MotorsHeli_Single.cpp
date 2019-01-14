@@ -102,6 +102,10 @@ const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
 
     // parameters up to and including 29 are reserved for tradheli
 
+    // @Group: H3-VAR_
+    // @Path: Swash.cpp
+    AP_SUBGROUPINFO(_manual_swash, "H3-VAR_", 30, AP_MotorsHeli_Single, SwashInt16Param),
+
     AP_GROUPEND
 };
 
@@ -245,6 +249,14 @@ void AP_MotorsHeli_Single::calculate_scalars()
     _collective_mid_pct = ((float)(_collective_mid-_collective_min))/((float)(_collective_max-_collective_min));
 
     // configure swashplate and update scalars
+    if (_swashplate_type == SWASHPLATE_TYPE_H3_VAR) {
+        _manual_swash.set_enable(1);
+        _swashplate.set_servo1_pos(_manual_swash.get_servo1_pos());
+        _swashplate.set_servo2_pos(_manual_swash.get_servo2_pos());
+        _swashplate.set_servo3_pos(_manual_swash.get_servo3_pos());
+    } else {
+        _manual_swash.set_enable(0);
+    }
     _swashplate.set_swash_type(static_cast<SwashPlateType>((uint8_t)_swashplate_type));
     _swashplate.set_phase_angle(_swash_phase_angle);
     _swashplate.set_collective_direction(static_cast<CollectiveDirection>((uint8_t)_swash_coll_dir));
