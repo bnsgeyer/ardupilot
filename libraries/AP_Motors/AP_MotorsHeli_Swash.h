@@ -16,7 +16,7 @@ enum SwashPlateType {
     SWASHPLATE_TYPE_H3 = 0,
     SWASHPLATE_TYPE_H1,
     SWASHPLATE_TYPE_H3_140,
-    SWASHPLATE_TYPE_H3_VAR
+    SWASHPLATE_TYPE_H3_120
 };
 
 // collective direction
@@ -72,6 +72,7 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
     void set_enable(int8_t setenable) {enable = setenable; }
+    int8_t get_enable() { return enable; }
     int16_t get_servo1_pos() const { return servo1_pos; }
     int16_t get_servo2_pos() const { return servo2_pos; }
     int16_t get_servo3_pos() const { return servo3_pos; }

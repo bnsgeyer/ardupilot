@@ -106,6 +106,8 @@ protected:
     AP_MotorsHeli_RSC           _rotor;             // main rotor controller
     AP_MotorsHeli_Swash        _swashplate1;        // swashplate1
     AP_MotorsHeli_Swash        _swashplate2;        // swashplate2
+    SwashInt16Param            _swash1_H3;          // H3 servo positions for swash 1
+    SwashInt16Param            _swash2_H3;          // H3 servo positions for swash 2
 
     // internal variables
     float _oscillate_angle = 0.0f;                  // cyclic oscillation angle, used by servo_test function

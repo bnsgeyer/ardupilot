@@ -68,24 +68,6 @@ SwashInt16Param::SwashInt16Param(void)
 void AP_MotorsHeli_Swash::calculate_roll_pitch_collective_factors()
 {
     if (_swash_type == SWASHPLATE_TYPE_H3) {                  //Three-Servo adjustable CCPM mixer factors
-        _servo1_pos = AP_MOTORS_HELI_SWASH_SERVO1_POS;
-        _servo2_pos = AP_MOTORS_HELI_SWASH_SERVO2_POS;
-        _servo3_pos = AP_MOTORS_HELI_SWASH_SERVO3_POS;
-        // aileron factors
-        _rollFactor[CH_1] = cosf(radians(_servo1_pos + 90 - _phase_angle));
-        _rollFactor[CH_2] = cosf(radians(_servo2_pos + 90 - _phase_angle));
-        _rollFactor[CH_3] = cosf(radians(_servo3_pos + 90 - _phase_angle));
-
-        // elevator factors
-        _pitchFactor[CH_1] = cosf(radians(_servo1_pos - _phase_angle));
-        _pitchFactor[CH_2] = cosf(radians(_servo2_pos - _phase_angle));
-        _pitchFactor[CH_3] = cosf(radians(_servo3_pos - _phase_angle));
-
-        // collective factors
-        _collectiveFactor[CH_1] = 1;
-        _collectiveFactor[CH_2] = 1;
-        _collectiveFactor[CH_3] = 1;
-    } else if (_swash_type == SWASHPLATE_TYPE_H3_VAR) {                  //Three-Servo adjustable CCPM mixer factors
         // aileron factors
         _rollFactor[CH_1] = cosf(radians(_servo1_pos + 90 - _phase_angle));
         _rollFactor[CH_2] = cosf(radians(_servo2_pos + 90 - _phase_angle));
@@ -110,6 +92,24 @@ void AP_MotorsHeli_Swash::calculate_roll_pitch_collective_factors()
         _pitchFactor[CH_1] = 1;
         _pitchFactor[CH_2] = 1;
         _pitchFactor[CH_3] = -1;
+
+        // collective factors
+        _collectiveFactor[CH_1] = 1;
+        _collectiveFactor[CH_2] = 1;
+        _collectiveFactor[CH_3] = 1;
+    } else if (_swash_type == SWASHPLATE_TYPE_H3_120) {                  //Three-Servo H3-120 mixer factors
+        _servo1_pos = AP_MOTORS_HELI_SWASH_SERVO1_POS;
+        _servo2_pos = AP_MOTORS_HELI_SWASH_SERVO2_POS;
+        _servo3_pos = AP_MOTORS_HELI_SWASH_SERVO3_POS;
+        // aileron factors
+        _rollFactor[CH_1] = cosf(radians(_servo1_pos + 90 - _phase_angle));
+        _rollFactor[CH_2] = cosf(radians(_servo2_pos + 90 - _phase_angle));
+        _rollFactor[CH_3] = cosf(radians(_servo3_pos + 90 - _phase_angle));
+
+        // elevator factors
+        _pitchFactor[CH_1] = cosf(radians(_servo1_pos - _phase_angle));
+        _pitchFactor[CH_2] = cosf(radians(_servo2_pos - _phase_angle));
+        _pitchFactor[CH_3] = cosf(radians(_servo3_pos - _phase_angle));
 
         // collective factors
         _collectiveFactor[CH_1] = 1;

@@ -128,6 +128,15 @@ const AP_Param::GroupInfo AP_MotorsHeli_Dual::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("SWASH2_TYPE", 22, AP_MotorsHeli_Dual, _swashplate2_type, (int8_t)SWASHPLATE_TYPE_H3),
 
+    // @Group: SW1_H3_
+    // @Path: Swash.cpp
+    AP_SUBGROUPINFO(_swash1_H3, "SW1_H3_", 23, AP_MotorsHeli_Dual, SwashInt16Param),
+
+    // @Group: SW2_H3_
+    // @Path: Swash.cpp
+    AP_SUBGROUPINFO(_swash2_H3, "SW2_H3_", 24, AP_MotorsHeli_Dual, SwashInt16Param),
+
+
     AP_GROUPEND
 };
 
@@ -261,12 +270,36 @@ void AP_MotorsHeli_Dual::calculate_scalars()
 
     // configure swashplate 1 and update scalars
 //    uint8_t swashplate1_type = _swashplate1_type;
+    if (_swashplate1_type == SWASHPLATE_TYPE_H3) {
+        if (_swash1_H3.get_enable() == 0) {
+            _swash1_H3.set_enable(1);
+        }
+        _swashplate1.set_servo1_pos(_swash1_H3.get_servo1_pos());
+        _swashplate1.set_servo2_pos(_swash1_H3.get_servo2_pos());
+        _swashplate1.set_servo3_pos(_swash1_H3.get_servo3_pos());
+    } else {
+        if (_swash1_H3.get_enable() == 1) {
+            _swash1_H3.set_enable(0);
+        }
+    }
     _swashplate1.set_swash_type(static_cast<SwashPlateType>((uint8_t)_swashplate1_type));
     _swashplate1.set_phase_angle(_swash1_phase_angle);
     _swashplate1.set_collective_direction(static_cast<CollectiveDirection>((uint8_t)_swash1_coll_dir));
     _swashplate1.calculate_roll_pitch_collective_factors();
 
     // configure swashplate 2 and update scalars
+    if (_swashplate2_type == SWASHPLATE_TYPE_H3) {
+        if (_swash2_H3.get_enable() == 0) {
+            _swash2_H3.set_enable(1);
+        }
+        _swashplate2.set_servo1_pos(_swash2_H3.get_servo1_pos());
+        _swashplate2.set_servo2_pos(_swash2_H3.get_servo2_pos());
+        _swashplate2.set_servo3_pos(_swash2_H3.get_servo3_pos());
+    } else {
+        if (_swash2_H3.get_enable() == 1) {
+            _swash2_H3.set_enable(0);
+        }
+    }
     _swashplate2.set_swash_type(static_cast<SwashPlateType>((uint8_t)_swashplate2_type));
     _swashplate2.set_phase_angle(_swash2_phase_angle);
     _swashplate2.set_collective_direction(static_cast<CollectiveDirection>((uint8_t)_swash2_coll_dir));
