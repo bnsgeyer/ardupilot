@@ -6,17 +6,14 @@
 #include <AP_Math/AP_Math.h>            // ArduPilot Mega Vector/Matrix math Library
 #include <AP_Param/AP_Param.h>
 
-// servo position defaults
-#define AP_MOTORS_HELI_SWASH_SERVO1_POS                       -60
-#define AP_MOTORS_HELI_SWASH_SERVO2_POS                       60
-#define AP_MOTORS_HELI_SWASH_SERVO3_POS                       180
-
 // swashplate types
 enum SwashPlateType {
     SWASHPLATE_TYPE_H3 = 0,
     SWASHPLATE_TYPE_H1,
     SWASHPLATE_TYPE_H3_140,
-    SWASHPLATE_TYPE_H3_120
+    SWASHPLATE_TYPE_H3_120,
+    SWASHPLATE_TYPE_H4_90,
+    SWASHPLATE_TYPE_H4_45
 };
 
 // collective direction

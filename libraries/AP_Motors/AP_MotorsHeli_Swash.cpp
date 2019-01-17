@@ -67,69 +67,89 @@ SwashInt16Param::SwashInt16Param(void)
 // CCPM Mixers - calculate mixing scale factors by swashplate type
 void AP_MotorsHeli_Swash::calculate_roll_pitch_collective_factors()
 {
-    if (_swash_type == SWASHPLATE_TYPE_H3) {                  //Three-Servo adjustable CCPM mixer factors
-        // aileron factors
-        _rollFactor[CH_1] = cosf(radians(_servo1_pos + 90 - _phase_angle));
-        _rollFactor[CH_2] = cosf(radians(_servo2_pos + 90 - _phase_angle));
-        _rollFactor[CH_3] = cosf(radians(_servo3_pos + 90 - _phase_angle));
-
-        // elevator factors
-        _pitchFactor[CH_1] = cosf(radians(_servo1_pos - _phase_angle));
-        _pitchFactor[CH_2] = cosf(radians(_servo2_pos - _phase_angle));
-        _pitchFactor[CH_3] = cosf(radians(_servo3_pos - _phase_angle));
-
-        // collective factors
+    if ((_swash_type == SWASHPLATE_TYPE_H3) || (_swash_type == SWASHPLATE_TYPE_H3_120)) {
+        // collective mixer for three-servo CCPM
         _collectiveFactor[CH_1] = 1;
         _collectiveFactor[CH_2] = 1;
         _collectiveFactor[CH_3] = 1;
-    } else if (_swash_type == SWASHPLATE_TYPE_H3_140) {       //Three-Servo H3-140 CCPM mixer factors
-        // aileron factors
-        _rollFactor[CH_1] = 1;
-        _rollFactor[CH_2] = -1;
-        _rollFactor[CH_3] = 0;
-
-        // elevator factors
-        _pitchFactor[CH_1] = 1;
-        _pitchFactor[CH_2] = 1;
-        _pitchFactor[CH_3] = -1;
-
-        // collective factors
+    } else if ((_swash_type == SWASHPLATE_TYPE_H4_90) || (_swash_type == SWASHPLATE_TYPE_H4_45)) {
+        // collective mixer for four-servo CCPM
         _collectiveFactor[CH_1] = 1;
         _collectiveFactor[CH_2] = 1;
         _collectiveFactor[CH_3] = 1;
-    } else if (_swash_type == SWASHPLATE_TYPE_H3_120) {                  //Three-Servo H3-120 mixer factors
-        _servo1_pos = AP_MOTORS_HELI_SWASH_SERVO1_POS;
-        _servo2_pos = AP_MOTORS_HELI_SWASH_SERVO2_POS;
-        _servo3_pos = AP_MOTORS_HELI_SWASH_SERVO3_POS;
-        // aileron factors
-        _rollFactor[CH_1] = cosf(radians(_servo1_pos + 90 - _phase_angle));
-        _rollFactor[CH_2] = cosf(radians(_servo2_pos + 90 - _phase_angle));
-        _rollFactor[CH_3] = cosf(radians(_servo3_pos + 90 - _phase_angle));
-
-        // elevator factors
-        _pitchFactor[CH_1] = cosf(radians(_servo1_pos - _phase_angle));
-        _pitchFactor[CH_2] = cosf(radians(_servo2_pos - _phase_angle));
-        _pitchFactor[CH_3] = cosf(radians(_servo3_pos - _phase_angle));
-
-        // collective factors
-        _collectiveFactor[CH_1] = 1;
-        _collectiveFactor[CH_2] = 1;
-        _collectiveFactor[CH_3] = 1;
-    } else {                                                              //H1 straight outputs, no mixing
-        // aileron factors
-        _rollFactor[CH_1] = 1;
-        _rollFactor[CH_2] = 0;
-        _rollFactor[CH_3] = 0;
-
-        // elevator factors
-        _pitchFactor[CH_1] = 0;
-        _pitchFactor[CH_2] = 1;
-        _pitchFactor[CH_3] = 0;
-
-        // collective factors
+//        _collectiveFactor[CH_7] = 1;
+    } else {
+        // CCPM mixing is not being used, so swash_type is H1
         _collectiveFactor[CH_1] = 0;
         _collectiveFactor[CH_2] = 0;
         _collectiveFactor[CH_3] = 1;
+    }
+
+    if (_swash_type == SWASHPLATE_TYPE_H3) {
+        // Three-servo roll/pitch mixer for adjustable servo position
+        // can be any style swashplate, phase angle is adjustable
+        _rollFactor[CH_1] = cosf(radians(_servo1_pos + 90 - _phase_angle));
+        _rollFactor[CH_2] = cosf(radians(_servo2_pos + 90 - _phase_angle));
+        _rollFactor[CH_3] = cosf(radians(_servo3_pos + 90 - _phase_angle));
+        _pitchFactor[CH_1] = cosf(radians(_servo1_pos - _phase_angle));
+        _pitchFactor[CH_2] = cosf(radians(_servo2_pos - _phase_angle));
+        _pitchFactor[CH_3] = cosf(radians(_servo3_pos - _phase_angle));
+        
+        // defined swashplates, servo1 is always left, servo2 is right,
+        // servo3 is elevator
+    } else if (_swash_type == SWASHPLATE_TYPE_H3_140) {    //
+        // Three-servo roll/pitch mixer for H3-140
+        // HR3-140 uses reversed servo and collective direction in heli setup
+        // 1:1 pure input style, phase angle not adjustable
+        _rollFactor[CH_1] = 1;
+        _rollFactor[CH_2] = -1;
+        _rollFactor[CH_3] = 0;
+        _pitchFactor[CH_1] = 1;
+        _pitchFactor[CH_2] = 1;
+        _pitchFactor[CH_3] = -1;
+    } else if (_swash_type == SWASHPLATE_TYPE_H3_120) {
+        // three-servo roll/pitch mixer for H3-120
+        // HR3-120 uses reversed servo and collective direction in heli setup
+        // not a pure mixing swashplate, phase angle is adjustable
+        _rollFactor[CH_1] = cosf(radians(30 - _phase_angle));
+        _rollFactor[CH_2] = cosf(radians(150 - _phase_angle));
+        _rollFactor[CH_3] = cosf(radians(-90 - _phase_angle));
+        _pitchFactor[CH_1] = cosf(radians(-60 - _phase_angle));
+        _pitchFactor[CH_2] = cosf(radians(60 - _phase_angle));
+        _pitchFactor[CH_3] = cosf(radians(180 - _phase_angle));
+    } else if (_swash_type == SWASHPLATE_TYPE_H4_90) {
+        // four-servo roll/pitch mixer for H4-90
+        // 1:1 pure input style, phase angle not adjustable
+        // servos 3 & 7 are elevator
+        // can also be used for all versions of 90 deg three-servo swashplates
+        _rollFactor[CH_1] = 1; 
+        _rollFactor[CH_2] = -1;
+        _rollFactor[CH_3] = 0;
+//        _rollFactor[CH_7] = 0;
+        _pitchFactor[CH_1] = 0;
+        _pitchFactor[CH_2] = 0;
+        _pitchFactor[CH_3] = 1;
+//        _pitchFactor[CH_7] = -1;
+    } else if (_swash_type == SWASHPLATE_TYPE_H4_45) {
+        // four-servo roll/pitch mixer for H4-45
+        // 1:1 pure input style, phase angle not adjustable
+        // for 45 deg plates servos 1&2 are LF&RF, 3&7 are LR&RR.
+        _rollFactor[CH_1] = 0.7f; 
+        _rollFactor[CH_2] = -0.7f;
+        _rollFactor[CH_3] = 0.7f;
+//        _rollFactor[CH_7] = -0.7f;
+        _pitchFactor[CH_1] = 0.7f;
+        _pitchFactor[CH_2] = 0.7f;
+        _pitchFactor[CH_3] = -0.7f;
+//        _pitchFactor[CH_7] = -0.7f;
+    } else {
+        // CCPM mixing not being used, so H1 straight outputs
+        _rollFactor[CH_1] = 1;
+        _rollFactor[CH_2] = 0;
+        _rollFactor[CH_3] = 0;
+        _pitchFactor[CH_1] = 0;
+        _pitchFactor[CH_2] = 1;
+        _pitchFactor[CH_3] = 0;
     }
 }
 
