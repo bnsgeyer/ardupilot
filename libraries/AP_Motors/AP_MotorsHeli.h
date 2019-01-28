@@ -132,6 +132,9 @@ public:
     // support passing init_targets_on_arming flag to greater code
     bool init_targets_on_arming() const { return _heliflags.init_targets_on_arming; }
 
+    // pilot input for boost for compound heli
+    virtual void        set_boost(float boost_in) {}
+
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo var_info[];
 
