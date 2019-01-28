@@ -46,10 +46,10 @@
 #define AP_MOTORS_HELI_COMPOUND_NUM_SWASHPLATE_SERVOS            3
 
 /// @class      AP_MotorsHELI_COMPOUND
-class AP_MotorsHELI_COMPOUND : public AP_MotorsHeli {
+class AP_MotorsHeli_Compound : public AP_MotorsHeli {
 public:
     // constructor
-    AP_MotorsHELI_COMPOUND(uint16_t       loop_rate,
+    AP_MotorsHeli_Compound(uint16_t       loop_rate,
                          uint16_t       speed_hz = AP_MOTORS_HELI_SPEED_DEFAULT) :
         AP_MotorsHeli(loop_rate, speed_hz),
         _main_rotor(SRV_Channel::k_heli_rsc, AP_MOTORS_HELI_COMPOUND_RSC),
@@ -146,6 +146,7 @@ protected:
     float _servo2_out = 0.0f;                   // output value sent to motor
     float _servo3_out = 0.0f;                   // output value sent to motor
     float _servo4_out = 0.0f;                   // output value sent to motor
+    float _servo5_out = 0.0f;                   // output value sent to motor
 
     // parameters
     AP_Int16        _servo1_pos;                // Angular location of swash servo #1
@@ -160,7 +161,8 @@ protected:
     AP_Float        _collective_yaw_effect;     // Feed-forward compensation to automatically add rudder input when collective pitch is increased. Can be positive or negative depending on mechanics.
     AP_Int8         _flybar_mode;               // Flybar present or not.  Affects attitude controller used during ACRO flight mode
     AP_Int16        _direct_drive_tailspeed;    // Direct Drive VarPitch Tail ESC speed (0 ~ 1000)
-
+    AP_Float        _yaw_offset;                // constant offset instead of mechanically adjusting for yaw in hover
+    AP_Float        _boost_flat_pitch;          // flat pitch point for propellers
     bool            _acro_tail = false;
     float           _rollFactor[AP_MOTORS_HELI_COMPOUND_NUM_SWASHPLATE_SERVOS];
     float           _pitchFactor[AP_MOTORS_HELI_COMPOUND_NUM_SWASHPLATE_SERVOS];

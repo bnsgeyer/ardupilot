@@ -125,6 +125,24 @@ const AP_Param::GroupInfo AP_MotorsHeli_Compound::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("COL_CTRL_DIR", 19, AP_MotorsHeli_Compound, _collective_direction, AP_MOTORS_HELI_COMPOUND_COLLECTIVE_DIRECTION_NORMAL),
 
+    // @Param: YAW_OFFSET
+    // @DisplayName: Yaw Offset
+    // @Description: Allows for a constant input in yaw for hover yaw input
+    // @Range: 0 3000
+    // @Units: Centi-degrees
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("YAW_OFFSET", 20, AP_MotorsHeli_Compound, _yaw_offset, 0.055),
+
+    // @Param: FLAT_PITCH
+    // @DisplayName: BOOST FLAT PITCH
+    // @Description: Allow user to set point for flat pitch
+    // @Range: 0 4500
+    // @Units: Centi-degrees
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("FLAT_PITCH", 21, AP_MotorsHeli_Compound, _boost_flat_pitch, 0.44),
+
     // parameters up to and including 29 are reserved for tradheli
 
     AP_GROUPEND
@@ -143,7 +161,8 @@ void AP_MotorsHeli_Compound::set_update_rate( uint16_t speed_hz )
         1U << AP_MOTORS_MOT_1 |
         1U << AP_MOTORS_MOT_2 |
         1U << AP_MOTORS_MOT_3 |
-        1U << AP_MOTORS_MOT_4;
+        1U << AP_MOTORS_MOT_4 |
+        1U << AP_MOTORS_MOT_5;
     rc_set_freq(mask, _speed_hz);
 }
 
@@ -157,6 +176,7 @@ bool AP_MotorsHeli_Compound::init_outputs()
         }
         // yaw servo
         add_motor_num(CH_4);
+        add_motor_num(CH_5);
 
         // initialize main rotor servo
         _main_rotor.init_servo();
@@ -181,6 +201,7 @@ bool AP_MotorsHeli_Compound::init_outputs()
 
     // yaw servo is an angle from -4500 to 4500
     SRV_Channels::set_angle(SRV_Channel::k_motor4, YAW_SERVO_MAX_ANGLE);
+    SRV_Channels::set_angle(SRV_Channel::k_motor5, YAW_SERVO_MAX_ANGLE);
 
     _flags.initialised_ok = true;
 
@@ -347,9 +368,9 @@ void AP_MotorsHeli_Compound::calculate_roll_pitch_collective_factors()
 //  this can be used to ensure other pwm outputs (i.e. for servos) do not conflict
 uint16_t AP_MotorsHeli_Compound::get_motor_mask()
 {
-    // heli uses channels 1,2,3,4 and 8
+    // heli uses channels 1,2,3,4,5 and 8
     // setup fast channels
-    uint32_t mask = 1U << 0 | 1U << 1 | 1U << 2 | 1U << 3 | 1U << AP_MOTORS_HELI_COMPOUND_RSC;
+    uint32_t mask = 1U << 0 | 1U << 1 | 1U << 2 | 1U << 3 | 1U << 4 | 1U << AP_MOTORS_HELI_COMPOUND_RSC;
 
     if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_SERVO_EXTGYRO) {
         mask |= 1U << AP_MOTORS_HELI_COMPOUND_EXTGYRO;
@@ -402,7 +423,7 @@ void AP_MotorsHeli_Compound::move_actuators(float roll_out, float pitch_out, flo
     if (_heliflags.inverted_flight) {
         coll_in = 1 - coll_in;
     }
- 
+
     // rescale roll_out and pitch_out into the min and max ranges to provide linear motion
     // across the input range instead of stopping when the input hits the constrain value
     // these calculations are based on an assumption of the user specified cyclic_max
@@ -481,6 +502,8 @@ void AP_MotorsHeli_Compound::move_actuators(float roll_out, float pitch_out, flo
 // move_yaw
 void AP_MotorsHeli_Compound::move_yaw(float yaw_out)
 {
+    float boost_out;
+	  
     // sanity check yaw_out
     if (yaw_out < -1.0f) {
         yaw_out = -1.0f;
@@ -491,7 +514,14 @@ void AP_MotorsHeli_Compound::move_yaw(float yaw_out)
         limit.yaw = true;
     }
 
-    _servo4_out = yaw_out;
+    boost_out = (2.0f - _boost_flat_pitch) * constrain_float(_boost_in, 0.0f, 1.0f);
+
+    _servo4_out = boost_out - 1.0f + _boost_flat_pitch + _yaw_offset + yaw_out;
+    _servo5_out = boost_out - 1.0f + _boost_flat_pitch - _yaw_offset - yaw_out;
+
+    _servo4_out = constrain_float(_servo4_out, -1.0f, 1.0f);
+    _servo5_out = constrain_float(_servo5_out, -1.0f, 1.0f);
+
 }
 
 void AP_MotorsHeli_Compound::output_to_motors()
@@ -506,6 +536,7 @@ void AP_MotorsHeli_Compound::output_to_motors()
     rc_write_swash(AP_MOTORS_MOT_3, _servo3_out);
     if (_tail_type != AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
         rc_write_angle(AP_MOTORS_MOT_4, _servo4_out * YAW_SERVO_MAX_ANGLE);
+        rc_write_angle(AP_MOTORS_MOT_5, _servo5_out * YAW_SERVO_MAX_ANGLE);
     }
     if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_SERVO_EXTGYRO) {
         // output gain to exernal gyro
@@ -522,6 +553,7 @@ void AP_MotorsHeli_Compound::output_to_motors()
             update_motor_control(ROTOR_CONTROL_STOP);
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
                 rc_write_angle(AP_MOTORS_MOT_4, -YAW_SERVO_MAX_ANGLE);
+                rc_write_angle(AP_MOTORS_MOT_5, -YAW_SERVO_MAX_ANGLE);
             }
             break;
         case GROUND_IDLE:
@@ -529,6 +561,7 @@ void AP_MotorsHeli_Compound::output_to_motors()
             update_motor_control(ROTOR_CONTROL_IDLE);
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
                 rc_write_angle(AP_MOTORS_MOT_4, -YAW_SERVO_MAX_ANGLE);
+                rc_write_angle(AP_MOTORS_MOT_5, -YAW_SERVO_MAX_ANGLE);
             }
             break;
         case SPOOL_UP:
@@ -538,8 +571,10 @@ void AP_MotorsHeli_Compound::output_to_motors()
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
                 // constrain output so that motor never fully stops
                  _servo4_out = constrain_float(_servo4_out, -0.9f, 1.0f);
+                 _servo5_out = constrain_float(_servo5_out, -0.9f, 1.0f);
                 // output yaw servo to tail rsc
                 rc_write_angle(AP_MOTORS_MOT_4, _servo4_out * YAW_SERVO_MAX_ANGLE);
+                rc_write_angle(AP_MOTORS_MOT_5, _servo5_out * YAW_SERVO_MAX_ANGLE);
             }
             break;
         case SPOOL_DOWN:
@@ -547,6 +582,7 @@ void AP_MotorsHeli_Compound::output_to_motors()
             update_motor_control(ROTOR_CONTROL_IDLE);
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
                 rc_write_angle(AP_MOTORS_MOT_4, -YAW_SERVO_MAX_ANGLE);
+                rc_write_angle(AP_MOTORS_MOT_5, -YAW_SERVO_MAX_ANGLE);
             }
             break;
 
