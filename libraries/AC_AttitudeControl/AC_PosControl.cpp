@@ -1105,7 +1105,14 @@ void AC_PosControl::accel_to_lean_angles(float accel_x_cmss, float accel_y_cmss,
     accel_right = -accel_x_cmss*_ahrs.sin_yaw() + accel_y_cmss*_ahrs.cos_yaw();
 
     // update angle targets that will be passed to stabilize controller
+    RC_Channel *rc_ptr = rc().find_channel_for_option(RC_Channel::aux_func::FORWARD_THRUST);
+    if (rc_ptr != nullptr) {
+        float forward_thrust = accel_forward/GRAVITY_MSS;
+        ((AP_Motors&)_motors).set_forward(constrain_float(forward_thrust,-1.0f,1.0f));
+        pitch_target = 0.0f;
+    } else { 
     pitch_target = atanf(-accel_forward/(GRAVITY_MSS * 100.0f))*(18000.0f/M_PI);
+    }
     float cos_pitch_target = cosf(pitch_target*M_PI/18000.0f);
     roll_target = atanf(accel_right*cos_pitch_target/(GRAVITY_MSS * 100.0f))*(18000.0f/M_PI);
 }
