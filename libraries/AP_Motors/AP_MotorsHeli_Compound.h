@@ -105,9 +105,6 @@ public:
     // parameter_check - returns true if helicopter specific parameters are sensible, used for pre-arm check
     bool parameter_check(bool display_msg) const override;
 
-    // set_boost - engage the booster
-    void set_boost(float boost_in) override { _boost_in = boost_in;}
-    
     // var_info
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -162,13 +159,10 @@ protected:
     AP_Int8         _flybar_mode;               // Flybar present or not.  Affects attitude controller used during ACRO flight mode
     AP_Int16        _direct_drive_tailspeed;    // Direct Drive VarPitch Tail ESC speed (0 ~ 1000)
     AP_Float        _yaw_offset;                // constant offset instead of mechanically adjusting for yaw in hover
-    AP_Float        _boost_flat_pitch;          // flat pitch point for propellers
+    AP_Float        _flat_pitch;                // flat pitch point for propellers
     bool            _acro_tail = false;
     float           _rollFactor[AP_MOTORS_HELI_COMPOUND_NUM_SWASHPLATE_SERVOS];
     float           _pitchFactor[AP_MOTORS_HELI_COMPOUND_NUM_SWASHPLATE_SERVOS];
     float           _collectiveFactor[AP_MOTORS_HELI_COMPOUND_NUM_SWASHPLATE_SERVOS];
-
-private:
-    float _boost_in;
 
 };

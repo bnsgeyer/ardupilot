@@ -135,13 +135,13 @@ const AP_Param::GroupInfo AP_MotorsHeli_Compound::var_info[] = {
     AP_GROUPINFO("YAW_OFFSET", 20, AP_MotorsHeli_Compound, _yaw_offset, 0.055),
 
     // @Param: FLAT_PITCH
-    // @DisplayName: BOOST FLAT PITCH
+    // @DisplayName: FLAT PITCH
     // @Description: Allow user to set point for flat pitch
     // @Range: 0 4500
     // @Units: Centi-degrees
     // @Increment: 1
     // @User: Advanced
-    AP_GROUPINFO("FLAT_PITCH", 21, AP_MotorsHeli_Compound, _boost_flat_pitch, 0.44),
+    AP_GROUPINFO("FLAT_PITCH", 21, AP_MotorsHeli_Compound, _flat_pitch, 0.44),
 
     // parameters up to and including 29 are reserved for tradheli
 
@@ -502,7 +502,7 @@ void AP_MotorsHeli_Compound::move_actuators(float roll_out, float pitch_out, flo
 // move_yaw
 void AP_MotorsHeli_Compound::move_yaw(float yaw_out)
 {
-    float boost_out;
+    float forward_out;
 	  
     // sanity check yaw_out
     if (yaw_out < -1.0f) {
@@ -514,10 +514,10 @@ void AP_MotorsHeli_Compound::move_yaw(float yaw_out)
         limit.yaw = true;
     }
 
-    boost_out = (2.0f - _boost_flat_pitch) * constrain_float(_boost_in, 0.0f, 1.0f);
+    forward_out = (2.0f - _flat_pitch) * constrain_float(_forward_in, 0.0f, 1.0f);
 
-    _servo4_out = boost_out - 1.0f + _boost_flat_pitch + _yaw_offset + yaw_out;
-    _servo5_out = boost_out - 1.0f + _boost_flat_pitch - _yaw_offset - yaw_out;
+    _servo4_out = forward_out - 1.0f + _flat_pitch + _yaw_offset + yaw_out;
+    _servo5_out = forward_out - 1.0f + _flat_pitch - _yaw_offset - yaw_out;
 
     _servo4_out = constrain_float(_servo4_out, -1.0f, 1.0f);
     _servo5_out = constrain_float(_servo5_out, -1.0f, 1.0f);
