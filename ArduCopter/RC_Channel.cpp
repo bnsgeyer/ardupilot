@@ -79,6 +79,7 @@ void RC_Channel_Copter::init_aux_function(const aux_func_t ch_option, const aux_
     case AVOID_ADSB:
     case PRECISION_LOITER:
     case INVERTED:
+    case FORWARD_THRUST:
     case WINCH_ENABLE:
         do_aux_function(ch_option, ch_flag);
         break;
@@ -483,7 +484,8 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
                 }
 #endif
             break;
-
+        case FORWARD_THRUST:
+            break;
 #ifdef USERHOOK_AUXSWITCH
         case USER_FUNC1:
             userhook_auxSwitch1(ch_flag);

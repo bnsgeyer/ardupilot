@@ -52,6 +52,11 @@ void Copter::ModeStabilize_Heli::run()
     // get pilot's desired throttle
     pilot_throttle_scaled = copter.input_manager.get_pilot_desired_collective(channel_throttle->get_control_in());
 
+    RC_Channel *rc_ptr = rc().find_channel_for_option(RC_Channel::aux_func::FORWARD_THRUST);
+    if (rc_ptr != nullptr) {
+        motors->set_forward((float)rc_ptr->get_control_in() * 0.001f);
+    } 
+
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 

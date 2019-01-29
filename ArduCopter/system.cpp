@@ -442,7 +442,6 @@ MAV_TYPE Copter::get_frame_mav_type()
         case AP_Motors::MOTOR_FRAME_HELI:
         case AP_Motors::MOTOR_FRAME_HELI_DUAL:
         case AP_Motors::MOTOR_FRAME_HELI_QUAD:
-            return MAV_TYPE_HELICOPTER;
         case AP_Motors::MOTOR_FRAME_HELI_COMPOUND:
             return MAV_TYPE_HELICOPTER;
         case AP_Motors::MOTOR_FRAME_TRI:
