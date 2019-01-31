@@ -552,16 +552,16 @@ void AP_MotorsHeli_Compound::output_to_motors()
             // sends minimum values out to the motors
             update_motor_control(ROTOR_CONTROL_STOP);
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
-                rc_write_angle(AP_MOTORS_MOT_4, -YAW_SERVO_MAX_ANGLE);
-                rc_write_angle(AP_MOTORS_MOT_5, -YAW_SERVO_MAX_ANGLE);
+                rc_write_angle(AP_MOTORS_MOT_4, 0.0f);
+                rc_write_angle(AP_MOTORS_MOT_5, 0.0f);
             }
             break;
         case GROUND_IDLE:
             // sends idle output to motors when armed. rotor could be static or turning (autorotation)
             update_motor_control(ROTOR_CONTROL_IDLE);
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
-                rc_write_angle(AP_MOTORS_MOT_4, -YAW_SERVO_MAX_ANGLE);
-                rc_write_angle(AP_MOTORS_MOT_5, -YAW_SERVO_MAX_ANGLE);
+                rc_write_angle(AP_MOTORS_MOT_4, 0.0f);
+                rc_write_angle(AP_MOTORS_MOT_5, 0.0f);
             }
             break;
         case SPOOL_UP:
@@ -569,9 +569,19 @@ void AP_MotorsHeli_Compound::output_to_motors()
             // set motor output based on thrust requests
             update_motor_control(ROTOR_CONTROL_ACTIVE);
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
-                // constrain output so that motor never fully stops
-                 _servo4_out = constrain_float(_servo4_out, -0.9f, 1.0f);
-                 _servo5_out = constrain_float(_servo5_out, -0.9f, 1.0f);
+                if (_servo4_out < 0.0f) {
+                    _servo4_out = -1.0f * (-0.35f + safe_sqrt(0.35f * 0.35f + 2.6f * fabsf(_servo4_out))) / 1.30f;
+                } else {
+                    _servo4_out = (-0.35f + safe_sqrt(0.35f * 0.35f + 2.6f * fabsf(_servo4_out))) / 1.30f;
+                }
+                if (_servo5_out < 0.0f) {
+                    _servo5_out = -1.0f * (-0.35f + safe_sqrt(0.35f * 0.35f + 2.6f * fabsf(_servo5_out))) / 1.30f;
+                } else {
+                    _servo5_out = (-0.35f + safe_sqrt(0.35f * 0.35f + 2.6f * fabsf(_servo5_out))) / 1.30f;
+                }
+                // constrain output
+                 _servo4_out = constrain_float(_servo4_out, -1.0f, 1.0f);
+                 _servo5_out = constrain_float(_servo5_out, -1.0f, 1.0f);
                 // output yaw servo to tail rsc
                 rc_write_angle(AP_MOTORS_MOT_4, _servo4_out * YAW_SERVO_MAX_ANGLE);
                 rc_write_angle(AP_MOTORS_MOT_5, _servo5_out * YAW_SERVO_MAX_ANGLE);
@@ -581,8 +591,8 @@ void AP_MotorsHeli_Compound::output_to_motors()
             // sends idle output to motors and wait for rotor to stop
             update_motor_control(ROTOR_CONTROL_IDLE);
             if (_tail_type == AP_MOTORS_HELI_COMPOUND_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
-                rc_write_angle(AP_MOTORS_MOT_4, -YAW_SERVO_MAX_ANGLE);
-                rc_write_angle(AP_MOTORS_MOT_5, -YAW_SERVO_MAX_ANGLE);
+                rc_write_angle(AP_MOTORS_MOT_4, 0.0f);
+                rc_write_angle(AP_MOTORS_MOT_5, 0.0f);
             }
             break;
 
