@@ -245,7 +245,6 @@ void AP_MotorsHeli_RSC::estimate_rpm()
             _rotor_speed = 0.0f;
         }
     }
-    _rotor_speed = _current_sample_filter.get();
 }
 
 

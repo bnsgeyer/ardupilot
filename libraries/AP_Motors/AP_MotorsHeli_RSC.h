@@ -33,7 +33,7 @@ public:
                       uint8_t default_channel) :
         _aux_fn(aux_fn),
         _default_channel(default_channel),
-        _current_sample_filter(1.0f)
+        _current_sample_filter(5.0f)
     {};
 
     // init_servo - servo initialization on start-up
