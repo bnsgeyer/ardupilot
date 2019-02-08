@@ -5,6 +5,7 @@
 #include <RC_Channel/RC_Channel.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
+#include <Filter/LowPassFilter.h>
 
 // rotor controller states
 enum RotorControlState {
@@ -31,7 +32,8 @@ public:
     AP_MotorsHeli_RSC(SRV_Channel::Aux_servo_function_t aux_fn,
                       uint8_t default_channel) :
         _aux_fn(aux_fn),
-        _default_channel(default_channel)
+        _default_channel(default_channel),
+        _current_sample_filter(1.0f)
     {};
 
     // init_servo - servo initialization on start-up
@@ -89,6 +91,7 @@ private:
     float _peak_sample;
     uint64_t _time_last_peak;
     uint64_t _peak_time;
+    LowPassFilterFloat _current_sample_filter;
 
     // channel setup for aux function
     SRV_Channel::Aux_servo_function_t _aux_fn;

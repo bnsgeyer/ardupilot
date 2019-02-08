@@ -15,7 +15,6 @@
 
 #include <stdlib.h>
 #include <AP_HAL/AP_HAL.h>
-#include <AP_InertialSensor/AP_InertialSensor.h>
 
 #include "AP_MotorsHeli_RSC.h"
 
@@ -61,7 +60,6 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
         dt = 1.0e-6f * (now - _last_update_us);
         _last_update_us = now;
     }
-    estimate_rpm();
     switch (state){
         case ROTOR_CONTROL_STOP:
             // set rotor ramp to decrease speed to zero, this happens instantly inside update_rotor_ramp()
@@ -157,6 +155,10 @@ void AP_MotorsHeli_RSC::update_rotor_runup(float dt)
         }
     }
 
+    // update rotor speed estimate
+    
+    estimate_rpm();
+
     // update run-up complete flag
 
     // if control mode is disabled, then run-up complete always returns true
@@ -221,17 +223,18 @@ void AP_MotorsHeli_RSC::estimate_rpm()
 {
     const uint8_t imu_instance = 0;
     const AP_InertialSensor &ins = AP::ins();
-    const Vector3f &gyro = ins.get_gyro(imu_instance);
+    const Vector3f &accel = ins.get_accel(imu_instance);
     uint64_t now = AP_HAL::micros64();
-    
-    float current_sample = gyro.x;
-    if (current_sample > 0.0f) {
+
+    float current_sample = accel.y;
+    _current_sample_filter.apply(current_sample, 0.0025f); 
+    if (current_sample > _current_sample_filter.get()) {
         if (current_sample > _peak_sample) {
             _peak_sample = current_sample;
             _peak_time = now;
         }
         _got_peak = false;
-    } else if (current_sample < 0.0f && !_got_peak) {
+    } else if (current_sample < _current_sample_filter.get() && !_got_peak) {
         _got_peak = true;
         float dt = 1.0e-6f * (_peak_time - _time_last_peak);
         _time_last_peak = _peak_time;
@@ -242,6 +245,7 @@ void AP_MotorsHeli_RSC::estimate_rpm()
             _rotor_speed = 0.0f;
         }
     }
+    _rotor_speed = _current_sample_filter.get();
 }
 
 
