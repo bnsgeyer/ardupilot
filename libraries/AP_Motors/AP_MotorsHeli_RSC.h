@@ -4,6 +4,7 @@
 #include <AP_Math/AP_Math.h>            // ArduPilot Mega Vector/Matrix math Library
 #include <RC_Channel/RC_Channel.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_InertialSensor/AP_InertialSensor.h>
 
 // rotor controller states
 enum RotorControlState {
@@ -60,7 +61,7 @@ public:
 
     // get_rotor_speed - return estimated or measured rotor speed
     float       get_rotor_speed() const;
-    uint16_t    get_estimated_rotor_speed() const;
+    float       get_estimated_rotor_speed() const;
 
     // is_runup_complete
     bool        is_runup_complete() const { return _runup_complete; }
@@ -107,7 +108,7 @@ private:
     float           _thrcrv_poly[4][4];         // spline polynomials for throttle curve interpolation
     uint16_t        _power_slewrate = 0;        // slewrate for throttle (percentage per second)
     float           _collective_in;             // collective in for throttle curve calculation, range 0-1.0f
-    uint16_t        _rotor_speed;               // current rotor speed in rpm
+    float           _rotor_speed;               // current rotor speed in rpm
 
     // update_rotor_ramp - slews rotor output scalar between 0 and 1, outputs float scalar to _rotor_ramp_output
     void            update_rotor_ramp(float rotor_ramp_input, float dt);

@@ -61,7 +61,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
         dt = 1.0e-6f * (now - _last_update_us);
         _last_update_us = now;
     }
-
+    estimate_rpm();
     switch (state){
         case ROTOR_CONTROL_STOP:
             // set rotor ramp to decrease speed to zero, this happens instantly inside update_rotor_ramp()
@@ -184,7 +184,7 @@ float AP_MotorsHeli_RSC::get_rotor_speed() const
 }
 
 // get_rotor_speed - gets rotor speed estimate from accel y
-uint16_t AP_MotorsHeli_RSC::get_estimated_rotor_speed() const
+float AP_MotorsHeli_RSC::get_estimated_rotor_speed() const
 {
     return _rotor_speed;
 }
@@ -221,10 +221,10 @@ void AP_MotorsHeli_RSC::estimate_rpm()
 {
     const uint8_t imu_instance = 0;
     const AP_InertialSensor &ins = AP::ins();
-    const Vector3f &accel = ins.get_accel(imu_instance);
+    const Vector3f &gyro = ins.get_gyro(imu_instance);
     uint64_t now = AP_HAL::micros64();
     
-    float current_sample = accel.y;
+    float current_sample = gyro.x;
     if (current_sample > 0.0f) {
         if (current_sample > _peak_sample) {
             _peak_sample = current_sample;
@@ -235,10 +235,11 @@ void AP_MotorsHeli_RSC::estimate_rpm()
         _got_peak = true;
         float dt = 1.0e-6f * (_peak_time - _time_last_peak);
         _time_last_peak = _peak_time;
+        _peak_sample = 0.0f;
         if (dt > 0.0f) {
-            _rotor_speed = (uint16_t)(60.0 / dt);
+            _rotor_speed = 60.0 / dt;
         } else {
-            _rotor_speed = 0;
+            _rotor_speed = 0.0f;
         }
     }
 }
