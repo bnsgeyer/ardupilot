@@ -400,6 +400,8 @@ struct PACKED log_Heli {
     uint64_t time_us;
     float    desired_rotor_speed;
     float    main_rotor_speed;
+    float    current_sample;
+    float    filtered_sample;
 };
 
 #if FRAME_CONFIG == HELI_FRAME
@@ -411,6 +413,8 @@ void Copter::Log_Write_Heli()
         time_us                 : AP_HAL::micros64(),
         desired_rotor_speed     : motors->get_desired_rotor_speed(),
         main_rotor_speed        : motors->get_main_rotor_speed(),
+        current_sample          : motors->get_current_sample(),
+        filtered_sample         : motors->get_filtered_sample()
     };
     DataFlash.WriteBlock(&pkt_heli, sizeof(pkt_heli));
 }
@@ -523,7 +527,7 @@ const struct LogStructure Copter::log_structure[] = {
       "ERR",   "QBB",         "TimeUS,Subsys,ECode", "s--", "F--" },
 #if FRAME_CONFIG == HELI_FRAME
     { LOG_HELI_MSG, sizeof(log_Heli),
-      "HELI",  "Qff",         "TimeUS,DRRPM,ERRPM", "s--", "F--" },
+      "HELI",  "Qffff",         "TimeUS,DRRPM,ERRPM,CURSAM,FILSAM", "s----", "F----" },
 #endif
 #if PRECISION_LANDING == ENABLED
     { LOG_PRECLAND_MSG, sizeof(log_Precland),
