@@ -104,6 +104,10 @@ public:
     // set_desired_rotor_speed - sets target rotor speed as a number from 0 ~ 1
     virtual void set_desired_rotor_speed(float desired_speed) = 0;
 
+    // get_current_sample and filtered sample for main rotor speed estimate
+    virtual float get_current_sample() const  = 0;
+    virtual float get_filtered_sample() const  = 0;
+
     // get_desired_rotor_speed - gets target rotor speed as a number from 0 ~ 1
     virtual float get_desired_rotor_speed() const = 0;
 

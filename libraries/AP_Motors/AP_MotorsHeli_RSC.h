@@ -64,6 +64,8 @@ public:
     // get_rotor_speed - return estimated or measured rotor speed
     float       get_rotor_speed() const;
     float       get_estimated_rotor_speed() const;
+    float       get_current_sample() const { return _current_sample; }
+    float       get_filtered_sample() const { return _current_sample_filter.get(); }
 
     // is_runup_complete
     bool        is_runup_complete() const { return _runup_complete; }
@@ -92,6 +94,7 @@ private:
     uint64_t _time_last_peak;
     uint64_t _peak_time;
     LowPassFilterFloat _current_sample_filter;
+    float _current_sample;
 
     // channel setup for aux function
     SRV_Channel::Aux_servo_function_t _aux_fn;

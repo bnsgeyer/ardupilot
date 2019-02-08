@@ -226,15 +226,15 @@ void AP_MotorsHeli_RSC::estimate_rpm()
     const Vector3f &accel = ins.get_accel(imu_instance);
     uint64_t now = AP_HAL::micros64();
 
-    float current_sample = accel.y;
-    _current_sample_filter.apply(current_sample, 0.0025f); 
-    if (current_sample > _current_sample_filter.get()) {
-        if (current_sample > _peak_sample) {
-            _peak_sample = current_sample;
+    _current_sample = accel.y;
+    _current_sample_filter.apply(_current_sample, 0.0025f); 
+    if (_current_sample > _current_sample_filter.get()) {
+        if (_current_sample > _peak_sample) {
+            _peak_sample = _current_sample;
             _peak_time = now;
         }
         _got_peak = false;
-    } else if (current_sample < _current_sample_filter.get() && !_got_peak) {
+    } else if (_current_sample < _current_sample_filter.get() && !_got_peak) {
         _got_peak = true;
         float dt = 1.0e-6f * (_peak_time - _time_last_peak);
         _time_last_peak = _peak_time;

@@ -69,6 +69,10 @@ public:
     // set_desired_rotor_speed - sets target rotor speed as a number from 0 ~ 1
     void set_desired_rotor_speed(float desired_speed) override;
 
+    // get_current_sample and filtered sample for main rotor speed estimate
+    float get_current_sample() const  override { return _main_rotor.get_current_sample(); }
+    float get_filtered_sample() const  override { return _main_rotor.get_filtered_sample(); }
+
     // get_main_rotor_speed - gets estimated or measured main rotor speed
     float get_main_rotor_speed() const  override { return _main_rotor.get_estimated_rotor_speed(); }
 
