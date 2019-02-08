@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <AP_HAL/AP_HAL.h>
+#include <AP_InertialSensor/AP_InertialSensor.h>
 
 #include "AP_MotorsHeli_RSC.h"
 
@@ -182,6 +183,12 @@ float AP_MotorsHeli_RSC::get_rotor_speed() const
     return _rotor_runup_output;
 }
 
+// get_rotor_speed - gets rotor speed estimate from accel y
+uint16_t AP_MotorsHeli_RSC::get_estimated_rotor_speed() const
+{
+    return _rotor_speed;
+}
+
 // write_rsc - outputs pwm onto output rsc channel
 // servo_out parameter is of the range 0 ~ 1
 void AP_MotorsHeli_RSC::write_rsc(float servo_out)
@@ -209,4 +216,32 @@ float AP_MotorsHeli_RSC::calculate_desired_throttle(float collective_in)
     return throttle;
 
 }
+
+void AP_MotorsHeli_RSC::estimate_rpm()
+{
+    const uint8_t imu_instance = 0;
+    const AP_InertialSensor &ins = AP::ins();
+    const Vector3f &accel = ins.get_accel(imu_instance);
+    uint64_t now = AP_HAL::micros64();
+    
+    float current_sample = accel.y;
+    if (current_sample > 0.0f) {
+        if (current_sample > _peak_sample) {
+            _peak_sample = current_sample;
+            _peak_time = now;
+        }
+        _got_peak = false;
+    } else if (current_sample < 0.0f && !_got_peak) {
+        _got_peak = true;
+        float dt = 1.0e-6f * (_peak_time - _time_last_peak);
+        _time_last_peak = _peak_time;
+        if (dt > 0.0f) {
+            _rotor_speed = (uint16_t)(60.0 / dt);
+        } else {
+            _rotor_speed = 0;
+        }
+    }
+}
+
+
 

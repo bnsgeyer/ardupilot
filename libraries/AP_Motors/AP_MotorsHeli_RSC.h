@@ -60,6 +60,7 @@ public:
 
     // get_rotor_speed - return estimated or measured rotor speed
     float       get_rotor_speed() const;
+    uint16_t    get_estimated_rotor_speed() const;
 
     // is_runup_complete
     bool        is_runup_complete() const { return _runup_complete; }
@@ -81,6 +82,12 @@ public:
 
 private:
     uint64_t        _last_update_us;
+    
+    // private variables for rotor speed estimator
+    bool _got_peak;
+    float _peak_sample;
+    uint64_t _time_last_peak;
+    uint64_t _peak_time;
 
     // channel setup for aux function
     SRV_Channel::Aux_servo_function_t _aux_fn;
@@ -100,6 +107,7 @@ private:
     float           _thrcrv_poly[4][4];         // spline polynomials for throttle curve interpolation
     uint16_t        _power_slewrate = 0;        // slewrate for throttle (percentage per second)
     float           _collective_in;             // collective in for throttle curve calculation, range 0-1.0f
+    uint16_t        _rotor_speed;               // current rotor speed in rpm
 
     // update_rotor_ramp - slews rotor output scalar between 0 and 1, outputs float scalar to _rotor_ramp_output
     void            update_rotor_ramp(float rotor_ramp_input, float dt);
@@ -112,4 +120,7 @@ private:
 
     // calculate_desired_throttle - uses throttle curve and collective input to determine throttle setting
     float           calculate_desired_throttle(float collective_in);
+
+    // estimate rotor speed from accel y
+    void            estimate_rpm(void);
 };
