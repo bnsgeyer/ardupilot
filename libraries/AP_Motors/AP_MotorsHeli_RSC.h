@@ -6,6 +6,7 @@
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #include <Filter/LowPassFilter.h>
+#include <Filter/Filter.h>
 
 // rotor controller states
 enum RotorControlState {
@@ -95,6 +96,7 @@ private:
     uint64_t _peak_time;
     LowPassFilterFloat _current_sample_filter;
     float _current_sample;
+    ModeFilterFloat_Size7 _rotor_speed_filter {4};
 
     // channel setup for aux function
     SRV_Channel::Aux_servo_function_t _aux_fn;

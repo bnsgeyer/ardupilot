@@ -188,7 +188,7 @@ float AP_MotorsHeli_RSC::get_rotor_speed() const
 // get_rotor_speed - gets rotor speed estimate from accel y
 float AP_MotorsHeli_RSC::get_estimated_rotor_speed() const
 {
-    return _rotor_speed;
+    return _rotor_speed_filter.get();
 }
 
 // write_rsc - outputs pwm onto output rsc channel
@@ -240,9 +240,7 @@ void AP_MotorsHeli_RSC::estimate_rpm()
         _time_last_peak = _peak_time;
         _peak_sample = 0.0f;
         if (dt > 0.0f) {
-            _rotor_speed = 60.0 / dt;
-        } else {
-            _rotor_speed = 0.0f;
+            _rotor_speed_filter.apply(60.0f / dt);
         }
     }
 }
