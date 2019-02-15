@@ -96,7 +96,7 @@ private:
     uint64_t _peak_time;
     LowPassFilterFloat _current_sample_filter;
     float _current_sample;
-    ModeFilterFloat_Size7 _rotor_speed_filter {4};
+    ModeFilterFloat_Size5 _rotor_speed_filter {3};
 
     // channel setup for aux function
     SRV_Channel::Aux_servo_function_t _aux_fn;
