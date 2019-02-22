@@ -4,6 +4,7 @@
 #include <AP_Math/AP_Math.h>            // ArduPilot Mega Vector/Matrix math Library
 #include <RC_Channel/RC_Channel.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_InertialSensor/AP_InertialSensor.h>
 
 // rotor controller states
 enum RotorControlState {
@@ -79,8 +80,18 @@ public:
     // output - update value to send to ESC/Servo
     void        output(RotorControlState state);
 
+    void        estimate_rpm();
+
 private:
     uint64_t        _last_update_us;
+
+    // rpm estimator variables
+    uint16_t sample_cnt;
+    float    estimated_rpm;
+    static const uint16_t fftLen = 256;
+    arm_cfft_radix4_instance_f32 * fft = new arm_cfft_radix4_instance_f32;
+    float * p = new float[2*fftLen];
+    float * cfft = new float[fftLen];
 
     // channel setup for aux function
     SRV_Channel::Aux_servo_function_t _aux_fn;

@@ -61,6 +61,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
         _last_update_us = now;
     }
 
+    estimate_rpm();
     switch (state){
         case ROTOR_CONTROL_STOP:
             // set rotor ramp to decrease speed to zero, this happens instantly inside update_rotor_ramp()
@@ -179,7 +180,8 @@ void AP_MotorsHeli_RSC::update_rotor_runup(float dt)
 float AP_MotorsHeli_RSC::get_rotor_speed() const
 {
     // if no actual measured rotor speed is available, estimate speed based on rotor runup scalar.
-    return _rotor_runup_output;
+//    return _rotor_runup_output;
+    return estimated_rpm;
 }
 
 // write_rsc - outputs pwm onto output rsc channel
@@ -210,3 +212,53 @@ float AP_MotorsHeli_RSC::calculate_desired_throttle(float collective_in)
 
 }
 
+void AP_MotorsHeli_RSC::estimate_rpm()
+{
+    const uint8_t imu_instance = 0;
+    const AP_InertialSensor &ins = AP::ins();
+    const Vector3f &accel = ins.get_accel(imu_instance);
+//    uint64_t now = AP_HAL::micros64();
+
+    if (sample_cnt < 2*fftLen) {
+//        p[sample_cnt] = accel.y + 0.2 * sinf(6.28e-6f*40.0f*now);
+        p[sample_cnt] = accel.y;
+        estimated_rpm = cfft[sample_cnt/2];
+        sample_cnt++;
+        p[sample_cnt] = 0.0f;
+        sample_cnt++;
+    } else {
+        sample_cnt = 0;
+        //run fft
+        if (arm_cfft_radix4_init_f32( fft, fftLen, 0, 1) == ARM_MATH_SUCCESS) {
+            arm_cfft_radix4_f32( fft , p);
+
+            float max_value = 0.0f;
+            uint16_t max_f = 0;
+            bool first_max = false;
+            bool thrsh = false;
+            uint16_t j = 0;
+            for (uint16_t i = 0; i < 2*fftLen ; i+=2) { 
+                cfft[j]= sqrtf(p[i]*p[i] + p[i+1]*p[i+1]);
+                if (cfft[j] > 10.0f) {
+                    thrsh = true;
+                } else {
+                    thrsh = false;
+                }
+                if (thrsh && !first_max && i != 0) {
+                    if (cfft[j] > max_value) {
+                        max_value = cfft[j];
+                        max_f = j;
+                    }                
+                } else if (!thrsh && max_f != 0) {
+                    first_max = true;
+                }
+                j++;
+            }
+            estimated_rpm = 400.0f * (float)max_f / ((float)fftLen - 1.0f);  
+        } else {
+            estimated_rpm = -1.0f;
+        }
+    }
+
+
+}
