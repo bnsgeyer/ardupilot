@@ -320,6 +320,9 @@ void Copter::fourhundred_hz_logging()
     if (should_log(MASK_LOG_ATTITUDE_FAST)) {
         Log_Write_Attitude();
     }
+#if FRAME_CONFIG == HELI_FRAME
+    Log_Write_Heli();
+#endif
 }
 
 // ten_hz_logging_loop
@@ -358,9 +361,6 @@ void Copter::ten_hz_logging_loop()
         DataFlash.Log_Write_Beacon(g2.beacon);
 #endif
     }
-#if FRAME_CONFIG == HELI_FRAME
-    Log_Write_Heli();
-#endif
 }
 
 // twentyfive_hz_logging - should be run at 25hz
