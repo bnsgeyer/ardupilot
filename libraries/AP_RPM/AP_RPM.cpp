@@ -17,6 +17,7 @@
 #include "RPM_PX4_PWM.h"
 #include "RPM_Pin.h"
 #include "RPM_SITL.h"
+#include "RPM_FFT.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -25,7 +26,7 @@ const AP_Param::GroupInfo AP_RPM::var_info[] = {
     // @Param: _TYPE
     // @DisplayName: RPM type
     // @Description: What type of RPM sensor is connected
-    // @Values: 0:None,1:PX4-PWM,2:AUXPIN
+    // @Values: 0:None,1:PX4-PWM,2:AUXPIN,3:FFT
     // @User: Standard
     AP_GROUPINFO("_TYPE",    0, AP_RPM, _type[0], 0),
 
@@ -68,7 +69,7 @@ const AP_Param::GroupInfo AP_RPM::var_info[] = {
     // @Param: 2_TYPE
     // @DisplayName: Second RPM type
     // @Description: What type of RPM sensor is connected
-    // @Values: 0:None,1:PX4-PWM,2:AUXPIN
+    // @Values: 0:None,1:PX4-PWM,2:AUXPIN,3:FFT
     // @User: Advanced
     AP_GROUPINFO("2_TYPE",    10, AP_RPM, _type[1], 0),
 
@@ -127,13 +128,18 @@ void AP_RPM::init(void)
             if (type == RPM_TYPE_PIN) {
                 state[instance].instance = instance;
                 drivers[instance] = new AP_RPM_Pin(*this, instance, state[instance]);
+            } else if (type == RPM_TYPE_FFT) {
+                state[instance].instance = instance;
+                drivers[instance] = new AP_RPM_FFT(*this, instance, state[instance]);
+            } else {
+//        }
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+//        uint8_t instance = num_instances;
+//        state[instance].instance = instance;
+                drivers[instance] = new AP_RPM_SITL(*this, instance, state[instance]);
+#endif
             }
         }
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        uint8_t instance = num_instances;
-        state[instance].instance = instance;
-        drivers[instance] = new AP_RPM_SITL(*this, instance, state[instance]);
-#endif
         if (drivers[i] != nullptr) {
             // we loaded a driver for this instance, so it must be
             // present (although it may not be healthy)

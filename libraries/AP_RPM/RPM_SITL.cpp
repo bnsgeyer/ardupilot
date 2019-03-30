@@ -37,6 +37,7 @@ void AP_RPM_SITL::update(void)
     }
     if (instance == 0) {
         state.rate_rpm = sitl->state.rpm1;
+        state.rate_rpm = 200.0f;
     } else {
         state.rate_rpm = sitl->state.rpm2;
     }

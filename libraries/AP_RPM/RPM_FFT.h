@@ -14,23 +14,41 @@
  */
 #pragma once
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-
+#include <AP_Math/AP_Math.h>
 #include "AP_RPM.h"
 #include "RPM_Backend.h"
-#include <SITL/SITL.h>
 
-class AP_RPM_SITL : public AP_RPM_Backend
+#define RPM_FFT_WIDTH 256
+
+class AP_RPM_FFT : public AP_RPM_Backend
 {
 public:
     // constructor
-    AP_RPM_SITL(AP_RPM &_ap_rpm, uint8_t instance, AP_RPM::RPM_State &_state);
+    AP_RPM_FFT(AP_RPM &_ap_rpm, uint8_t instance, AP_RPM::RPM_State &_state);
 
     // update state
     void update(void);
-private:
-    SITL::SITL *sitl;    
-    uint8_t instance;
-};
 
-#endif // CONFIG_HAL_BOARD
+private:
+
+    void fast_timer_update();
+    void slow_timer_update();
+
+    uint8_t instance;
+
+    uint32_t last_imu_sample_us;
+
+    // rpm estimator variables
+    arm_cfft_radix4_instance_f32 fft;
+    float dt;
+
+    // fft data
+    uint16_t nsamples;
+    // semaphore for access to shared data with IO thread
+    AP_HAL::Semaphore *sem;    
+
+    float new_rpm;
+    bool have_new_rpm;
+
+    float fft_buffer[2 * RPM_FFT_WIDTH];
+};
