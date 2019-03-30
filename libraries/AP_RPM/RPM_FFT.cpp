@@ -49,9 +49,19 @@ void AP_RPM_FFT::fast_timer_update(void)
         const Vector3f &accel = ins.get_accel(0);
         // collecting accel data. We leave the complex component at zero
         fft_buffer[nsamples] = accel.y;
-        // inject signal to allow testing of feature
-//        fft_buffer[nsamples] = 0.2 * sinf(157.0f * (float)nsamples * 0.5f * 0.0025f);
+        // inject signal to allow testing in sitl
+//        fft_buffer[nsamples] = 0.2 * sinf(freq * (float)nsamples * 0.5f * 0.0025f);
         nsamples += 2;
+
+        //get FFT output faster
+        if (nsamples > 400) {
+// used to test in sitl
+/*            freq += 12.0f;
+            if (freq > 300) {
+                freq = 30;
+            } */
+            nsamples = ARRAY_SIZE(fft_buffer);
+        }
     }
 }
 
@@ -71,7 +81,7 @@ void AP_RPM_FFT::slow_timer_update(void)
 
         //find first peak above a threshold
         float max_value = 0.0f;
-        const float sq_threshold = 500.0f;
+        const float sq_threshold = 200.0f;
         bool first_max = false;
         bool thrsh = false;
 
