@@ -45,18 +45,35 @@ void AP_RPM_FFT::fast_timer_update(void)
         }
         dt = 1.0e-6f * (imu_sample_us - last_imu_sample_us);
         last_imu_sample_us = imu_sample_us;
-
-        const Vector3f &accel = ins.get_accel(0);
-        // collecting accel data. We leave the complex component at zero
-        fft_buffer[nsamples] = accel.y;
+        const uint8_t &signal = ap_rpm._signal_source[state.instance];
+        if (signal > 0 && signal < 4) {
+           const Vector3f &gyro = ins.get_gyro(0);
+           // collecting data. We leave the complex component at zero
+           if (signal == 1) {
+               fft_buffer[nsamples] = gyro.x;
+           } else if (signal == 2) {
+               fft_buffer[nsamples] = gyro.y;
+           } else if (signal == 3) {
+               fft_buffer[nsamples] = gyro.z;
+           }
+        } else if (signal > 3 && signal < 7) {
+           const Vector3f &accel = ins.get_accel(0);
+           if (signal == 4) {
+               fft_buffer[nsamples] = accel.x;
+           } else if (signal == 5) {
+               fft_buffer[nsamples] = accel.y;
         // inject signal to allow testing in sitl
-//        fft_buffer[nsamples] = 0.2 * sinf(freq * (float)nsamples * 0.5f * 0.0025f);
+//               fft_buffer[nsamples] = 0.2 * sinf(freq * (float)nsamples * 0.5f * 0.0025f);
+           } else if (signal == 6) {
+               fft_buffer[nsamples] = accel.z;
+           }
+        }
         nsamples += 2;
 
         //get FFT output faster
         if (nsamples > 400) {
 // used to test in sitl
-/*            freq += 12.0f;
+ /*           freq += 12.0f;
             if (freq > 300) {
                 freq = 30;
             } */
@@ -71,6 +88,7 @@ void AP_RPM_FFT::fast_timer_update(void)
 void AP_RPM_FFT::slow_timer_update(void)
 {
     uint16_t max_f = 0;
+    float max_value = 0.0f;
 
     if (nsamples != ARRAY_SIZE(fft_buffer)) {
         // not ready yet
@@ -80,8 +98,7 @@ void AP_RPM_FFT::slow_timer_update(void)
         arm_cfft_radix4_f32(&fft ,fft_buffer);
 
         //find first peak above a threshold
-        float max_value = 0.0f;
-        const float sq_threshold = 200.0f;
+        const float &sq_threshold = ap_rpm._threshold[state.instance];
         bool first_max = false;
         bool thrsh = false;
 
@@ -107,6 +124,7 @@ void AP_RPM_FFT::slow_timer_update(void)
         return;
     }
     new_rpm = 60.0f * (float)max_f / (dt * ((float)RPM_FFT_WIDTH - 1.0f));
+    peak_mag = max_value;
     have_new_rpm = true;
     // reset nsamples
     nsamples = 0;
@@ -119,6 +137,7 @@ void AP_RPM_FFT::update(void)
     if (have_new_rpm && sem->take_nonblocking()) {
         const float &maximum = ap_rpm._maximum[state.instance];
         const float &minimum = ap_rpm._minimum[state.instance];
+        const uint8_t &check_threshold = ap_rpm._threshold_check[state.instance];
 
         new_rpm *= ap_rpm._scaling[state.instance];
         if ((maximum <= 0 || new_rpm <= maximum) && (new_rpm >= minimum)) {
@@ -128,6 +147,12 @@ void AP_RPM_FFT::update(void)
         } else {
             state.signal_quality = 0.0f;
         }
+        if (check_threshold == 1) {
+            state.rate_rpm = peak_mag;
+            state.signal_quality = 0.5f;
+            state.last_reading_ms = AP_HAL::millis();
+        }
+        
         have_new_rpm = false;
         sem->give();
     }

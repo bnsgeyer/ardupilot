@@ -88,6 +88,48 @@ const AP_Param::GroupInfo AP_RPM::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("2_PIN",    12, AP_RPM, _pin[1], -1),
     
+    // @Param: 1_SIG_SRCE
+    // @DisplayName: RPM1 Signal Source
+    // @Description: Signal source for RPM estimate
+    // @Values: 1:GyroX,2:GyroY,3:GyroZ,4:AccelX,5:AccelY,6:AccelZ
+    // @User: Advanced
+    AP_GROUPINFO("1_SIG_SRC", 13, AP_RPM, _signal_source[0], 1),
+
+    // @Param: 1_THRSHOLD
+    // @DisplayName: RPM1 FFT Threshold
+    // @Description: Sets the threshold for determining first peak
+    // @Range: 1 1000
+    // @User: Standard
+    AP_GROUPINFO("1_THRSHLD", 14, AP_RPM, _threshold[0], 400),
+
+    // @Param: 1_THRS_CK
+    // @DisplayName: RPM1 Threshold check
+    // @Description: Displays first peak amplitude
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Standard
+    AP_GROUPINFO("1_THRS_CK", 15, AP_RPM, _threshold_check[0], 0),
+    
+    // @Param: 2_SIG_SRCE
+    // @DisplayName: RPM2 Signal Source
+    // @Description: Signal source for RPM estimate
+    // @Values: 1:GyroX,2:GyroY,3:GyroZ,4:AccelX,5:AccelY,6:AccelZ
+    // @User: Advanced
+    AP_GROUPINFO("2_SIG_SRC", 16, AP_RPM, _signal_source[1], 1),
+
+    // @Param: 2_THRSHOLD
+    // @DisplayName: RPM2 FFT Threshold
+    // @Description: Sets the threshold for determining first peak
+    // @Range: 1 1000
+    // @User: Standard
+    AP_GROUPINFO("2_THRSHLD", 17, AP_RPM, _threshold[1], 400),
+
+    // @Param: 2_THRS_CK
+    // @DisplayName: RPM2 Threshold check
+    // @Description: Displays first peak amplitude
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Standard
+    AP_GROUPINFO("2_THRS_CK", 18, AP_RPM, _threshold_check[1], 0),
+
     AP_GROUPEND
 };
 

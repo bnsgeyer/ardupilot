@@ -48,8 +48,9 @@ private:
     AP_HAL::Semaphore *sem;    
 
     float new_rpm;
+    float peak_mag;
     bool have_new_rpm;
-    float freq = 30.0f;
+    float freq = 160.0f;
 
 
     float fft_buffer[2 * RPM_FFT_WIDTH];

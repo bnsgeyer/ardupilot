@@ -58,6 +58,10 @@ public:
     AP_Float _maximum[RPM_MAX_INSTANCES];
     AP_Float _minimum[RPM_MAX_INSTANCES];
     AP_Float _quality_min[RPM_MAX_INSTANCES];
+    AP_Float _threshold[RPM_MAX_INSTANCES];                   // fft amplitude threshold
+    AP_Int8  _threshold_check[RPM_MAX_INSTANCES];             // output fft amplitude
+    AP_Int8  _signal_source[RPM_MAX_INSTANCES];               // source for fft estimate
+
 
     static const struct AP_Param::GroupInfo var_info[];
 
