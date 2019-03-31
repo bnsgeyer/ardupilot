@@ -71,14 +71,14 @@ void AP_RPM_FFT::fast_timer_update(void)
         nsamples += 2;
 
         //get FFT output faster
-        if (nsamples > 400) {
+/*        if (nsamples > 400) {
 // used to test in sitl
- /*           freq += 12.0f;
+            freq += 12.0f;
             if (freq > 300) {
                 freq = 30;
-            } */
+            } 
             nsamples = ARRAY_SIZE(fft_buffer);
-        }
+        } */
     }
 }
 
@@ -140,19 +140,17 @@ void AP_RPM_FFT::update(void)
         const uint8_t &check_threshold = ap_rpm._threshold_check[state.instance];
 
         new_rpm *= ap_rpm._scaling[state.instance];
-        if ((maximum <= 0 || new_rpm <= maximum) && (new_rpm >= minimum)) {
+        if (check_threshold == 1) {
+            state.rate_rpm = peak_mag;
+            state.signal_quality = 0.5f;
+            state.last_reading_ms = AP_HAL::millis();
+        } else if ((maximum <= 0 || new_rpm <= maximum) && (new_rpm >= minimum)) {
             state.rate_rpm = new_rpm;
             state.signal_quality = 0.5f;
             state.last_reading_ms = AP_HAL::millis();
         } else {
             state.signal_quality = 0.0f;
-        }
-        if (check_threshold == 1) {
-            state.rate_rpm = peak_mag;
-            state.signal_quality = 0.5f;
-            state.last_reading_ms = AP_HAL::millis();
-        }
-        
+        }        
         have_new_rpm = false;
         sem->give();
     }
