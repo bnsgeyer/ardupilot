@@ -61,7 +61,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
         _last_update_us = now;
     }
 
-    estimate_rpm();
+//    estimate_rpm();
     switch (state){
         case ROTOR_CONTROL_STOP:
             // set rotor ramp to decrease speed to zero, this happens instantly inside update_rotor_ramp()
@@ -180,8 +180,8 @@ void AP_MotorsHeli_RSC::update_rotor_runup(float dt)
 float AP_MotorsHeli_RSC::get_rotor_speed() const
 {
     // if no actual measured rotor speed is available, estimate speed based on rotor runup scalar.
-//    return _rotor_runup_output;
-    return estimated_rpm;
+    return _rotor_runup_output;
+//    return estimated_rpm;
 }
 
 // write_rsc - outputs pwm onto output rsc channel
@@ -220,8 +220,12 @@ void AP_MotorsHeli_RSC::estimate_rpm()
 //    uint64_t now = AP_HAL::micros64();
 
     if (sample_cnt < 2*fftLen) {
-//        p[sample_cnt] = accel.y + 0.2 * sinf(6.28e-6f*40.0f*now);
-        p[sample_cnt] = accel.y;
+        if (sample_cnt * 0.5f < 200) {
+//            p[sample_cnt] =  0.2 * sinf(6.28e-6f * 30.0f * now);  //(float)sample_cnt * 0.5f * 0.0025f);
+          p[sample_cnt] = accel.y;
+        } else {
+            p[sample_cnt] = 0.0f;
+        }
         estimated_rpm = cfft[sample_cnt/2];
         sample_cnt++;
         p[sample_cnt] = 0.0f;
