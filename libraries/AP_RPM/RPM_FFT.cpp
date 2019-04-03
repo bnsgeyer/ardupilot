@@ -48,6 +48,7 @@ void AP_RPM_FFT::fast_timer_update(void)
         const uint8_t &signal = ap_rpm._signal_source[state.instance];
         if (signal > 0 && signal < 4) {
            const Vector3f &gyro = ins.get_gyro(0);
+           ins_filter_freq_hz = ins.get_gyro_filter_hz();
            // collecting data. We leave the complex component at zero
            if (signal == 1) {
                fft_buffer[nsamples] = gyro.x;
@@ -58,6 +59,7 @@ void AP_RPM_FFT::fast_timer_update(void)
            }
         } else if (signal > 3 && signal < 7) {
            const Vector3f &accel = ins.get_accel(0);
+           ins_filter_freq_hz = ins.get_accel_filter_hz();
            if (signal == 4) {
                fft_buffer[nsamples] = accel.x;
            } else if (signal == 5) {
@@ -104,6 +106,9 @@ void AP_RPM_FFT::slow_timer_update(void)
 
         for (uint16_t i = 0; i < 2*RPM_FFT_WIDTH ; i+=2) { 
             float cfft = sq(fft_buffer[i]) + sq(fft_buffer[i+1]);
+            // remove effect of IMU filter on fft
+            const float current_freq_hz = (float)i / (2.0f * dt * (float)(RPM_FFT_WIDTH-1));
+            cfft *= (1.0f + sq(current_freq_hz / (float)ins_filter_freq_hz));
             if (cfft > sq_threshold) {
                 thrsh = true;
             } else {

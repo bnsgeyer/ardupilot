@@ -52,6 +52,8 @@ private:
     bool have_new_rpm;
     float freq = 160.0f;
 
+    uint8_t ins_filter_freq_hz;
+
 
     float fft_buffer[2 * RPM_FFT_WIDTH];
 };
