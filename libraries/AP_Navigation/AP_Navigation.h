@@ -17,6 +17,10 @@ public:
     // the target waypoint
     virtual int32_t nav_roll_cd(void) const = 0;
 
+    // return the desired turn rate in centi-degrees to move towards
+    // the target waypoint
+    virtual int32_t turn_rate_cds(void) const = 0;
+
     // return the desired lateral acceleration in m/s/s to move towards
     // the target waypoint
     virtual float lateral_acceleration(void) const = 0;
