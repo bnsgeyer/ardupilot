@@ -37,6 +37,9 @@ public:
     int32_t nav_roll_cd(void) const;
     float lateral_acceleration(void) const;
 
+    // return the turn rate needed to achieve tracking from the last update_*() operation
+    int32_t turn_rate_cds(void) const;
+
     // return the desired track heading angle(centi-degrees)
     int32_t nav_bearing_cd(void) const;
 
@@ -122,6 +125,8 @@ private:
     float _L1_xtrack_i_gain_prev = 0;
     uint32_t _last_update_waypoint_us;
     bool _data_is_stale = true;
+
+    float _groundSpeed;
 
     AP_Float _loiter_bank_limit;
 

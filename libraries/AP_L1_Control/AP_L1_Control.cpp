@@ -85,6 +85,18 @@ int32_t AP_L1_Control::nav_roll_cd(void) const
 }
 
 /*
+  return the turn rate needed to achieve tracking from the last
+  update_*() operation
+ */
+int32_t AP_L1_Control::turn_rate_cds(void) const
+{
+    float ret;
+    ret = (GRAVITY_MSS / _groundSpeed) * 5730.0f * sinf(radians(nav_roll_cd() * 0.01));
+    ret = constrain_float(ret, -4500, 4500);
+    return ret;
+}
+
+/*
   return the lateral acceleration needed to achieve tracking from the last
   update_*() operation
  */
@@ -227,18 +239,18 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
     _target_bearing_cd = get_bearing_cd(_current_loc, next_WP);
 
     //Calculate groundspeed
-    float groundSpeed = _groundspeed_vector.length();
-    if (groundSpeed < 0.1f) {
+    _groundSpeed = _groundspeed_vector.length();
+    if (_groundSpeed < 0.1f) {
         // use a small ground speed vector in the right direction,
         // allowing us to use the compass heading at zero GPS velocity
-        groundSpeed = 0.1f;
-        _groundspeed_vector = Vector2f(cosf(get_yaw()), sinf(get_yaw())) * groundSpeed;
+        _groundSpeed = 0.1f;
+        _groundspeed_vector = Vector2f(cosf(get_yaw()), sinf(get_yaw())) * _groundSpeed;
     }
 
     // Calculate time varying control parameters
     // Calculate the L1 length required for specified period
     // 0.3183099 = 1/1/pipi
-    _L1_dist = MAX(0.3183099f * _L1_damping * _L1_period * groundSpeed, dist_min);
+    _L1_dist = MAX(0.3183099f * _L1_damping * _L1_period * _groundSpeed, dist_min);
 
     // Calculate the NE position of WP B relative to WP A
     Vector2f AB = location_diff(prev_WP, next_WP);
@@ -273,7 +285,7 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
         ltrackVel = _groundspeed_vector * (-A_air_unit); // Velocity along line
         Nu = atan2f(xtrackVel,ltrackVel);
         _nav_bearing = atan2f(-A_air_unit.y , -A_air_unit.x); // bearing (radians) from AC to L1 point
-    } else if (alongTrackDist > AB_length + groundSpeed*3) {
+    } else if (alongTrackDist > AB_length + _groundSpeed*3) {
         // we have passed point B by 3 seconds. Head towards B
         // Calc Nu to fly To WP B
         Vector2f B_air = location_diff(next_WP, _current_loc);
@@ -319,7 +331,7 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
 
     //Limit Nu to +-(pi/2)
     Nu = constrain_float(Nu, -1.5708f, +1.5708f);
-    _latAccDem = K_L1 * groundSpeed * groundSpeed / _L1_dist * sinf(Nu);
+    _latAccDem = K_L1 * _groundSpeed * _groundSpeed / _L1_dist * sinf(Nu);
 
     // Waypoint capture status is always false during waypoint following
     _WPcircle = false;
@@ -356,7 +368,7 @@ void AP_L1_Control::update_loiter(const struct Location &center_WP, float radius
     Vector2f _groundspeed_vector = _ahrs.groundspeed_vector();
 
     //Calculate groundspeed
-    float groundSpeed = MAX(_groundspeed_vector.length() , 1.0f);
+    _groundSpeed = MAX(_groundspeed_vector.length() , 1.0f);
 
 
     // update _target_bearing_cd
@@ -366,7 +378,7 @@ void AP_L1_Control::update_loiter(const struct Location &center_WP, float radius
     // Calculate time varying control parameters
     // Calculate the L1 length required for specified period
     // 0.3183099 = 1/pi
-    _L1_dist = 0.3183099f * _L1_damping * _L1_period * groundSpeed;
+    _L1_dist = 0.3183099f * _L1_damping * _L1_period * _groundSpeed;
 
     //Calculate the NE position of the aircraft relative to WP A
     Vector2f A_air = location_diff(center_WP, _current_loc);
@@ -397,7 +409,7 @@ void AP_L1_Control::update_loiter(const struct Location &center_WP, float radius
     Nu = constrain_float(Nu, -M_PI_2, M_PI_2); //Limit Nu to +- Pi/2
 
     //Calculate lat accln demand to capture center_WP (use L1 guidance law)
-    float latAccDemCap = K_L1 * groundSpeed * groundSpeed / _L1_dist * sinf(Nu);
+    float latAccDemCap = K_L1 * _groundSpeed * _groundSpeed / _L1_dist * sinf(Nu);
 
     //Calculate radial position and velocity errors
     float xtrackVelCirc = -ltrackVelCap; // Radial outbound velocity - reuse previous radial inbound velocity
@@ -463,11 +475,11 @@ void AP_L1_Control::update_heading_hold(int32_t navigation_heading_cd)
     Vector2f _groundspeed_vector = _ahrs.groundspeed_vector();
 
     //Calculate groundspeed
-    float groundSpeed = _groundspeed_vector.length();
+    _groundSpeed = _groundspeed_vector.length();
 
     // Calculate time varying control parameters
-    _L1_dist = groundSpeed / omegaA; // L1 distance is adjusted to maintain a constant tracking loop frequency
-    float VomegaA = groundSpeed * omegaA;
+    _L1_dist = _groundSpeed / omegaA; // L1 distance is adjusted to maintain a constant tracking loop frequency
+    float VomegaA = _groundSpeed * omegaA;
 
     // Waypoint capture status is always false during heading hold
     _WPcircle = false;
