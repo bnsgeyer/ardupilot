@@ -67,7 +67,8 @@ public:
 	// select which controller to use by setting the
 	// SPDHGT_CONTROLLER parameter
 	enum ControllerType {
-		CONTROLLER_TECS     = 1
+		CONTROLLER_TECS     = 1,
+                CONTROLLER_HELI     = 2
 	};
 	
 
