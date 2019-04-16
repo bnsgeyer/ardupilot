@@ -801,6 +801,14 @@ const AP_Param::Info Copter::var_info[] = {
     GOBJECT(osd, "OSD", AP_OSD),
 #endif
     
+    // @Group: NAVL1_
+    // @Path: ../libraries/AP_L1_Control/AP_L1_Control.cpp
+    GOBJECT(L1_controller, "NAVL1_",   AP_L1_Control),
+
+    // @Group: SPDHGT_
+    // @Path: ../libraries/AP_SpdHgtControl/AP_SpdHgtControl_Heli.cpp
+    GOBJECT(helispdhgtctrl, "SPDHGT_",   AP_SpdHgtControl_Heli),
+
     // @Group:
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),

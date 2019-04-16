@@ -31,3 +31,10 @@ int32_t Copter::home_bearing()
     }
     return _home_bearing;
 }
+
+// set the nav_controller pointer to the right controller
+void Copter::set_nav_controller(void)
+{
+    nav_controller = &L1_controller;
+}
+

@@ -788,7 +788,11 @@ void Copter::ModeAuto::wp_run()
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio) {
         // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        if (wp_nav->using_l1_navigation()) {
+            target_yaw_rate = wp_nav->get_turn_rate();
+        } else {
+            target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        }
         if (!is_zero(target_yaw_rate)) {
             auto_yaw.set_mode(AUTO_YAW_HOLD);
         }

@@ -83,6 +83,10 @@
 #include <AP_Arming/AP_Arming.h>
 #include <AP_SmartRTL/AP_SmartRTL.h>
 #include <AP_TempCalibration/AP_TempCalibration.h>
+#include <AP_Navigation/AP_Navigation.h>
+#include <AP_L1_Control/AP_L1_Control.h>
+#include <AP_SpdHgtControl/AP_SpdHgtControl.h>
+#include <AP_SpdHgtControl/AP_SpdHgtControl_Heli.h>
 
 // Configuration
 #include "defines.h"
@@ -497,6 +501,19 @@ private:
 #if MODE_CIRCLE_ENABLED == ENABLED
     AC_Circle *circle_nav;
 #endif
+
+    // L1 Controller and SpdHgt controller declarations
+    AP_L1_Control L1_controller{ahrs, spdhgt_controller};
+
+    AP_SpdHgtControl_Heli helispdhgtctrl{ahrs};
+
+    // selected navigation controller
+    AP_Navigation *nav_controller = &L1_controller;
+
+    AP_SpdHgtControl *spdhgt_controller = 0;
+
+    void set_nav_controller(void);
+
 
     // System Timers
     // --------------
