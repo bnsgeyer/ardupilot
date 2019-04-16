@@ -67,6 +67,22 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("RFND_USE",   10, AC_WPNav, _rangefinder_use, 1),
 
+    // @Param: USE_L1_NAV
+    // @DisplayName: Waypoint mission use L1 navigation with speed/height control
+    // @Description: This controls if waypoint missions use L1 navigation
+    // @Values: 0:Disable,1:Enable
+    // @User: Advanced
+    AP_GROUPINFO("USE_L1_NAV",   11, AC_WPNav, _l1_nav_use, 0),
+
+    // @Param: L1_SPEED
+    // @DisplayName: Minimum speed at which waypoint navigation begins using L1 controller
+    // @Description: Defines the speed in cm/s which the aircraft begins using L1 controller for waypoint navigation
+    // @Units: cm/s
+    // @Range: 500 2000
+    // @Increment: 50
+    // @User: Standard
+    AP_GROUPINFO("L1_SPEED",       12, AC_WPNav, _l1_speed_cms, 500),
+
     AP_GROUPEND
 };
 
@@ -74,11 +90,13 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
 // Note that the Vector/Matrix constructors already implicitly zero
 // their values.
 //
-AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control) :
+AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, AP_Navigation& nav_controller, AP_SpdHgtControl_Heli& helispdhgtctrl) :
     _inav(inav),
     _ahrs(ahrs),
     _pos_control(pos_control),
-    _attitude_control(attitude_control)
+    _attitude_control(attitude_control),
+    _nav_controller(nav_controller),
+    _helispdhgtctrl(helispdhgtctrl)
 {
     AP_Param::setup_object_defaults(this, var_info);
 
@@ -157,6 +175,13 @@ void AC_WPNav::wp_and_spline_init()
 
     // initialise yaw heading to current heading target
     _flags.wp_yaw_set = false;
+
+    // initialize L1 and spdhgt controller
+    _helispdhgtctrl.set_desired_speed(_wp_speed_cms);
+    _helispdhgtctrl.set_max_accel(_wp_accel_cmss);
+    _flags.using_l1_nav = false;
+
+    
 }
 
 /// set_speed_xy - allows main code to pass target horizontal velocity for wp navigation
@@ -165,6 +190,7 @@ void AC_WPNav::set_speed_xy(float speed_cms)
     // range check new target speed and update position controller
     if (speed_cms >= WPNAV_WP_SPEED_MIN) {
         _wp_speed_cms = speed_cms;
+        _helispdhgtctrl.set_desired_speed(_wp_speed_cms);
         _pos_control.set_speed_xy(_wp_speed_cms);
         // flag that wp leash must be recalculated
         _flags.recalc_wp_leash = true;
@@ -194,6 +220,15 @@ bool AC_WPNav::get_wp_destination(Location_Class& destination) {
     }
     destination.offset(dest.x*0.01f, dest.y*0.01f);
     destination.alt += dest.z;
+    return true;
+}
+
+bool AC_WPNav::convert_wp_location(Location_Class& location, Vector3f loc) {
+    if (!AP::ahrs().get_origin(location)) {
+        return false;
+    }
+    location.offset(loc.x*0.01f, loc.y*0.01f);
+    location.alt += loc.z;
     return true;
 }
 
@@ -241,6 +276,8 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     _origin = origin;
     _destination = destination;
     _terrain_alt = terrain_alt;
+    convert_wp_location(_prev_WP_loc, origin);
+    convert_wp_location(_next_WP_loc, destination);
     Vector3f pos_delta = _destination - _origin;
 
     _track_length = pos_delta.length(); // get track length
@@ -506,6 +543,7 @@ bool AC_WPNav::update_wpnav()
     // out of auto mode. This makes it easier to tune auto flight
     _pos_control.set_accel_xy(_wp_accel_cmss);
     _pos_control.set_accel_z(_wp_accel_z_cmss);
+    _helispdhgtctrl.set_max_accel(_wp_accel_cmss);
 
     // advance the target if necessary
     if (!advance_wp_target_along_track(dt)) {
@@ -519,9 +557,16 @@ bool AC_WPNav::update_wpnav()
         _pos_control.freeze_ff_z();
     }
 
+    const Vector3f& curr_vel = _inav.get_velocity();
+    if (_l1_nav_use == 1 && curr_vel.length() > _l1_speed_cms) {
+        _nav_controller.update_waypoint(_prev_WP_loc, _next_WP_loc);
+        _helispdhgtctrl.update_speed_controller();
+        _flags.using_l1_nav = true;
+    } else {
+        _flags.using_l1_nav = false;
+    }
     _pos_control.update_xy_controller(1.0f);
     check_wp_leash_length();
-
     _wp_last_update = AP_HAL::millis();
 
     return ret;

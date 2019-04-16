@@ -7,6 +7,8 @@
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
 #include <AC_AttitudeControl/AC_PosControl.h>      // Position control library
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude control library
+#include <AP_Navigation/AP_Navigation.h>
+#include <AP_SpdHgtControl/AP_SpdHgtControl_Heli.h>
 #include <AP_Terrain/AP_Terrain.h>
 #include <AC_Avoidance/AC_Avoid.h>                 // Stop at fence library
 
@@ -46,7 +48,7 @@ public:
     };
 
     /// Constructor
-    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control);
+    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, AP_Navigation& nav_controller, AP_SpdHgtControl_Heli& helispdhgtctrl);
 
     /// provide pointer to terrain database
     void set_terrain(AP_Terrain* terrain_ptr) { _terrain = terrain_ptr; }
@@ -108,6 +110,11 @@ public:
     // coordinates
     bool get_wp_destination(Location_Class& destination);
 
+    // returns wp location using location class.
+    // returns false if unable to convert from target vector to global
+    // coordinates
+    bool convert_wp_location(Location_Class& location, Vector3f loc);
+
     /// set_wp_destination waypoint using position vector (distance from ekf origin in cm)
     ///     terrain_alt should be true if destination.z is a desired altitude above terrain
     bool set_wp_destination(const Vector3f& destination, bool terrain_alt = false);
@@ -151,6 +158,11 @@ public:
 
     /// calculate_wp_leash_length - calculates track speed, acceleration and leash lengths for waypoint controller
     void calculate_wp_leash_length();
+
+    /// using_l1_navigation - true when using L1 navigation controller
+    bool using_l1_navigation() const { return _flags.using_l1_nav; };
+
+    float get_turn_rate() const { return _nav_controller.turn_rate_cds(); };
 
     ///
     /// spline methods
@@ -205,8 +217,20 @@ public:
     ///
 
     /// get desired roll, pitch which should be fed into stabilize controllers
-    int32_t get_roll() const { return _pos_control.get_roll(); }
-    int32_t get_pitch() const { return _pos_control.get_pitch(); }
+    int32_t get_roll() const {
+        if (_flags.using_l1_nav) {
+            return _nav_controller.nav_roll_cd();
+        } else {
+            return _pos_control.get_roll();
+        }
+    }
+    int32_t get_pitch() const {
+        if (_flags.using_l1_nav) {
+            return _helispdhgtctrl.get_pitch();
+        } else {
+            return _pos_control.get_pitch();
+        }
+    }
 
     /// advance_wp_target_along_track - move target location along track from origin to destination
     bool advance_wp_target_along_track(float dt);
@@ -233,6 +257,7 @@ protected:
         uint8_t new_wp_destination      : 1;    // true if we have just received a new destination.  allows us to freeze the position controller's xy feed forward
         SegmentType segment_type        : 1;    // active segment is either straight or spline
         uint8_t wp_yaw_set              : 1;    // true if yaw target has been set
+        uint8_t using_l1_nav            : 1;    // true if using L1 navigation controller
     } _flags;
 
     /// calc_slow_down_distance - calculates distance before waypoint that target point should begin to slow-down assuming it is traveling at full speed
@@ -269,6 +294,8 @@ protected:
     const AP_AHRS_View&     _ahrs;
     AC_PosControl&          _pos_control;
     const AC_AttitudeControl& _attitude_control;
+    AP_Navigation&          _nav_controller;
+    AP_SpdHgtControl_Heli&  _helispdhgtctrl;
     AP_Terrain              *_terrain = nullptr;
     AC_Avoid                *_avoid = nullptr;
 
@@ -284,6 +311,8 @@ protected:
     uint32_t    _wp_last_update;        // time of last update_wpnav call
     uint8_t     _wp_step;               // used to decide which portion of wpnav controller to run during this iteration
     Vector3f    _origin;                // starting point of trip to next waypoint in cm from ekf origin
+    Location_Class _prev_WP_loc;
+    Location_Class _next_WP_loc;
     Vector3f    _destination;           // target destination in cm from ekf origin
     Vector3f    _pos_delta_unit;        // each axis's percentage of the total track from origin to destination
     float       _track_error_xy;        // horizontal error of the actual position vs the desired position
@@ -304,6 +333,10 @@ protected:
     Vector3f    _hermite_spline_solution[4]; // array describing spline path between origin and destination
     float       _spline_vel_scaler;	    //
     float       _yaw;                   // heading according to yaw
+
+    // L1 controller variables
+    AP_Int8     _l1_nav_use;
+    AP_Float    _l1_speed_cms;          // horizontal speed in cm/s at which l1 nav begins during missions
 
     // terrain following variables
     bool        _terrain_alt = false;   // true if origin and destination.z are alt-above-terrain, false if alt-above-ekf-origin
