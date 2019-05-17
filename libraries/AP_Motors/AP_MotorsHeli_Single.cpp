@@ -427,6 +427,13 @@ void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float
         limit.throttle_upper = true;
     }
 
+    // ensure collective is not below minimum acro collective while rotors are powered.
+    // Ensures requested collective will always be within throttle curve range.
+    // This could cause problems in non manual throttle modes.
+    if (get_interlock() && collective_out < _acro_col_min * 0.001f) {
+        collective_out = _acro_col_min * 0.001f;
+    }        
+
     // ensure not below landed/landing collective
     if (_heliflags.landing_collective && collective_out < (_land_collective_min*0.001f)) {
         collective_out = (_land_collective_min*0.001f);
@@ -451,7 +458,8 @@ void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float
     // feed power estimate into main rotor controller
     // ToDo: include tail rotor power?
     // ToDo: add main rotor cyclic power?
-    _main_rotor.set_collective(fabsf(collective_out));
+    float thrcrv_coll = (collective_out - _acro_col_min * 0.001f) / (1.0f - _acro_col_min * 0.001f);
+    _main_rotor.set_collective(fabsf(thrcrv_coll));
 
     // scale collective pitch for swashplate servos
     float collective_scalar = ((float)(_collective_max-_collective_min))*0.001f;

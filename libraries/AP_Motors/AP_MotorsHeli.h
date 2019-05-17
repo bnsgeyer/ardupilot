@@ -133,6 +133,9 @@ public:
 
     float get_throttle_hover() const { return 0.5f; }
 
+    // set_acro_coll_min - sets the minimum value for acro collective in order to calculate throttle curve collective
+    void set_acro_coll_min(int16_t coll_min) { _acro_col_min = coll_min; }
+
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -214,6 +217,7 @@ protected:
     // internal variables
     float           _collective_mid_pct = 0.0f;      // collective mid parameter value converted to 0 ~ 1 range
     uint8_t         _servo_test_cycle_counter = 0;   // number of test cycles left to run after bootup
+    int16_t         _acro_col_min;
 
     motor_frame_type _frame_type;
 };
