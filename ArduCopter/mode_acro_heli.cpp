@@ -92,8 +92,14 @@ void Copter::ModeAcro_Heli::run()
         attitude_control->passthrough_bf_roll_pitch_rate_yaw(roll_in, pitch_in, yaw_in);
     }
 
+    bool in_autorotation;
+    if (motors->get_interlock()) {
+        in_autorotation = false;
+    } else {
+        in_autorotation = true;
+    }
     // get pilot's desired throttle
-    pilot_throttle_scaled = copter.input_manager.get_pilot_desired_collective(channel_throttle->get_control_in());
+    pilot_throttle_scaled = copter.input_manager.get_pilot_desired_collective(channel_throttle->get_control_in(), in_autorotation);
 
     // output pilot's throttle without angle boost
     attitude_control->set_throttle_out(pilot_throttle_scaled, false, g.throttle_filt);
