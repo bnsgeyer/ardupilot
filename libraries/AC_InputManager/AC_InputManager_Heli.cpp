@@ -52,11 +52,29 @@ const AP_Param::GroupInfo AC_InputManager_Heli::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("ACRO_COL_EXP",    5, AC_InputManager_Heli, _acro_col_expo, 0),
 
+    // @Param: ACRO_COL_MIN
+    // @DisplayName: Acro Mode Collective Minimum
+    // @Description: Minimum Collective to be used in acro mode.
+    // @Range: 0 500
+    // @Units: d%
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("ACRO_COL_MIN",    6, AC_InputManager_Heli, _acro_col_min, 0),
+
+    // @Param: AROT_COL_MIN
+    // @DisplayName: autorotation collective minimum
+    // @Description: Minimum Collective to be used in autorotations (throttle hold on).
+    // @Range: 0 500
+    // @Units: d%
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("AROT_COL_MIN",    7, AC_InputManager_Heli, _arot_col_min, 0),
+
     AP_GROUPEND
 };
 
 // get_pilot_desired_collective - rescale's pilot collective pitch input in Stabilize and Acro modes
-float AC_InputManager_Heli::get_pilot_desired_collective(int16_t control_in)
+float AC_InputManager_Heli::get_pilot_desired_collective(int16_t control_in, bool in_autorotation)
 {
     float slope_low, slope_high, slope_range, slope_run, scalar;
     float stab_col_out, acro_col_out;
@@ -114,7 +132,17 @@ float AC_InputManager_Heli::get_pilot_desired_collective(int16_t control_in)
     // scale collective output smoothly between acro and stab col
     float collective_out;
     collective_out = (float)((1.0f-_stab_col_ramp)*acro_col_out + _stab_col_ramp*stab_col_out);
+
+    if (in_autorotation) {
+        // set autorotation collective
+        // TODO: provide smooth transition
+        collective_out = (control_in - _arot_col_min) / (1000.0f - _arot_col_min);
+    } else {
+        // scale collective to full range
+        collective_out = _acro_col_min * 0.001f + collective_out * (1.0f - _acro_col_min * 0.001f);
+    }
     collective_out = constrain_float(collective_out, 0.0f, 1.0f);
+
 
     return collective_out;
 }

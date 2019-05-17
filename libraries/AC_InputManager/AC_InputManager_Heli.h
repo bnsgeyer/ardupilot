@@ -29,13 +29,16 @@ public:
     AC_InputManager_Heli &operator=(const AC_InputManager_Heli&) = delete;
 
     // get_pilot_desired_collective - rescale's pilot collective pitch input in Stabilize and Acro modes
-    float get_pilot_desired_collective(int16_t control_in);
+    float get_pilot_desired_collective(int16_t control_in, bool in_autorotation);
 
     // set_use_stab_col - setter function
     void set_use_stab_col(bool use) { _im_flags_heli.use_stab_col = use; }
 
     // set_heli_stab_col_ramp - setter function
     void set_stab_col_ramp(float ramp) { _stab_col_ramp = constrain_float(ramp, 0.0, 1.0); }
+
+    // get_pilot_desired_collective - rescale's pilot collective pitch input in Stabilize and Acro modes
+    int16_t get_acro_col_min() { return _acro_col_min; }
 
     static const struct AP_Param::GroupInfo        var_info[];
 
@@ -52,5 +55,6 @@ private:
     AP_Int16        _heli_stab_col_high;            // collective pitch setting at mid-high throttle input in Stabilize mode
     AP_Int16        _heli_stab_col_max;             // maximum collective pitch setting at full throttle input in Stabilize mode
     AP_Float        _acro_col_expo;                 // used to soften collective pitch inputs near center point in Acro mode
-
+    AP_Int16        _acro_col_min;
+    AP_Int16        _arot_col_min;
 };
