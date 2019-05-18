@@ -136,6 +136,9 @@ public:
     // set_acro_coll_min - sets the minimum value for acro collective in order to calculate throttle curve collective
     void set_acro_coll_min(int16_t coll_min) { _acro_col_min = coll_min; }
 
+    // set_in_autorotation - allows main code to set when aircraft is in autorotation.
+    void set_in_autorotation(bool autorotation) { _heliflags.in_autorotation = autorotation; }
+
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -195,6 +198,7 @@ protected:
         uint8_t landing_collective      : 1;    // true if collective is setup for landing which has much higher minimum
         uint8_t rotor_runup_complete    : 1;    // true if the rotors have had enough time to wind up
         uint8_t inverted_flight         : 1;    // true for inverted flight
+        uint8_t in_autorotation         : 1;    // true if aircraft is in autorotation
     } _heliflags;
 
     // parameters
