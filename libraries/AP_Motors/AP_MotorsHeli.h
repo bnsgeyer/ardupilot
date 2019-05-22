@@ -133,9 +133,6 @@ public:
 
     float get_throttle_hover() const { return 0.5f; }
 
-    // set_acro_coll_min - sets the minimum value for acro collective in order to calculate throttle curve collective
-    void set_acro_coll_min(int16_t coll_min) { _acro_col_min = coll_min; }
-
     // set_in_autorotation - allows main code to set when aircraft is in autorotation.
     void set_in_autorotation(bool autorotation) { _heliflags.in_autorotation = autorotation; }
 
@@ -196,6 +193,9 @@ protected:
     // write to a swash servo. output value is pwm
     void rc_write_swash(uint8_t chan, float swash_in);
     
+    // calculate_collective_out_scaled - calculate the scaled collective out based on autorotation flag
+    float calculate_collective_out_scaled(float coll_in);
+
     // flags bitmask
     struct heliflags_type {
         uint8_t landing_collective      : 1;    // true if collective is setup for landing which has much higher minimum
@@ -209,7 +209,8 @@ protected:
     AP_Int16        _cyclic_max;                // Maximum cyclic angle of the swash plate in centi-degrees
     AP_Int16        _collective_min;            // Lowest possible servo position for the swashplate
     AP_Int16        _collective_max;            // Highest possible servo position for the swashplate
-    AP_Int16        _collective_mid;            // Swash servo position corresponding to zero collective pitch (or zero lift for Asymmetrical blades)
+    AP_Int16        _collective_mid;            // Swash servo position corresponding to zero collective pitch (or zero lift for symmetrical blades)
+    AP_Int16        _acro_col_min;             //swash servo position for lowest collective in acro mode
     AP_Int8         _servo_mode;              // Pass radio inputs directly to servos during set-up through mission planner
     AP_Int16        _rsc_setpoint;              // rotor speed when RSC mode is set to is enabledv
     AP_Int8         _rsc_mode;                  // Which main rotor ESC control mode is active
@@ -225,7 +226,6 @@ protected:
     // internal variables
     float           _collective_mid_pct = 0.0f;      // collective mid parameter value converted to 0 ~ 1 range
     uint8_t         _servo_test_cycle_counter = 0;   // number of test cycles left to run after bootup
-    int16_t         _acro_col_min;
-
+    float           _col_ramp;                      //holds ramp value
     motor_frame_type _frame_type;
 };

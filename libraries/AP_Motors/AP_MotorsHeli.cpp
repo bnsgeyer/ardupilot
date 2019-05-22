@@ -193,6 +193,15 @@ const AP_Param::GroupInfo AP_MotorsHeli::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("RSC_THRCRV_100", 24, AP_MotorsHeli, _rsc_thrcrv[4], AP_MOTORS_HELI_RSC_THRCRV_100_DEFAULT),
 
+    // @Param: ACRO_COL_MIN
+    // @DisplayName: Acro Mode Collective Minimum
+    // @Description: Minimum Collective to be used in acro mode.
+    // @Range: 1000 2000
+    // @Units: PWM
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("ACRO_COL_MIN",   25, AP_MotorsHeli, _acro_col_min, 0),
+
     AP_GROUPEND
 };
 
@@ -437,5 +446,31 @@ void AP_MotorsHeli::rc_write_swash(uint8_t chan, float swash_in)
     SRV_Channels::set_output_pwm_trimmed(function, pwm);
 }
 
+// calculate_collective_out_scaled - calculate the scaled collective out based on autorotation flag
+float AP_MotorsHeli::calculate_collective_out_scaled(float coll_in)
+{
+    // scale collective pitch for swashplate servos for acro collective
+    float collective_scalar = ((float)(_collective_max-_acro_col_min))*0.001f;
+    float acro_col_out = coll_in * collective_scalar + (_acro_col_min - 1000)*0.001f;
 
+    // scale collective pitch for swashplate servos for autorotation collective
+    collective_scalar = ((float)(_collective_max-_collective_min))*0.001f;
+    float autorotate_col_out = coll_in * collective_scalar + (_collective_min - 1000)*0.001f;
+
+    // ramp to and from stab col over 1/4 second
+    if (!_heliflags.in_autorotation && (_col_ramp < 1.0f)){
+        _col_ramp += 4.0f/(float)_loop_rate;
+    } else if(_heliflags.in_autorotation && (_col_ramp > 0.0f)){
+        _col_ramp -= 4.0f/(float)_loop_rate;
+    }
+    _col_ramp = constrain_float(_col_ramp, 0.0f, 1.0f);
+
+    // scale collective output smoothly between acro and stab col
+    float collective_out;
+    collective_out = (float)((1.0f-_col_ramp)*autorotate_col_out + _col_ramp*acro_col_out);
+    collective_out = constrain_float(collective_out, 0.0f, 1.0f);
+
+    return collective_out;
+
+}
 
