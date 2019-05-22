@@ -29,7 +29,7 @@ public:
     AC_InputManager_Heli &operator=(const AC_InputManager_Heli&) = delete;
 
     // get_pilot_desired_collective - rescale's pilot collective pitch input in Stabilize and Acro modes
-    float get_pilot_desired_collective(int16_t control_in, bool in_autorotation);
+    float get_pilot_desired_collective(int16_t control_in);
 
     // set_use_stab_col - setter function
     void set_use_stab_col(bool use) { _im_flags_heli.use_stab_col = use; }
@@ -40,11 +40,15 @@ public:
     // get_pilot_desired_collective - rescale's pilot collective pitch input in Stabilize and Acro modes
     int16_t get_acro_col_min() { return _acro_col_min; }
 
+    // set_in_autorotation - setter function
+    void set_in_autorotation(bool autorotation) { _im_flags_heli.in_autorotation = autorotation; }
+
     static const struct AP_Param::GroupInfo        var_info[];
 
 private:
     struct InputManagerHeliFlags {
         uint8_t use_stab_col        :   1;  // 1 if we should use Stabilise mode collective range, 0 for Acro range
+        uint8_t in_autorotation     :   1;  // 1 if we should use autorotation collective range, 0 for Stabilize/Acro range
     } _im_flags_heli;
 
     //  factor used to smoothly ramp collective from Acro value to Stab-Col value
