@@ -168,9 +168,6 @@ void Copter::heli_update_rotor_speed_targets()
             break;
     }
 
-    // provide the min collective setting in acro in order for motors class to calculate throttle.
-    motors->set_acro_coll_min(copter.input_manager.get_acro_col_min());
-
     // when rotor_runup_complete changes to true, log event
     if (!rotor_runup_complete_last && motors->rotor_runup_complete()){
         Log_Write_Event(DATA_ROTOR_RUNUP_COMPLETE);
@@ -186,8 +183,10 @@ void Copter::heli_update_autorotation()
 
     if (!ap.land_complete && !motors->get_interlock()) {
         motors->set_in_autorotation(true);
+        input_manager.set_in_autorotation(true);
     } else if (ap.land_complete || (flightmode->has_manual_throttle() && motors->get_interlock())) {
         motors->set_in_autorotation(false);
+        input_manager.set_in_autorotation(false);
     }
     if (!ap.land_complete) {
         motors->set_enable_bailout(true);

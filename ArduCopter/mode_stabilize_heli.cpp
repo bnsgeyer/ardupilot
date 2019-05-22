@@ -56,14 +56,8 @@ void Copter::ModeStabilize_Heli::run()
     // get pilot's desired yaw rate
     target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
 
-    bool in_autorotation;
-    if (motors->get_interlock()) {
-        in_autorotation = false;
-    } else {
-        in_autorotation = true;
-    }
     // get pilot's desired throttle
-    pilot_throttle_scaled = copter.input_manager.get_pilot_desired_collective(channel_throttle->get_control_in(), in_autorotation);
+    pilot_throttle_scaled = copter.input_manager.get_pilot_desired_collective(channel_throttle->get_control_in());
 
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
