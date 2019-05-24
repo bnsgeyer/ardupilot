@@ -442,8 +442,8 @@ void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float
         limit.throttle_upper = true;
     }
 
-    // ensure not below landed/landing collective when aircraft is not in autorotation
-    if (_heliflags.landing_collective && collective_out < (_land_collective_min*0.001f) && !_heliflags.in_autorotation) {
+    // ensure not below landed/landing collective
+    if (_heliflags.landing_collective && collective_out < (_land_collective_min*0.001f)) {
         collective_out = (_land_collective_min*0.001f);
         limit.throttle_lower = true;
     }
