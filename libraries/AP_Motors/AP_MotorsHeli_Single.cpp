@@ -472,7 +472,7 @@ void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float
     float collective_out_scaled = calculate_collective_out_scaled(collective_out);
 
     // set collective below mid flag
-    if (collective_out_scaled <= (float)_collective_mid) {
+    if (collective_out_scaled <= (float)(_collective_mid-1000)*0.001f) {
         _heliflags.collective_below_mid = true;
     } else {
         _heliflags.collective_below_mid = false;
