@@ -442,8 +442,8 @@ void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float
         limit.throttle_upper = true;
     }
 
-    // ensure not below landed/landing collective
-    if (_heliflags.landing_collective && collective_out < _collective_mid_pct) {
+    // ensure not below landed/landing collective when heli is not in autorotation
+    if (_heliflags.landing_collective && collective_out < _collective_mid_pct && !_heliflags.in_autorotation) {
         collective_out = _collective_mid_pct;
         limit.throttle_lower = true;
     }
@@ -470,6 +470,13 @@ void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float
 
     // scale collective pitch for swashplate servos
     float collective_out_scaled = calculate_collective_out_scaled(collective_out);
+
+    // set collective below mid flag
+    if (collective_out_scaled <= (float)_collective_mid) {
+        _heliflags.collective_below_mid = true;
+    } else {
+        _heliflags.collective_below_mid = false;
+    }
 
     // Collective control direction. Swash moves up for negative collective pitch, down for positive collective pitch
     if (_collective_direction == AP_MOTORS_HELI_SINGLE_COLLECTIVE_DIRECTION_REVERSED){
