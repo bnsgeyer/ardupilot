@@ -1745,3 +1745,17 @@ float GCS_MAVLINK_Copter::vfr_hud_alt() const
     }
     return GCS_MAVLINK::vfr_hud_alt();
 }
+
+float GCS_MAVLINK_Copter::vfr_hud_airspeed() const
+{
+    // airspeed sensors are best.  While the AHRS airspeed_estimate
+    // will use an airspeed sensor, that value is constrained by the
+    // ground speed.  When reporting we should send the true airspeed
+    // value if possible:
+    if (copter.airspeed.enabled() && copter.airspeed.healthy()) {
+        return copter.airspeed.get_airspeed();
+    }
+
+    // lying is worst:
+    return 0;
+}
