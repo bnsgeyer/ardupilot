@@ -286,7 +286,7 @@ void AP_MotorsHeli_Single::calculate_scalars()
     _collective_mid = constrain_int16(_collective_mid, _collective_min, _collective_max);
 
     // calculate collective mid point as a number from 0 to 1
-    _collective_mid_pct = ((float)(_collective_mid-_collective_min))/((float)(_collective_max-_collective_min));
+    _collective_mid_pct = ((float)(_collective_mid-_acro_col_min))/((float)(_collective_max-_collective_min));
 
     // calculate factors based on swash type and servo position
     calculate_roll_pitch_collective_factors();
