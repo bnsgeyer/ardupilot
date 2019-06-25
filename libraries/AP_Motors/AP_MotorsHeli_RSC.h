@@ -159,7 +159,6 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
-    void set_thrcrv_enable(int8_t setenable) {enable = setenable; }
     float * get_thrcrv() {
         static float throttlecurve[5];
         for (uint8_t i = 0; i < 5; i++) {
@@ -169,7 +168,6 @@ public:
     }
 
 private:
-    AP_Int8   enable;
     AP_Int16  thrcrv[5]; // throttle value sent to throttle servo at 0, 25, 50, 75 and 100 percent collective
 
 };
@@ -180,7 +178,6 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
-    void set_gov_enable(int8_t setenable) {enable = setenable; }
     int16_t get_reference() { return reference; }
     float get_range() { return range; }
     float get_disengage() { return disengage; }
@@ -188,7 +185,6 @@ public:
     float get_thrcurve() { return thrcurve; }
 
 private:
-    AP_Int8   enable;
     AP_Int16  reference;      // sets rotor speed for governor
     AP_Float  range;          // RPM range +/- governor rpm reference setting where governor is operational
     AP_Float  disengage;      // sets the throttle percent where the governor disengages for return to flight idle
