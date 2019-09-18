@@ -199,7 +199,7 @@ void AP_MotorsHeli::output_armed_stabilizing()
         reset_flight_controls();
     }
 
-    move_actuators(_roll_in, _pitch_in, get_throttle(), _yaw_in);
+    move_actuators(_roll_in + _roll_in_ff, _pitch_in + _pitch_in_ff, get_throttle(), _yaw_in + _yaw_in_ff);
 }
 
 // output_armed_zero_throttle - sends commands to the motors
@@ -210,7 +210,7 @@ void AP_MotorsHeli::output_armed_zero_throttle()
         reset_flight_controls();
     }
 
-    move_actuators(_roll_in, _pitch_in, get_throttle(), _yaw_in);
+    move_actuators(_roll_in + _roll_in_ff, _pitch_in + _pitch_in_ff, get_throttle(), _yaw_in + _yaw_in_ff);
 }
 
 // output_disarmed - sends commands to the motors
