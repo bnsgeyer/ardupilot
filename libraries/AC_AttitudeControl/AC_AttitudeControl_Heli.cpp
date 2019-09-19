@@ -253,15 +253,15 @@ void AC_AttitudeControl_Heli::rate_controller_run()
     // call rate controllers and send output to motors object
     // if using a flybar passthrough roll and pitch directly to motors
     if (_flags_heli.flybar_passthrough) {
-        _motors.set_roll(_passthrough_roll / 4500.0f);
-        _motors.set_pitch(_passthrough_pitch / 4500.0f);
+        _motors.set_roll_ff(_passthrough_roll / 4500.0f);
+        _motors.set_pitch_ff(_passthrough_pitch / 4500.0f);
     } else {
         rate_bf_to_motor_roll_pitch(gyro_latest, _rate_target_ang_vel.x, _rate_target_ang_vel.y);
     }
     if (_flags_heli.tail_passthrough) {
-        _motors.set_yaw(_passthrough_yaw / 4500.0f);
+        _motors.set_yaw_ff(_passthrough_yaw / 4500.0f);
     } else {
-        _motors.set_yaw(rate_target_to_motor_yaw(gyro_latest.z, _rate_target_ang_vel.z));
+        rate_target_to_motor_yaw(gyro_latest.z, _rate_target_ang_vel.z);
     }
 }
 
@@ -318,8 +318,10 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
     }
 
     // output to motors
-    _motors.set_roll(roll_out);
-    _motors.set_pitch(pitch_out);
+    _motors.set_roll_ff(roll_ff);
+    _motors.set_roll(roll_pid);
+    _motors.set_pitch_ff(pitch_ff);
+    _motors.set_pitch(pitch_pid);
 
     // Piro-Comp, or Pirouette Compensation is a pre-compensation calculation, which basically rotates the Roll and Pitch Rate I-terms as the
     // helicopter rotates in yaw.  Much of the built-up I-term is needed to tip the disk into the incoming wind.  Fast yawing can create an instability
@@ -343,7 +345,7 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
 }
 
 // rate_bf_to_motor_yaw - ask the rate controller to calculate the motor outputs to achieve the target rate in radians/second
-float AC_AttitudeControl_Heli::rate_target_to_motor_yaw(float rate_yaw_actual_rads, float rate_target_rads)
+void AC_AttitudeControl_Heli::rate_target_to_motor_yaw(float rate_yaw_actual_rads, float rate_target_rads)
 {
     if (!((AP_MotorsHeli&)_motors).rotor_runup_complete()) {
         _pid_rate_yaw.update_leaky_i(AC_ATTITUDE_HELI_RATE_INTEGRATOR_LEAK_RATE);
@@ -366,7 +368,8 @@ float AC_AttitudeControl_Heli::rate_target_to_motor_yaw(float rate_yaw_actual_ra
     }
 
     // output to motors
-    return yaw_out;
+    _motors.set_yaw(pid);
+    _motors.set_yaw_ff(vff);
 }
 
 //
