@@ -163,7 +163,7 @@ protected:
     void update_throttle_filter() override;
 
     // move_actuators - moves swash plate and tail rotor
-    virtual void move_actuators(float roll_out, float pitch_out, float coll_in, float yaw_out) = 0;
+    virtual void move_actuators(float roll_out_pid, float roll_out_ff, float pitch_out_pid, float pitch_out_ff, float coll_in, float yaw_out_pid, float yaw_out_ff) = 0;
 
     // reset_swash_servo - free up swash servo for maximum movement
     void reset_swash_servo(SRV_Channel::Aux_servo_function_t function);

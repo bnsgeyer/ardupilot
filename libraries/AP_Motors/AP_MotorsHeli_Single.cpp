@@ -322,9 +322,14 @@ void AP_MotorsHeli_Single::update_motor_control(RotorControlState state)
 //                       collective: 0 ~ 1
 //                       yaw:   -1 ~ +1
 //
-void AP_MotorsHeli_Single::move_actuators(float roll_out, float pitch_out, float coll_in, float yaw_out)
+void AP_MotorsHeli_Single::move_actuators(float roll_out_pid, float roll_out_ff, float pitch_out_pid, float pitch_out_ff, float coll_in, float yaw_out_pid, float yaw_out_ff)
 {
     float yaw_offset = 0.0f;
+
+    // sum PID output and FF output
+    float pitch_out = constrain_float(pitch_out_pid + pitch_out_ff, -1.0f, 1.0f);
+    float roll_out = constrain_float(roll_out_pid + roll_out_ff, -1.0f, 1.0f);
+    float yaw_out = constrain_float(yaw_out_pid + yaw_out_ff, -1.0f, 1.0f);
 
     // initialize limits flag
     limit.roll = false;

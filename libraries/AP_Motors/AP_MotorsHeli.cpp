@@ -155,7 +155,7 @@ void AP_MotorsHeli::set_frame_class_and_type(motor_frame_class frame_class, moto
 void AP_MotorsHeli::output_min()
 {
     // move swash to mid
-    move_actuators(0.0f,0.0f,0.5f,0.0f);
+    move_actuators(0.0f,0.0f,0.0f,0.0f,0.5f,0.0f,0.0f);
 
     update_motor_control(ROTOR_CONTROL_STOP);
 
@@ -199,7 +199,7 @@ void AP_MotorsHeli::output_armed_stabilizing()
         reset_flight_controls();
     }
 
-    move_actuators(_roll_in + _roll_in_ff, _pitch_in + _pitch_in_ff, get_throttle(), _yaw_in + _yaw_in_ff);
+    move_actuators(_roll_in, _roll_in_ff, _pitch_in, _pitch_in_ff, get_throttle(), _yaw_in, _yaw_in_ff);
 }
 
 // output_armed_zero_throttle - sends commands to the motors
@@ -210,7 +210,7 @@ void AP_MotorsHeli::output_armed_zero_throttle()
         reset_flight_controls();
     }
 
-    move_actuators(_roll_in + _roll_in_ff, _pitch_in + _pitch_in_ff, get_throttle(), _yaw_in + _yaw_in_ff);
+    move_actuators(_roll_in, _roll_in_ff, _pitch_in, _pitch_in_ff, get_throttle(), _yaw_in, _yaw_in_ff);
 }
 
 // output_disarmed - sends commands to the motors
@@ -277,7 +277,7 @@ void AP_MotorsHeli::output_disarmed()
     calculate_scalars();
 
     // helicopters always run stabilizing flight controls
-    move_actuators(_roll_in, _pitch_in, get_throttle(), _yaw_in);
+    move_actuators(0.0f, _roll_in, 0.0f, _pitch_in, get_throttle(), 0.0f, _yaw_in);
 }
 
 // run spool logic

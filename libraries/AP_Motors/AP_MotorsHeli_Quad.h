@@ -89,7 +89,7 @@ protected:
     void calculate_roll_pitch_collective_factors ();
 
     // move_actuators - moves swash plate to attitude of parameters passed in
-    void move_actuators(float roll_out, float pitch_out, float coll_in, float yaw_out)  override;
+    void move_actuators(float roll_out_pid, float roll_out_ff, float pitch_out_pid, float pitch_out_ff, float coll_in, float yaw_out_pid, float yaw_out_ff)  override;
 
     // rate factors
     float _rollFactor[AP_MOTORS_HELI_QUAD_NUM_MOTORS];

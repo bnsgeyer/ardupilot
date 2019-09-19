@@ -112,7 +112,7 @@ protected:
     void update_motor_control(RotorControlState state) override;
 
     // heli_move_actuators - moves swash plate and tail rotor
-    void move_actuators(float roll_out, float pitch_out, float coll_in, float yaw_out) override;
+    void move_actuators(float roll_out_pid, float roll_out_ff, float pitch_out_pid, float pitch_out_ff, float coll_in, float yaw_out_pid, float yaw_out_ff) override;
 
     // move_yaw - moves the yaw servo
     void move_yaw(float yaw_out);

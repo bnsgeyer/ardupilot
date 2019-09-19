@@ -111,7 +111,7 @@ protected:
     float get_swashplate(int8_t swash_num, int8_t swash_axis, float pitch_input, float roll_input, float yaw_input, float coll_input);
 
     // move_actuators - moves swash plate to attitude of parameters passed in
-    void move_actuators(float roll_out, float pitch_out, float coll_in, float yaw_out)  override;
+    void move_actuators(float roll_out_pid, float roll_out_ff, float pitch_out_pid, float pitch_out_ff, float coll_in, float yaw_out_pid, float yaw_out_ff)  override;
 
     //  objects we depend upon
     AP_MotorsHeli_Swash        _swashplate1;        // swashplate1
