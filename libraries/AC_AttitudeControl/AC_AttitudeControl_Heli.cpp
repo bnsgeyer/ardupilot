@@ -303,15 +303,17 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
     float roll_out = roll_pid + roll_ff;
     float pitch_out = pitch_pid + pitch_ff;
 
-    // constrain output and update limit flags
+    // proportionally constrain pid and ff output and update limit flags
     if (fabsf(roll_out) > AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX) {
-        roll_out = constrain_float(roll_out, -AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX, AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX);
+        roll_pid = AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX * roll_pid / roll_out;
+        roll_ff = AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX * roll_ff / roll_out;
         _flags_heli.limit_roll = true;
     } else {
         _flags_heli.limit_roll = false;
     }
     if (fabsf(pitch_out) > AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX) {
-        pitch_out = constrain_float(pitch_out, -AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX, AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX);
+        pitch_pid = AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX * pitch_pid / pitch_out;
+        pitch_ff = AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX * pitch_ff / pitch_out;
         _flags_heli.limit_pitch = true;
     } else {
         _flags_heli.limit_pitch = false;
@@ -351,25 +353,26 @@ void AC_AttitudeControl_Heli::rate_target_to_motor_yaw(float rate_yaw_actual_rad
         _pid_rate_yaw.update_leaky_i(AC_ATTITUDE_HELI_RATE_INTEGRATOR_LEAK_RATE);
     }
 
-    float pid = _pid_rate_yaw.update_all(rate_target_rads, rate_yaw_actual_rads, _flags_heli.limit_yaw);
+    float yaw_pid = _pid_rate_yaw.update_all(rate_target_rads, rate_yaw_actual_rads, _flags_heli.limit_yaw);
 
     // use pid library to calculate ff
-    float vff = _pid_rate_yaw.get_ff();
+    float yaw_ff = _pid_rate_yaw.get_ff();
 
     // add feed forward
-    float yaw_out = pid + vff;
+    float yaw_out = yaw_pid + yaw_ff;
 
-    // constrain output and update limit flag
+    // proportionally constrain pid and ff output and update limit flag
     if (fabsf(yaw_out) > AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX) {
-        yaw_out = constrain_float(yaw_out, -AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX, AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX);
+        yaw_pid = AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX * yaw_pid / yaw_out;
+        yaw_ff = AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX * yaw_ff / yaw_out;
         _flags_heli.limit_yaw = true;
     } else {
         _flags_heli.limit_yaw = false;
     }
 
     // output to motors
-    _motors.set_yaw(pid);
-    _motors.set_yaw_ff(vff);
+    _motors.set_yaw(yaw_pid);
+    _motors.set_yaw_ff(yaw_ff);
 }
 
 //
