@@ -121,7 +121,7 @@ void AC_WPNav::wp_and_spline_init()
     // initialise position controller speed and acceleration
     _wp_desired_speed_cms = _wp_speed_cms;
     _pos_control.set_max_speed_xy(_wp_speed_cms);
-    _pos_control.set_max_accel_xy(_wp_accel_cmss);
+    _pos_control.set_max_accel_xy(2.0 * _wp_accel_cmss);
     _pos_control.set_max_speed_z(-_wp_speed_down_cms, _wp_speed_up_cms);
     _pos_control.set_max_accel_z(_wp_accel_z_cmss);
     _pos_control.calc_leash_length_xy();
@@ -432,6 +432,12 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     final_target.z += terr_offset;
     _pos_control.set_pos_target(final_target);
 
+    Vector3f desired_vel;
+    desired_vel.x = (final_target.x - _wp_last_target_pos.x) / dt;
+    desired_vel.y = (final_target.y - _wp_last_target_pos.y) / dt;
+    _pos_control.set_wpvel_desired(desired_vel);
+    _wp_last_target_pos = final_target;
+
     // check if we've reached the waypoint
     if( !_flags.reached_destination ) {
         if( _track_desired >= _track_length ) {
@@ -490,7 +496,7 @@ bool AC_WPNav::update_wpnav()
 
     // allow the accel and speed values to be set without changing
     // out of auto mode. This makes it easier to tune auto flight
-    _pos_control.set_max_accel_xy(_wp_accel_cmss);
+    _pos_control.set_max_accel_xy(2.0 * _wp_accel_cmss);
     _pos_control.set_max_accel_z(_wp_accel_z_cmss);
 
     // wp_speed_update - update _pos_control.set_max_speed_xy if speed change has been requested

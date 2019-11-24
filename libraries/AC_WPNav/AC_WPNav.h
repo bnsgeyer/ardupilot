@@ -290,6 +290,7 @@ protected:
     AP_Float    _wp_accel_z_cmss;        // vertical acceleration in cm/s/s during missions
 
     // waypoint controller internal variables
+    Vector3f    _wp_last_target_pos;           // 
     uint32_t    _wp_last_update;        // time of last update_wpnav call
     float       _wp_current_speed_cms;  // current wp speed in cm/sec
     float       _wp_desired_speed_cms;  // desired wp speed in cm/sec

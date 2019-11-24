@@ -227,6 +227,8 @@ public:
     ///     when update_vel_controller_xyz is next called the position target is moved based on the desired velocity
     void set_desired_velocity(const Vector3f &des_vel) { _vel_desired = des_vel; }
 
+    void set_wpvel_desired(const Vector3f &des_vel) { _wpvel_desired = des_vel; }
+
     // overrides the velocity process variable for one timestep
     void override_vehicle_velocity_xy(const Vector2f& vel_xy) { _vehicle_horiz_vel = vel_xy; _flags.vehicle_horiz_vel_override = true; }
 
@@ -392,6 +394,7 @@ protected:
     AC_PID      _pid_accel_z;
     AC_P        _p_pos_xy;
     AC_PID_2D   _pid_vel_xy;
+    AP_Float    _pid_vel_xy_ff;
 
     // internal variables
     float       _dt;                    // time difference (in seconds) between calls from the main program
@@ -413,6 +416,7 @@ protected:
     float       _pitch_target;          // desired roll pitch in centi-degrees calculated by position controller
 
     // position controller internal variables
+    Vector3f    _wpvel_desired;
     Vector3f    _pos_target;            // target location in cm from home
     Vector3f    _pos_error;             // error between desired and actual position in cm
     Vector3f    _vel_desired;           // desired velocity in cm/s

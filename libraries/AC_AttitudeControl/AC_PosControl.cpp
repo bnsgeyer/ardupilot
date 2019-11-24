@@ -182,6 +182,15 @@ const AP_Param::GroupInfo AC_PosControl::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("_ANGLE_MAX", 7, AC_PosControl, _lean_angle_max, 0.0f),
 
+    // @Param: _VELXY_FF
+    // @DisplayName: Velocity Control Feed Forward Gain
+    // @Description: Sets Feedforward velocity
+    // @Units: deg
+    // @Range: 0 5
+    // @Increment: 0.1
+    // @User: Advanced
+    AP_GROUPINFO("_VELXY_FF", 8, AC_PosControl, _pid_vel_xy_ff, 0.0f),
+
     AP_GROUPEND
 };
 
@@ -1076,9 +1085,13 @@ void AC_PosControl::run_xy_controller(float dt)
     // get d
     vel_xy_d = _pid_vel_xy.get_d();
 
+    // get ff
+    float vel_xy_ff_x = _vel_target.x * _pid_vel_xy_ff;
+    float vel_xy_ff_y = _vel_target.y * _pid_vel_xy_ff;
+
     // acceleration to correct for velocity error and scale PID output to compensate for optical flow measurement induced EKF noise
-    accel_target.x = (vel_xy_p.x + vel_xy_i.x + vel_xy_d.x) * ekfNavVelGainScaler;
-    accel_target.y = (vel_xy_p.y + vel_xy_i.y + vel_xy_d.y) * ekfNavVelGainScaler;
+    accel_target.x = (vel_xy_ff_x + vel_xy_p.x + vel_xy_i.x + vel_xy_d.x) * ekfNavVelGainScaler;
+    accel_target.y = (vel_xy_ff_y + vel_xy_p.y + vel_xy_i.y + vel_xy_d.y) * ekfNavVelGainScaler;
 
     // reset accel to current desired acceleration
     if (_flags.reset_accel_to_lean_xy) {
