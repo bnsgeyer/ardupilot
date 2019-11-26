@@ -85,6 +85,13 @@ const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
     // @Path: AP_MotorsHeli_Swash.cpp
     AP_SUBGROUPINFO(_swashplate, "SW_", 20, AP_MotorsHeli_Single, AP_MotorsHeli_Swash),
 
+    // @Param: DDFP_REVERSED
+    // @DisplayName: Direct-Drive Fixed Pitch Reverse
+    // @Description: Reverses the yaw command to the DDFP motor.  Normal setting would be used with heli's that have clockwise rotating rotors when viewed from above.  Reverse setting would be used for heli's that have counter clockwise rotating rotors when viewed from above.
+    // @Values: 0:Normal,1:Reversed
+    // @User: Standard
+    AP_GROUPINFO("DDFP_REVERSED", 21, AP_MotorsHeli_Single,  _ddfp_reversed, 0),
+
     AP_GROUPEND
 };
 
@@ -424,6 +431,9 @@ void AP_MotorsHeli_Single::move_yaw(float yaw_out)
         limit.yaw = true;
     }
     if (_tail_type == AP_MOTORS_HELI_SINGLE_TAILTYPE_DIRECTDRIVE_FIXEDPITCH){
+        if (_ddfp_reversed == AP_MOTORS_HELI_SINGLE_DDFP_REVERSED) {
+            yaw_out = -yaw_out;
+        }
         if (_main_rotor.get_desired_speed() > 0.0f && hal.util->get_soft_armed()) {
             // constrain output so that motor never fully stops
             yaw_out = constrain_float(yaw_out, -0.9f, 1.0f);

@@ -32,6 +32,10 @@
 // maximum number of swashplate servos
 #define AP_MOTORS_HELI_SINGLE_NUM_SWASHPLATE_SERVOS            3
 
+// DDFP direction
+#define AP_MOTORS_HELI_SINGLE_DDFP_NORMAL                      0
+#define AP_MOTORS_HELI_SINGLE_DDFP_REVERSED                    1
+
 /// @class      AP_MotorsHeli_Single
 class AP_MotorsHeli_Single : public AP_MotorsHeli {
 public:
@@ -143,6 +147,7 @@ protected:
     AP_Float        _collective_yaw_effect;     // Feed-forward compensation to automatically add rudder input when collective pitch is increased. Can be positive or negative depending on mechanics.
     AP_Int8         _flybar_mode;               // Flybar present or not.  Affects attitude controller used during ACRO flight mode
     AP_Int16        _direct_drive_tailspeed;    // Direct Drive VarPitch Tail ESC speed (0 ~ 1000)
+    AP_Int8         _ddfp_reversed;             // Reverses the output of the yaw command for DDFP on heli with counterclockwise rotor rotation.
 
     bool            _acro_tail = false;
 };
