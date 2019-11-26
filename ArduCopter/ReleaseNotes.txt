@@ -1,5 +1,10 @@
 ArduHeli Feature Release Notes:
 ------------------------------------------------------------------
+ArduHeli 3.6.11 Feature Release 25-Nov-2019
+Changes from 3.6.11 Feature Release 22-Oct-2019
+1) Enhancement
+    a) Added capability to reverse yaw command for DDFP tails to support counter clockwise rotor rotation
+------------------------------------------------------------------
 ArduHeli 3.6.11 Feature Release 22-Oct-2019
 1) Rebase on latest Copter stable 3.6.11
     a) No functional change for helicopters
