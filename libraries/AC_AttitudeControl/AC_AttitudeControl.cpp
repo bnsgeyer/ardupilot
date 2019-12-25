@@ -144,6 +144,33 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("INPUT_TC", 20, AC_AttitudeControl, _input_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
 
+    // @Param: PITCH_FREQ
+    // @DisplayName: Attitude control pitch lag frequency
+    // @Description: Attitude control pitch lag frequency.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @Units: hz
+    // @Range: 0.5 10
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("PITCH_FREQ", 21, AC_AttitudeControl, _pitch_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
+
+    // @Param: ROLL_FREQ
+    // @DisplayName: Attitude control roll lag frequency
+    // @Description: Attitude control roll lag frequency.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @Units: hz
+    // @Range: 0.5 10
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("ROLL_FREQ", 22, AC_AttitudeControl, _roll_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
+
+    // @Param: YAW_FREQ
+    // @DisplayName: Attitude control yaw lag frequency
+    // @Description: Attitude control yaw lag frequency.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @Units: hz
+    // @Range: 0.5 10
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("YAW_FREQ", 23, AC_AttitudeControl, _yaw_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
+
     AP_GROUPEND
 };
 
@@ -663,9 +690,22 @@ void AC_AttitudeControl::attitude_controller_run_quat()
 
     ang_vel_limit(_rate_target_ang_vel, radians(_ang_vel_roll_max), radians(_ang_vel_pitch_max), radians(_ang_vel_yaw_max));
 
+    // determine feedforward components of desired velocity
+    Quaternion attitude_target_ang_vel_quat_ff = Quaternion(0.0f, _attitude_target_ang_vel.x, _attitude_target_ang_vel.y, _attitude_target_ang_vel.z);
+    Quaternion to_to_from_quat = attitude_vehicle_quat.inverse() * _attitude_target_quat;
+    Quaternion desired_ang_vel_quat_ff = to_to_from_quat.inverse() * attitude_target_ang_vel_quat_ff * to_to_from_quat;
+    _desired_ang_vel_ff = Vector3f(desired_ang_vel_quat_ff.q2, desired_ang_vel_quat_ff.q3, desired_ang_vel_quat_ff.q4);
+    
+    // lag feedforward velocities to provide delay in response
+    _roll_lag.set_cutoff_freq_zeta(1.0f/_dt, _roll_freq, 0.9f);
+    _attitude_target_ang_vel.x = _roll_lag.apply(_attitude_target_ang_vel.x);
+    _pitch_lag.set_cutoff_freq_zeta(1.0f/_dt, _pitch_freq, 0.9f);
+    _attitude_target_ang_vel.y = _pitch_lag.apply(_attitude_target_ang_vel.y);
+    _yaw_lag.set_cutoff_freq_zeta(1.0f/_dt, _yaw_freq, 0.9f);
+    _attitude_target_ang_vel.z = _yaw_lag.apply(_attitude_target_ang_vel.z);
+
     // Add the angular velocity feedforward, rotated into vehicle frame
     Quaternion attitude_target_ang_vel_quat = Quaternion(0.0f, _attitude_target_ang_vel.x, _attitude_target_ang_vel.y, _attitude_target_ang_vel.z);
-    Quaternion to_to_from_quat = attitude_vehicle_quat.inverse() * _attitude_target_quat;
     Quaternion desired_ang_vel_quat = to_to_from_quat.inverse() * attitude_target_ang_vel_quat * to_to_from_quat;
 
     // Correct the thrust vector and smoothly add feedforward and yaw input

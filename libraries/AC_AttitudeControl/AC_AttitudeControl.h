@@ -42,6 +42,7 @@
 #define AC_ATTITUDE_CONTROL_MAX                         5.0f    // maximum throttle mix default
 
 #define AC_ATTITUDE_CONTROL_THR_MIX_DEFAULT             0.5f  // ratio controlling the max throttle output during competing requests of low throttle from the pilot (or autopilot) and higher throttle for attitude control.  Higher favours Attitude over pilot input
+#define AC_ATTITUDE_CONTROL_FREQ_DEFAULT                2.0f
 
 class AC_AttitudeControl {
 public:
@@ -59,7 +60,10 @@ public:
         _throttle_rpy_mix(AC_ATTITUDE_CONTROL_THR_MIX_DEFAULT),
         _ahrs(ahrs),
         _aparm(aparm),
-        _motors(motors)
+        _motors(motors),
+        _pitch_lag(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f),
+        _roll_lag(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f),
+        _yaw_lag(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f)
         {
             AP_Param::setup_object_defaults(this, var_info);
         }
@@ -376,6 +380,11 @@ protected:
 
     // rate controller input smoothing time constant
     AP_Float            _input_tc;
+    
+    // rate controller lag frequencies
+    AP_Float            _pitch_freq;
+    AP_Float            _roll_freq;
+    AP_Float            _yaw_freq;
 
     // Intersampling period in seconds
     float               _dt;
@@ -442,6 +451,12 @@ protected:
 
     // Yaw feed forward percent to allow zero yaw actuator output during extreme roll and pitch corrections
     float               _feedforward_scalar = 1.0f;
+
+    LowPassFilter2pFloat  _pitch_lag;
+    LowPassFilter2pFloat  _roll_lag;
+    LowPassFilter2pFloat  _yaw_lag;
+
+    Vector3f            _desired_ang_vel_ff;
 
     // References to external libraries
     const AP_AHRS_View&  _ahrs;
