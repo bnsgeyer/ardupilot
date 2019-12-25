@@ -149,7 +149,31 @@ const AP_Param::GroupInfo AC_AttitudeControl_Heli::var_info[] = {
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     AP_GROUPINFO("PIRO_COMP",    5, AC_AttitudeControl_Heli, _piro_comp_enabled, 0),
-    
+
+    // @Param: PITCH_FF_D
+    // @DisplayName: Derivative Gain for pitch FeedForward
+    // @Description: Derivative Gain for pitch FeedForward
+    // @Range: 0.000 0.02
+    // @Increment: 0.001
+    // @User: Standard
+    AP_GROUPINFO("PITCH_FF_D",    6, AC_AttitudeControl_Heli, _pitch_ff_d, 0),
+        
+    // @Param: ROLL_FF_D
+    // @DisplayName: Derivative Gain for Roll FeedForward
+    // @Description: Derivative Gain for Roll FeedForward
+    // @Range: 0.000 0.02
+    // @Increment: 0.001
+    // @User: Standard
+    AP_GROUPINFO("ROLL_FF_D",    7, AC_AttitudeControl_Heli, _roll_ff_d, 0),
+        
+    // @Param: YAW_FF_D
+    // @DisplayName: Derivative Gain for Yaw FeedForward
+    // @Description: Derivative Gain for Yaw FeedForward
+    // @Range: 0.000 0.02
+    // @Increment: 0.001
+    // @User: Standard
+    AP_GROUPINFO("YAW_FF_D",    8, AC_AttitudeControl_Heli, _yaw_ff_d, 0),
+        
     AP_GROUPEND
 };
 
@@ -289,6 +313,8 @@ void AC_AttitudeControl_Heli::update_althold_lean_angle_max(float throttle_in)
 // rate_bf_to_motor_roll_pitch - ask the rate controller to calculate the motor outputs to achieve the target rate in radians/second
 void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_rads, float rate_roll_target_rads, float rate_pitch_target_rads, float rate_roll_target_ff_rads, float rate_pitch_target_ff_rads)
 {
+    static float rate_pitch_target_ff_last;
+    static float rate_roll_target_ff_last;
 
     if (_flags_heli.leaky_i) {
         _pid_rate_roll.update_leaky_i(AC_ATTITUDE_HELI_RATE_INTEGRATOR_LEAK_RATE);
@@ -305,9 +331,15 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
     float roll_ff = _pid_rate_roll.get_ff(rate_roll_target_ff_rads);
     float pitch_ff = _pid_rate_pitch.get_ff(rate_pitch_target_ff_rads);
 
+    // calculate derivative ff output
+    float roll_ff_d = _roll_ff_d * (rate_roll_target_ff_rads - rate_roll_target_ff_last) / _dt;
+    rate_roll_target_ff_last = rate_roll_target_ff_rads;
+    float pitch_ff_d = _pitch_ff_d * (rate_pitch_target_ff_rads - rate_pitch_target_ff_last) / _dt;
+    rate_pitch_target_ff_last = rate_pitch_target_ff_rads;
+
     // add feed forward and final output
-    float roll_out = roll_pid + roll_ff;
-    float pitch_out = pitch_pid + pitch_ff;
+    float roll_out = roll_pid + roll_ff + roll_ff_d;
+    float pitch_out = pitch_pid + pitch_ff + pitch_ff_d;
 
     // constrain output and update limit flags
     if (fabsf(roll_out) > AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX) {
@@ -351,6 +383,8 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
 // rate_bf_to_motor_yaw - ask the rate controller to calculate the motor outputs to achieve the target rate in radians/second
 float AC_AttitudeControl_Heli::rate_target_to_motor_yaw(float rate_yaw_actual_rads, float rate_yaw_target_rads, float rate_yaw_target_ff_rads)
 {
+    static float rate_yaw_target_ff_last;
+
     if (!((AP_MotorsHeli&)_motors).rotor_runup_complete()) {
         _pid_rate_yaw.update_leaky_i(AC_ATTITUDE_HELI_RATE_INTEGRATOR_LEAK_RATE);
     }
@@ -360,8 +394,12 @@ float AC_AttitudeControl_Heli::rate_target_to_motor_yaw(float rate_yaw_actual_ra
     // use pid library to calculate ff
     float vff = _pid_rate_yaw.get_ff(rate_yaw_target_ff_rads)*_feedforward_scalar;
 
+    // calculate derivative ff output
+    float dvff = _yaw_ff_d * (rate_yaw_target_ff_rads - rate_yaw_target_ff_last) / _dt;
+    rate_yaw_target_ff_last = rate_yaw_target_ff_rads;
+
     // add feed forward
-    float yaw_out = pid + vff;
+    float yaw_out = pid + vff + dvff;
 
     // constrain output and update limit flag
     if (fabsf(yaw_out) > AC_ATTITUDE_RATE_YAW_CONTROLLER_OUT_MAX) {

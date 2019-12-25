@@ -156,5 +156,7 @@ private:
     AC_HELI_PID     _pid_rate_roll;
     AC_HELI_PID     _pid_rate_pitch;
     AC_HELI_PID     _pid_rate_yaw;
-    
+    AP_Float        _pitch_ff_d;
+    AP_Float        _roll_ff_d;
+    AP_Float        _yaw_ff_d;
 };
