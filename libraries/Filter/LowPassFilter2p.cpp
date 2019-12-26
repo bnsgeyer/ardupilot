@@ -32,7 +32,8 @@ void DigitalBiquadFilter<T>::reset() {
 }
 
 template <class T>
-void DigitalBiquadFilter<T>::compute_params(float sample_freq, float cutoff_freq, biquad_params &ret) {
+void DigitalBiquadFilter<T>::compute_params(float sample_freq, float cutoff_freq, float zeta, biquad_params &ret) {
+    ret.zeta = zeta;
     ret.cutoff_freq = cutoff_freq;
     ret.sample_freq = sample_freq;
     if (!is_positive(ret.cutoff_freq)) {
@@ -42,13 +43,13 @@ void DigitalBiquadFilter<T>::compute_params(float sample_freq, float cutoff_freq
 
     float fr = sample_freq/cutoff_freq;
     float ohm = tanf(M_PI/fr);
-    float c = 1.0f+2.0f*cosf(M_PI/4.0f)*ohm + ohm*ohm;
+    float c = 1.0f+2.0f*zeta*ohm + ohm*ohm;
 
     ret.b0 = ohm*ohm/c;
     ret.b1 = 2.0f*ret.b0;
     ret.b2 = ret.b0;
     ret.a1 = 2.0f*(ohm*ohm-1.0f)/c;
-    ret.a2 = (1.0f-2.0f*cosf(M_PI/4.0f)*ohm+ohm*ohm)/c;
+    ret.a2 = (1.0f-2.0f*zeta*ohm+ohm*ohm)/c;
 }
 
 
@@ -68,10 +69,22 @@ LowPassFilter2p<T>::LowPassFilter2p(float sample_freq, float cutoff_freq) {
     set_cutoff_frequency(sample_freq, cutoff_freq);
 }
 
+template <class T>
+LowPassFilter2p<T>::LowPassFilter2p(float sample_freq, float cutoff_freq, float zeta) {
+    // set initial parameters
+    set_cutoff_freq_zeta(sample_freq, cutoff_freq, zeta);
+}
+
 // change parameters
 template <class T>
 void LowPassFilter2p<T>::set_cutoff_frequency(float sample_freq, float cutoff_freq) {
-    DigitalBiquadFilter<T>::compute_params(sample_freq, cutoff_freq, _params);
+    float zeta = cosf(M_PI/4.0f);
+    DigitalBiquadFilter<T>::compute_params(sample_freq, cutoff_freq, zeta, _params);
+}
+
+template <class T>
+void LowPassFilter2p<T>::set_cutoff_freq_zeta(float sample_freq, float cutoff_freq, float zeta) {
+    DigitalBiquadFilter<T>::compute_params(sample_freq, cutoff_freq, zeta, _params);
 }
 
 // return the cutoff frequency

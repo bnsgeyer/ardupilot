@@ -26,6 +26,7 @@ template <class T>
 class DigitalBiquadFilter {
 public:
     struct biquad_params {
+        float zeta;
         float cutoff_freq;
         float sample_freq;
         float a1;
@@ -39,7 +40,7 @@ public:
 
     T apply(const T &sample, const struct biquad_params &params);
     void reset();
-    static void compute_params(float sample_freq, float cutoff_freq, biquad_params &ret);
+    static void compute_params(float sample_freq, float cutoff_freq, float zeta, biquad_params &ret);
     
 private:
     T _delay_element_1;
@@ -52,8 +53,10 @@ public:
     LowPassFilter2p();
     // constructor
     LowPassFilter2p(float sample_freq, float cutoff_freq);
+    LowPassFilter2p(float sample_freq, float cutoff_freq, float zeta);
     // change parameters
     void set_cutoff_frequency(float sample_freq, float cutoff_freq);
+    void set_cutoff_freq_zeta(float sample_freq, float cutoff_freq, float zeta);
     // return the cutoff frequency
     float get_cutoff_freq(void) const;
     float get_sample_freq(void) const;
