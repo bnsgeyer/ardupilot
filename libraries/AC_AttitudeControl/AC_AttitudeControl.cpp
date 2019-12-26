@@ -701,8 +701,10 @@ void AC_AttitudeControl::attitude_controller_run_quat()
     _attitude_target_ang_vel.x = _roll_lag.apply(_attitude_target_ang_vel.x);
     _pitch_lag.set_cutoff_freq_zeta(1.0f/_dt, _pitch_freq, 0.9f);
     _attitude_target_ang_vel.y = _pitch_lag.apply(_attitude_target_ang_vel.y);
-    _yaw_lag.set_cutoff_freq_zeta(1.0f/_dt, _yaw_freq, 0.9f);
-    _attitude_target_ang_vel.z = _yaw_lag.apply(_attitude_target_ang_vel.z);
+//    _yaw_lag.set_cutoff_freq_zeta(1.0f/_dt, _yaw_freq, 0.9f);
+//    _attitude_target_ang_vel.z = _yaw_lag.apply(_attitude_target_ang_vel.z);
+    _attitude_target_ang_vel.z = bw_two_pole_lpf(_attitude_target_ang_vel.z, _yaw_freq, _dt);
+
 
     // Add the angular velocity feedforward, rotated into vehicle frame
     Quaternion attitude_target_ang_vel_quat = Quaternion(0.0f, _attitude_target_ang_vel.x, _attitude_target_ang_vel.y, _attitude_target_ang_vel.z);
@@ -1156,3 +1158,29 @@ bool AC_AttitudeControl::pre_arm_checks(const char *param_prefix,
     }
     return true;
 }
+
+float AC_AttitudeControl::bw_two_pole_lpf(float sample, float co_freq, float dt)
+{
+   static float outm1, outm2;
+   static float inm1, inm2;
+   float omega_c, coeff_a, coeff_b, coeff_c, denom;
+   float output, omega_c_2, zeta;
+
+    zeta = 0.9;
+   omega_c = tan( 3.14159 * co_freq * dt );
+   omega_c_2 = pow(omega_c, 2.0);
+   denom = 1.0 / (1.0 + 2.0f * zeta * omega_c + omega_c_2);
+   coeff_a = omega_c_2 * denom;
+   coeff_b = 2.0 * (omega_c_2 - 1.0) * denom;
+   coeff_c = (1.0 - 2.0f * zeta * omega_c + omega_c_2) * denom;
+
+    output = coeff_a * sample + 2.0 * coeff_a * inm1 + coeff_a * inm2 - coeff_b * outm1 - coeff_c * outm2;
+
+    outm2 = outm1;
+   outm1 = output;
+   inm2 = inm1;
+   inm1 = sample;
+
+    return output;
+
+ }
