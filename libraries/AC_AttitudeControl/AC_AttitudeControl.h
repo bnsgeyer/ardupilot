@@ -43,7 +43,7 @@
 
 #define AC_ATTITUDE_CONTROL_THR_MIX_DEFAULT             0.5f  // ratio controlling the max throttle output during competing requests of low throttle from the pilot (or autopilot) and higher throttle for attitude control.  Higher favours Attitude over pilot input
 #define AC_ATTITUDE_CONTROL_FREQ_DEFAULT                2.0f
-
+#define AC_ATTITUDE_CONTROL_DELAY_DEFAULT               0.020f 
 class AC_AttitudeControl {
 public:
     AC_AttitudeControl( AP_AHRS_View &ahrs,
@@ -61,9 +61,12 @@ public:
         _ahrs(ahrs),
         _aparm(aparm),
         _motors(motors),
-        _pitch_lag(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f),
-        _roll_lag(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f),
-        _yaw_lag(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f)
+        _pitch_attitude_shaping(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f),
+        _roll_attitude_shaping(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f),
+        _yaw_rate_shaping(1.0f/dt, AC_ATTITUDE_CONTROL_FREQ_DEFAULT, 0.9f),
+        _pitch_delay(1.0f/dt,1.0f/AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
+        _roll_delay(1.0f/dt,1.0f/AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
+        _yaw_delay(1.0f/dt,1.0f/AC_ATTITUDE_CONTROL_DELAY_DEFAULT)
         {
             AP_Param::setup_object_defaults(this, var_info);
         }
@@ -381,10 +384,15 @@ protected:
     // rate controller input smoothing time constant
     AP_Float            _input_tc;
     
-    // rate controller lag frequencies
+    // attitude/rate controller shaping frequencies
     AP_Float            _pitch_freq;
     AP_Float            _roll_freq;
     AP_Float            _yaw_freq;
+
+    // attitude/rate controller shaping frequencies
+    AP_Float            _pitch_delay_tc;
+    AP_Float            _roll_delay_tc;
+    AP_Float            _yaw_delay_tc;
 
     // Intersampling period in seconds
     float               _dt;
@@ -452,9 +460,13 @@ protected:
     // Yaw feed forward percent to allow zero yaw actuator output during extreme roll and pitch corrections
     float               _feedforward_scalar = 1.0f;
 
-    LowPassFilter2pFloat  _pitch_lag;
-    LowPassFilter2pFloat  _roll_lag;
-    LowPassFilter2pFloat  _yaw_lag;
+    LowPassFilter2pFloat  _pitch_attitude_shaping;
+    LowPassFilter2pFloat  _roll_attitude_shaping;
+    LowPassFilter2pFloat  _yaw_rate_shaping;
+
+    LowPassFilterFloat  _pitch_delay;
+    LowPassFilterFloat  _roll_delay;
+    LowPassFilterFloat  _yaw_delay;
 
     float               bw_two_pole_lpf(float sample, float co_freq, float dt);
     Vector3f            _desired_ang_vel_ff;

@@ -145,8 +145,8 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     AP_GROUPINFO("INPUT_TC", 20, AC_AttitudeControl, _input_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
 
     // @Param: PITCH_FREQ
-    // @DisplayName: Attitude control pitch lag frequency
-    // @Description: Attitude control pitch lag frequency.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @DisplayName: Attitude control pitch shaping frequency
+    // @Description: Attitude control pitch shaping frequency.  Higher numbers lead to sharper response, lower numbers to softer response
     // @Units: hz
     // @Range: 0.5 10
     // @Increment: 0.01
@@ -154,8 +154,8 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     AP_GROUPINFO("PITCH_FREQ", 21, AC_AttitudeControl, _pitch_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
 
     // @Param: ROLL_FREQ
-    // @DisplayName: Attitude control roll lag frequency
-    // @Description: Attitude control roll lag frequency.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @DisplayName: Attitude control roll shaping frequency
+    // @Description: Attitude control roll shaping frequency.  Higher numbers lead to sharper response, lower numbers to softer response
     // @Units: hz
     // @Range: 0.5 10
     // @Increment: 0.01
@@ -163,13 +163,40 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     AP_GROUPINFO("ROLL_FREQ", 22, AC_AttitudeControl, _roll_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
 
     // @Param: YAW_FREQ
-    // @DisplayName: Attitude control yaw lag frequency
-    // @Description: Attitude control yaw lag frequency.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @DisplayName: Attitude control yaw shaping frequency
+    // @Description: Attitude control yaw shaping frequency.  Higher numbers lead to sharper response, lower numbers to softer response
     // @Units: hz
     // @Range: 0.5 10
     // @Increment: 0.01
     // @User: Standard
     AP_GROUPINFO("YAW_FREQ", 23, AC_AttitudeControl, _yaw_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
+
+    // @Param: PITCH_TD
+    // @DisplayName: Pitch Time Delay
+    // @Description: Pitch Time Delay.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @Units: s
+    // @Range: 0.01 1
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("PITCH_TD", 24, AC_AttitudeControl, _pitch_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
+
+    // @Param: ROLL_TD
+    // @DisplayName: Roll Time Delay
+    // @Description: Roll Time Delay.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @Units: s
+    // @Range: 0.01 1
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("ROLL_TD", 25, AC_AttitudeControl, _roll_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
+
+    // @Param: YAW_TD
+    // @DisplayName: Yaw Time Delay
+    // @Description: Yaw Time Delay.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @Units: s
+    // @Range: 0.01 1
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("YAW_TD", 26, AC_AttitudeControl, _yaw_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
 
     AP_GROUPEND
 };
@@ -283,11 +310,18 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
         // When acceleration limiting and feedforward are enabled, the sqrt controller is used to compute an euler
         // angular velocity that will cause the euler angle to smoothly stop at the input angle with limited deceleration
         // and an exponential decay specified by smoothing_gain at the end.
+        _roll_attitude_shaping.set_cutoff_freq_zeta(1.0f/_dt, _roll_freq, 0.9f);
+        euler_roll_angle = _roll_attitude_shaping.apply(euler_roll_angle);
         _attitude_target_euler_rate.x = input_shaping_angle(wrap_PI(euler_roll_angle - _attitude_target_euler_angle.x), _input_tc, euler_accel.x, _attitude_target_euler_rate.x, _dt);
+
+        _pitch_attitude_shaping.set_cutoff_freq_zeta(1.0f/_dt, _pitch_freq, 0.9f);
+        euler_pitch_angle = _pitch_attitude_shaping.apply(euler_pitch_angle);
         _attitude_target_euler_rate.y = input_shaping_angle(wrap_PI(euler_pitch_angle - _attitude_target_euler_angle.y), _input_tc, euler_accel.y, _attitude_target_euler_rate.y, _dt);
 
         // When yaw acceleration limiting is enabled, the yaw input shaper constrains angular acceleration about the yaw axis, slewing
         // the output rate towards the input rate.
+        _yaw_rate_shaping.set_cutoff_freq_zeta(1.0f/_dt, _yaw_freq, 0.9f);
+        euler_yaw_rate = _yaw_rate_shaping.apply(euler_yaw_rate);
         _attitude_target_euler_rate.z = input_shaping_ang_vel(_attitude_target_euler_rate.z, euler_yaw_rate, euler_accel.z, _dt);
 
         // Convert euler angle derivative of desired attitude into a body-frame angular velocity vector for feedforward
@@ -696,15 +730,30 @@ void AC_AttitudeControl::attitude_controller_run_quat()
     Quaternion desired_ang_vel_quat_ff = to_to_from_quat.inverse() * attitude_target_ang_vel_quat_ff * to_to_from_quat;
     _desired_ang_vel_ff = Vector3f(desired_ang_vel_quat_ff.q2, desired_ang_vel_quat_ff.q3, desired_ang_vel_quat_ff.q4);
     
-    // lag feedforward velocities to provide delay in response
-    _roll_lag.set_cutoff_freq_zeta(1.0f/_dt, _roll_freq, 0.9f);
-    _attitude_target_ang_vel.x = _roll_lag.apply(_attitude_target_ang_vel.x);
-    _pitch_lag.set_cutoff_freq_zeta(1.0f/_dt, _pitch_freq, 0.9f);
-    _attitude_target_ang_vel.y = _pitch_lag.apply(_attitude_target_ang_vel.y);
-//    _yaw_lag.set_cutoff_freq_zeta(1.0f/_dt, _yaw_freq, 0.9f);
-//    _attitude_target_ang_vel.z = _yaw_lag.apply(_attitude_target_ang_vel.z);
-    _attitude_target_ang_vel.z = bw_two_pole_lpf(_attitude_target_ang_vel.z, _yaw_freq, _dt);
-
+    // delay feedforward velocities to provide delay in target response
+    float cutoff_freq;
+    if (is_zero(_roll_delay_tc)) {
+        cutoff_freq = 0.0f;
+    } else {
+        cutoff_freq = 1.0f/_roll_delay_tc;
+    }
+    _roll_delay.set_cutoff_frequency(1.0f/_dt, cutoff_freq);
+    _attitude_target_ang_vel.x = _roll_delay.apply(_attitude_target_ang_vel.x);
+    if (is_zero(_pitch_delay_tc)) {
+        cutoff_freq = 0.0f;
+    } else {
+        cutoff_freq = 1.0f/_pitch_delay_tc;
+    }
+    _pitch_delay.set_cutoff_frequency(1.0f/_dt, cutoff_freq);
+    _attitude_target_ang_vel.y = _pitch_delay.apply(_attitude_target_ang_vel.y);
+    if (is_zero(_yaw_delay_tc)) {
+        cutoff_freq = 0.0f;
+    } else {
+        cutoff_freq = 1.0f/_yaw_delay_tc;
+    }
+    _yaw_delay.set_cutoff_frequency(1.0f/_dt, cutoff_freq);
+    _attitude_target_ang_vel.z = _yaw_delay.apply(_attitude_target_ang_vel.z);
+//    _attitude_target_ang_vel.z = bw_two_pole_lpf(_attitude_target_ang_vel.z, _yaw_freq, _dt);
 
     // Add the angular velocity feedforward, rotated into vehicle frame
     Quaternion attitude_target_ang_vel_quat = Quaternion(0.0f, _attitude_target_ang_vel.x, _attitude_target_ang_vel.y, _attitude_target_ang_vel.z);
