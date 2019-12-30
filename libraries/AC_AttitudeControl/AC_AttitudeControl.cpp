@@ -296,6 +296,8 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
     float euler_roll_angle = radians(euler_roll_angle_cd * 0.01f);
     float euler_pitch_angle = radians(euler_pitch_angle_cd * 0.01f);
     float euler_yaw_rate = radians(euler_yaw_rate_cds * 0.01f);
+    static float euler_roll_angle_last;
+    static float euler_pitch_angle_last;
 
     // calculate the attitude target euler angles
     _attitude_target_quat.to_euler(_attitude_target_euler_angle.x, _attitude_target_euler_angle.y, _attitude_target_euler_angle.z);
@@ -312,11 +314,18 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
         // and an exponential decay specified by smoothing_gain at the end.
         _roll_attitude_shaping.set_cutoff_freq_zeta(1.0f/_dt, _roll_freq, 0.9f);
         euler_roll_angle = _roll_attitude_shaping.apply(euler_roll_angle);
-        _attitude_target_euler_rate.x = input_shaping_angle(wrap_PI(euler_roll_angle - _attitude_target_euler_angle.x), _input_tc, euler_accel.x, _attitude_target_euler_rate.x, _dt);
+//        _attitude_target_euler_rate.x = input_shaping_angle(wrap_PI(euler_roll_angle - _attitude_target_euler_angle.x), _input_tc, euler_accel.x, _attitude_target_euler_rate.x, _dt);
+        float euler_roll_rate = (euler_roll_angle - euler_roll_angle_last) / _dt;
+        euler_roll_angle_last = euler_roll_angle;
+        _attitude_target_euler_rate.x = input_shaping_ang_vel(_attitude_target_euler_rate.x, euler_roll_rate, euler_accel.x, _dt);
+
 
         _pitch_attitude_shaping.set_cutoff_freq_zeta(1.0f/_dt, _pitch_freq, 0.9f);
         euler_pitch_angle = _pitch_attitude_shaping.apply(euler_pitch_angle);
-        _attitude_target_euler_rate.y = input_shaping_angle(wrap_PI(euler_pitch_angle - _attitude_target_euler_angle.y), _input_tc, euler_accel.y, _attitude_target_euler_rate.y, _dt);
+//        _attitude_target_euler_rate.y = input_shaping_angle(wrap_PI(euler_pitch_angle - _attitude_target_euler_angle.y), _input_tc, euler_accel.y, _attitude_target_euler_rate.y, _dt);
+        float euler_pitch_rate = (euler_pitch_angle - euler_pitch_angle_last) / _dt;
+        euler_pitch_angle_last = euler_pitch_angle;
+        _attitude_target_euler_rate.y = input_shaping_ang_vel(_attitude_target_euler_rate.y, euler_pitch_rate, euler_accel.y, _dt);
 
         // When yaw acceleration limiting is enabled, the yaw input shaper constrains angular acceleration about the yaw axis, slewing
         // the output rate towards the input rate.
@@ -728,7 +737,7 @@ void AC_AttitudeControl::attitude_controller_run_quat()
     Quaternion attitude_target_ang_vel_quat_ff = Quaternion(0.0f, _attitude_target_ang_vel.x, _attitude_target_ang_vel.y, _attitude_target_ang_vel.z);
     Quaternion to_to_from_quat = attitude_vehicle_quat.inverse() * _attitude_target_quat;
     Quaternion desired_ang_vel_quat_ff = to_to_from_quat.inverse() * attitude_target_ang_vel_quat_ff * to_to_from_quat;
-    _desired_ang_vel_ff = Vector3f(desired_ang_vel_quat_ff.q2, desired_ang_vel_quat_ff.q3, desired_ang_vel_quat_ff.q4);
+    _desired_ang_vel_ff = Vector3f(desired_ang_vel_quat_ff.q2 + _rate_target_ang_vel.x, desired_ang_vel_quat_ff.q3 + _rate_target_ang_vel.y, desired_ang_vel_quat_ff.q4 + _rate_target_ang_vel.z);
     
     // delay feedforward velocities to provide delay in target response
     float cutoff_freq;
@@ -753,7 +762,6 @@ void AC_AttitudeControl::attitude_controller_run_quat()
     }
     _yaw_delay.set_cutoff_frequency(1.0f/_dt, cutoff_freq);
     _attitude_target_ang_vel.z = _yaw_delay.apply(_attitude_target_ang_vel.z);
-//    _attitude_target_ang_vel.z = bw_two_pole_lpf(_attitude_target_ang_vel.z, _yaw_freq, _dt);
 
     // Add the angular velocity feedforward, rotated into vehicle frame
     Quaternion attitude_target_ang_vel_quat = Quaternion(0.0f, _attitude_target_ang_vel.x, _attitude_target_ang_vel.y, _attitude_target_ang_vel.z);
@@ -1207,29 +1215,3 @@ bool AC_AttitudeControl::pre_arm_checks(const char *param_prefix,
     }
     return true;
 }
-
-float AC_AttitudeControl::bw_two_pole_lpf(float sample, float co_freq, float dt)
-{
-   static float outm1, outm2;
-   static float inm1, inm2;
-   float omega_c, coeff_a, coeff_b, coeff_c, denom;
-   float output, omega_c_2, zeta;
-
-    zeta = 0.9;
-   omega_c = tan( 3.14159 * co_freq * dt );
-   omega_c_2 = pow(omega_c, 2.0);
-   denom = 1.0 / (1.0 + 2.0f * zeta * omega_c + omega_c_2);
-   coeff_a = omega_c_2 * denom;
-   coeff_b = 2.0 * (omega_c_2 - 1.0) * denom;
-   coeff_c = (1.0 - 2.0f * zeta * omega_c + omega_c_2) * denom;
-
-    output = coeff_a * sample + 2.0 * coeff_a * inm1 + coeff_a * inm2 - coeff_b * outm1 - coeff_c * outm2;
-
-    outm2 = outm1;
-   outm1 = output;
-   inm2 = inm1;
-   inm1 = sample;
-
-    return output;
-
- }

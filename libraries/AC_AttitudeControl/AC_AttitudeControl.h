@@ -468,7 +468,6 @@ protected:
     LowPassFilterFloat  _roll_delay;
     LowPassFilterFloat  _yaw_delay;
 
-    float               bw_two_pole_lpf(float sample, float co_freq, float dt);
     Vector3f            _desired_ang_vel_ff;
 
     // References to external libraries
