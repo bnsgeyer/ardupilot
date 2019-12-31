@@ -290,7 +290,7 @@ void AC_AttitudeControl::input_quaternion(Quaternion attitude_desired_quat)
 }
 
 // attitude shaping
-float AC_AttitudeControl::attitude_shaping(float freq, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float accel_limit, float dt)
+float AC_AttitudeControl::input_attitude_shaping(float freq, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float accel_limit, float dt)
 {
     float zeta = 0.9;
     freq = freq * 6.283185;
@@ -303,6 +303,21 @@ float AC_AttitudeControl::attitude_shaping(float freq, float euler_desired_angle
     return euler_target_rate;
 }
 
+// rate shaping
+float AC_AttitudeControl::input_rate_shaping(float freq, float euler_desired_rate, float euler_target_rate, float accel_limit, float dt)
+{
+    static float euler_target_accel;
+    float zeta = 0.9;
+    freq = freq * 6.283185;
+    float desired_accel = (euler_desired_rate - euler_target_rate) * freq / (2.0f * zeta);
+    if (is_positive(accel_limit)) {
+        constrain_float(desired_accel, -accel_limit, accel_limit);
+    } 
+    float desired_jerk = (desired_accel - euler_target_accel) * 2 * zeta * freq;
+    euler_target_accel += desired_jerk * dt;
+    euler_target_rate += euler_target_accel * dt;
+    return euler_target_rate;
+}
 
 // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
 void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds)
@@ -326,16 +341,15 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
         // angular velocity that will cause the euler angle to smoothly stop at the input angle with limited deceleration
         // and an exponential decay specified by smoothing_gain at the end.
 //        _attitude_target_euler_rate.x = input_shaping_angle(wrap_PI(euler_roll_angle - _attitude_target_euler_angle.x), _input_tc, euler_accel.x, _attitude_target_euler_rate.x, _dt);
-        _attitude_target_euler_rate.x = attitude_shaping(_roll_freq, euler_roll_angle, _attitude_target_euler_angle.x, _attitude_target_euler_rate.x, euler_accel.x, _dt);
+        _attitude_target_euler_rate.x = input_attitude_shaping(_roll_freq, euler_roll_angle, _attitude_target_euler_angle.x, _attitude_target_euler_rate.x, euler_accel.x, _dt);
 
 //        _attitude_target_euler_rate.y = input_shaping_angle(wrap_PI(euler_pitch_angle - _attitude_target_euler_angle.y), _input_tc, euler_accel.y, _attitude_target_euler_rate.y, _dt);
-        _attitude_target_euler_rate.y = attitude_shaping(_pitch_freq, euler_pitch_angle, _attitude_target_euler_angle.y, _attitude_target_euler_rate.y, euler_accel.y, _dt);
+        _attitude_target_euler_rate.y = input_attitude_shaping(_pitch_freq, euler_pitch_angle, _attitude_target_euler_angle.y, _attitude_target_euler_rate.y, euler_accel.y, _dt);
 
         // When yaw acceleration limiting is enabled, the yaw input shaper constrains angular acceleration about the yaw axis, slewing
         // the output rate towards the input rate.
-        _yaw_rate_shaping.set_cutoff_freq_zeta(1.0f/_dt, _yaw_freq, 0.9f);
-        euler_yaw_rate = _yaw_rate_shaping.apply(euler_yaw_rate);
-        _attitude_target_euler_rate.z = input_shaping_ang_vel(_attitude_target_euler_rate.z, euler_yaw_rate, euler_accel.z, _dt);
+//        _attitude_target_euler_rate.z = input_shaping_ang_vel(_attitude_target_euler_rate.z, euler_yaw_rate, euler_accel.z, _dt);
+        _attitude_target_euler_rate.z = input_rate_shaping(_yaw_freq, euler_yaw_rate, _attitude_target_euler_rate.z, euler_accel.z, _dt);
 
         // Convert euler angle derivative of desired attitude into a body-frame angular velocity vector for feedforward
         euler_rate_to_ang_vel(_attitude_target_euler_angle, _attitude_target_euler_rate, _attitude_target_ang_vel);
