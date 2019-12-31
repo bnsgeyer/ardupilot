@@ -457,8 +457,8 @@ protected:
     // Yaw feed forward percent to allow zero yaw actuator output during extreme roll and pitch corrections
     float               _feedforward_scalar = 1.0f;
 
-    float input_attitude_shaping(float freq, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float accel_limit, float dt);
-    float input_rate_shaping(float freq, float euler_desired_rate, float euler_target_rate, float accel_limit, float dt);
+    float input_attitude_shaping(float input_tc, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float accel_limit, float dt);
+    float input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float accel_limit, float dt);
 
     LowPassFilterFloat  _pitch_delay;
     LowPassFilterFloat  _roll_delay;
