@@ -460,6 +460,7 @@ protected:
     // Yaw feed forward percent to allow zero yaw actuator output during extreme roll and pitch corrections
     float               _feedforward_scalar = 1.0f;
 
+    float attitude_shaping(float freq, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float accel_limit, float dt);
     LowPassFilter2pFloat  _pitch_attitude_shaping;
     LowPassFilter2pFloat  _roll_attitude_shaping;
     LowPassFilter2pFloat  _yaw_rate_shaping;
@@ -469,7 +470,7 @@ protected:
     LowPassFilterFloat  _yaw_delay;
 
     Vector3f            _desired_ang_vel_ff;
-
+    Vector3f            _euler_angle_last;
     // References to external libraries
     const AP_AHRS_View&  _ahrs;
     const AP_Vehicle::MultiCopter &_aparm;
