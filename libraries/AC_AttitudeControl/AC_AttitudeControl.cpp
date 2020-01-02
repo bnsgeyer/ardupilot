@@ -144,32 +144,14 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("INPUT_TC", 20, AC_AttitudeControl, _input_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
 
-    // @Param: PITCH_FREQ
-    // @DisplayName: Attitude control pitch shaping frequency
-    // @Description: Attitude control pitch shaping frequency.  Higher numbers lead to sharper response, lower numbers to softer response
+    // @Param: _RATE_TC
+    // @DisplayName: Rate Commmand Model Shaping Time Constant
+    // @Description: Rate Commmand Model Shaping Time Constant.  Low numbers lead to sharper response, higher numbers to softer response
     // @Units: hz
-    // @Range: 0.5 10
+    // @Range: 0.05 1
     // @Increment: 0.01
     // @User: Standard
-    AP_GROUPINFO("PITCH_FREQ", 21, AC_AttitudeControl, _pitch_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
-
-    // @Param: ROLL_FREQ
-    // @DisplayName: Attitude control roll shaping frequency
-    // @Description: Attitude control roll shaping frequency.  Higher numbers lead to sharper response, lower numbers to softer response
-    // @Units: hz
-    // @Range: 0.5 10
-    // @Increment: 0.01
-    // @User: Standard
-    AP_GROUPINFO("ROLL_FREQ", 22, AC_AttitudeControl, _roll_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
-
-    // @Param: YAW_FREQ
-    // @DisplayName: Attitude control yaw shaping frequency
-    // @Description: Attitude control yaw shaping frequency.  Higher numbers lead to sharper response, lower numbers to softer response
-    // @Units: hz
-    // @Range: 0.5 10
-    // @Increment: 0.01
-    // @User: Standard
-    AP_GROUPINFO("YAW_FREQ", 23, AC_AttitudeControl, _yaw_freq, AC_ATTITUDE_CONTROL_FREQ_DEFAULT),
+    AP_GROUPINFO("RATE_TC", 21, AC_AttitudeControl, _input_rate_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
 
     // @Param: PITCH_TD
     // @DisplayName: Pitch Time Delay
@@ -178,7 +160,7 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @Range: 0.01 1
     // @Increment: 0.01
     // @User: Standard
-    AP_GROUPINFO("PITCH_TD", 24, AC_AttitudeControl, _pitch_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
+    AP_GROUPINFO("PITCH_TD", 22, AC_AttitudeControl, _pitch_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
 
     // @Param: ROLL_TD
     // @DisplayName: Roll Time Delay
@@ -187,7 +169,7 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @Range: 0.01 1
     // @Increment: 0.01
     // @User: Standard
-    AP_GROUPINFO("ROLL_TD", 25, AC_AttitudeControl, _roll_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
+    AP_GROUPINFO("ROLL_TD", 23, AC_AttitudeControl, _roll_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
 
     // @Param: YAW_TD
     // @DisplayName: Yaw Time Delay
@@ -196,7 +178,7 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @Range: 0.01 1
     // @Increment: 0.01
     // @User: Standard
-    AP_GROUPINFO("YAW_TD", 26, AC_AttitudeControl, _yaw_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
+    AP_GROUPINFO("YAW_TD", 24, AC_AttitudeControl, _yaw_delay_tc, AC_ATTITUDE_CONTROL_DELAY_DEFAULT),
 
     AP_GROUPEND
 };
@@ -349,7 +331,7 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
         // When yaw acceleration limiting is enabled, the yaw input shaper constrains angular acceleration about the yaw axis, slewing
         // the output rate towards the input rate.
 //        _attitude_target_euler_rate.z = input_shaping_ang_vel(_attitude_target_euler_rate.z, euler_yaw_rate, euler_accel.z, _dt);
-        _attitude_target_euler_rate.z = input_rate_shaping(_input_tc, euler_yaw_rate, _attitude_target_euler_rate.z, euler_accel.z, _dt);
+        _attitude_target_euler_rate.z = input_rate_shaping(_input_rate_tc, euler_yaw_rate, _attitude_target_euler_rate.z, euler_accel.z, _dt);
 
         // Convert euler angle derivative of desired attitude into a body-frame angular velocity vector for feedforward
         euler_rate_to_ang_vel(_attitude_target_euler_angle, _attitude_target_euler_rate, _attitude_target_ang_vel);
@@ -606,9 +588,12 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, fl
         // Compute acceleration-limited body frame rates
         // When acceleration limiting is enabled, the input shaper constrains angular acceleration about the axis, slewing
         // the output rate towards the input rate.
-        _attitude_target_ang_vel.x = input_shaping_ang_vel(_attitude_target_ang_vel.x, roll_rate_rads, get_accel_roll_max_radss(), _dt);
-        _attitude_target_ang_vel.y = input_shaping_ang_vel(_attitude_target_ang_vel.y, pitch_rate_rads, get_accel_pitch_max_radss(), _dt);
-        _attitude_target_ang_vel.z = input_shaping_ang_vel(_attitude_target_ang_vel.z, yaw_rate_rads, get_accel_yaw_max_radss(), _dt);
+//        _attitude_target_ang_vel.x = input_shaping_ang_vel(_attitude_target_ang_vel.x, roll_rate_rads, get_accel_roll_max_radss(), _dt);
+        _attitude_target_euler_rate.x = input_rate_shaping(_input_rate_tc, roll_rate_rads, _attitude_target_euler_rate.x, get_accel_roll_max_radss(), _dt);
+//        _attitude_target_ang_vel.y = input_shaping_ang_vel(_attitude_target_ang_vel.y, pitch_rate_rads, get_accel_pitch_max_radss(), _dt);
+        _attitude_target_euler_rate.y = input_rate_shaping(_input_rate_tc, pitch_rate_rads, _attitude_target_euler_rate.y, get_accel_pitch_max_radss(), _dt);
+//        _attitude_target_ang_vel.z = input_shaping_ang_vel(_attitude_target_ang_vel.z, yaw_rate_rads, get_accel_yaw_max_radss(), _dt);
+        _attitude_target_euler_rate.z = input_rate_shaping(_input_rate_tc, yaw_rate_rads, _attitude_target_euler_rate.z, get_accel_yaw_max_radss(), _dt);
 
         // Convert body-frame angular velocity into euler angle derivative of desired attitude
         ang_vel_to_euler_rate(_attitude_target_euler_angle, _attitude_target_ang_vel, _attitude_target_euler_rate);

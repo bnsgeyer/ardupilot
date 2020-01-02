@@ -378,13 +378,11 @@ protected:
     // Angle limit time constant (to maintain altitude)
     AP_Float            _angle_limit_tc;
 
-    // rate controller input smoothing time constant
+    // Attitude command model input smoothing time constant
     AP_Float            _input_tc;
     
-    // attitude/rate controller shaping frequencies
-    AP_Float            _pitch_freq;
-    AP_Float            _roll_freq;
-    AP_Float            _yaw_freq;
+    // rate command model input smoothing time constant
+    AP_Float            _input_rate_tc;
 
     // attitude/rate controller shaping frequencies
     AP_Float            _pitch_delay_tc;
