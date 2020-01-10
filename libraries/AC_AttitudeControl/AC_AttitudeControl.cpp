@@ -286,9 +286,8 @@ float AC_AttitudeControl::input_attitude_shaping(float input_tc, float euler_des
 }
 
 // rate shaping
-float AC_AttitudeControl::input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float accel_limit, float dt)
+float AC_AttitudeControl::input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float euler_target_accel, float accel_limit, float dt)
 {
-    static float euler_target_accel;
     float zeta = 0.95;
     float freq = 6.283185 / MAX(3.0f*input_tc, 0.05f);
     float desired_accel = (euler_desired_rate - euler_target_rate) * freq / (2.0f * zeta);
@@ -331,7 +330,7 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
         // When yaw acceleration limiting is enabled, the yaw input shaper constrains angular acceleration about the yaw axis, slewing
         // the output rate towards the input rate.
 //        _attitude_target_euler_rate.z = input_shaping_ang_vel(_attitude_target_euler_rate.z, euler_yaw_rate, euler_accel.z, _dt);
-        _attitude_target_euler_rate.z = input_rate_shaping(_input_rate_tc, euler_yaw_rate, _attitude_target_euler_rate.z, euler_accel.z, _dt);
+        _attitude_target_euler_rate.z = input_rate_shaping(_input_rate_tc, euler_yaw_rate, _attitude_target_euler_rate.z, _attitude_target_euler_accel.z, euler_accel.z, _dt);
 
         // Convert euler angle derivative of desired attitude into a body-frame angular velocity vector for feedforward
         euler_rate_to_ang_vel(_attitude_target_euler_angle, _attitude_target_euler_rate, _attitude_target_ang_vel);
@@ -589,11 +588,11 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, fl
         // When acceleration limiting is enabled, the input shaper constrains angular acceleration about the axis, slewing
         // the output rate towards the input rate.
 //        _attitude_target_ang_vel.x = input_shaping_ang_vel(_attitude_target_ang_vel.x, roll_rate_rads, get_accel_roll_max_radss(), _dt);
-        _attitude_target_euler_rate.x = input_rate_shaping(_input_rate_tc, roll_rate_rads, _attitude_target_euler_rate.x, get_accel_roll_max_radss(), _dt);
+        _attitude_target_ang_vel.x = input_rate_shaping(_input_rate_tc, roll_rate_rads, _attitude_target_ang_vel.x, _attitude_target_ang_accel.x, get_accel_roll_max_radss(), _dt);
 //        _attitude_target_ang_vel.y = input_shaping_ang_vel(_attitude_target_ang_vel.y, pitch_rate_rads, get_accel_pitch_max_radss(), _dt);
-        _attitude_target_euler_rate.y = input_rate_shaping(_input_rate_tc, pitch_rate_rads, _attitude_target_euler_rate.y, get_accel_pitch_max_radss(), _dt);
+        _attitude_target_ang_vel.y = input_rate_shaping(_input_rate_tc, pitch_rate_rads, _attitude_target_ang_vel.y, _attitude_target_ang_accel.y, get_accel_pitch_max_radss(), _dt);
 //        _attitude_target_ang_vel.z = input_shaping_ang_vel(_attitude_target_ang_vel.z, yaw_rate_rads, get_accel_yaw_max_radss(), _dt);
-        _attitude_target_euler_rate.z = input_rate_shaping(_input_rate_tc, yaw_rate_rads, _attitude_target_euler_rate.z, get_accel_yaw_max_radss(), _dt);
+        _attitude_target_ang_vel.z = input_rate_shaping(_input_rate_tc, yaw_rate_rads, _attitude_target_ang_vel.z, _attitude_target_ang_accel.z, get_accel_yaw_max_radss(), _dt);
 
         // Convert body-frame angular velocity into euler angle derivative of desired attitude
         ang_vel_to_euler_rate(_attitude_target_euler_angle, _attitude_target_ang_vel, _attitude_target_euler_rate);
