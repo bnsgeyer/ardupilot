@@ -286,7 +286,7 @@ float AC_AttitudeControl::input_attitude_shaping(float input_tc, float euler_des
 }
 
 // rate shaping
-float AC_AttitudeControl::input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float euler_target_accel, float accel_limit, float dt)
+float AC_AttitudeControl::input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float &euler_target_accel, float accel_limit, float dt)
 {
     float zeta = 0.95;
     float freq = 6.283185 / MAX(3.0f*input_tc, 0.05f);

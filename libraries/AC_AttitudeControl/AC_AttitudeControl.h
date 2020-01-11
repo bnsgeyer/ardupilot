@@ -456,7 +456,7 @@ protected:
     float               _feedforward_scalar = 1.0f;
 
     float input_attitude_shaping(float input_tc, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float accel_limit, float dt);
-    float input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float euler_target_accel, float accel_limit, float dt);
+    float input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float &euler_target_accel, float accel_limit, float dt);
 
     LowPassFilterFloat  _pitch_delay;
     LowPassFilterFloat  _roll_delay;
