@@ -274,7 +274,7 @@ void AC_AttitudeControl::input_quaternion(Quaternion attitude_desired_quat)
 // attitude shaping
 float AC_AttitudeControl::input_attitude_shaping(float input_tc, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float accel_limit, float dt)
 {
-    float zeta = 0.95;
+    float zeta = 0.9;
     float freq = 6.283185 / MAX(3.0f*input_tc, 0.05f);
     float desired_rate = wrap_PI(euler_desired_angle - euler_target_angle) * freq / (2.0f * zeta);
     float desired_accel = (desired_rate - euler_target_rate) * 2 * zeta * freq;
@@ -288,7 +288,7 @@ float AC_AttitudeControl::input_attitude_shaping(float input_tc, float euler_des
 // rate shaping
 float AC_AttitudeControl::input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float &euler_target_accel, float accel_limit, float dt)
 {
-    float zeta = 0.95;
+    float zeta = 0.9;
     float freq = 6.283185 / MAX(3.0f*input_tc, 0.05f);
     float desired_accel = (euler_desired_rate - euler_target_rate) * freq / (2.0f * zeta);
     if (is_positive(accel_limit)) {
