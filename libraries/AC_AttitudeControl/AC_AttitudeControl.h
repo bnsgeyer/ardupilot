@@ -378,8 +378,11 @@ protected:
     // Angle limit time constant (to maintain altitude)
     AP_Float            _angle_limit_tc;
 
-    // rate controller input smoothing time constant
+    // Attitude command model input smoothing time constant
     AP_Float            _input_tc;
+    
+    // rate command model input smoothing time constant
+    AP_Float            _input_rate_tc;
 
     // Intersampling period in seconds
     float               _dt;
@@ -449,6 +452,12 @@ protected:
 
     // desired angular velocity for feedforward to motors class
     Vector3f            _desired_ang_vel_ff;
+
+   float input_attitude_shaping(float input_tc, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float &euler_target_accel, float accel_limit, float dt);
+    float input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float &euler_target_accel, float accel_limit, float dt);
+
+    Vector3f            _attitude_target_euler_accel;
+    Vector3f            _attitude_target_ang_accel;
 
     // buffers to provide time delay
     struct target_states {
