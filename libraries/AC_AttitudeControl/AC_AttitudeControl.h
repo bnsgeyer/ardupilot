@@ -453,11 +453,13 @@ protected:
     // desired angular velocity for feedforward to motors class
     Vector3f            _desired_ang_vel_ff;
 
-   float input_attitude_shaping(float input_tc, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float &euler_target_accel, float accel_limit, float dt);
-    float input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float &euler_target_accel, float accel_limit, float dt);
+   float input_attitude_shaping(float input_tc, float euler_desired_angle, float euler_target_angle, float euler_target_rate, float &euler_target_accel, float &euler_target_jerk, float accel_limit, float dt);
+    float input_rate_shaping(float input_tc, float euler_desired_rate, float euler_target_rate, float &euler_target_accel, float &euler_target_jerk, float accel_limit, float dt);
 
     Vector3f            _attitude_target_euler_accel;
     Vector3f            _attitude_target_ang_accel;
+    Vector3f            _attitude_target_euler_jerk;
+    Vector3f            _attitude_target_ang_jerk;
 
     // buffers to provide time delay
     struct target_states {
