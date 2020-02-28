@@ -291,7 +291,7 @@ void AP_MotorsHeli_Quad::move_actuators(float roll_out, float pitch_out, float c
 
     for (uint8_t i=0; i<AP_MOTORS_HELI_QUAD_NUM_MOTORS; i++) {
         // scale output to 0 to 1
-        _out[i] += _collective_mid_pct;
+        _out[i] = _out[i] + _collective_mid_pct * collective_range + (_collective_min - 1000)*0.001f;
         // scale output to -1 to 1 for servo output
         _out[i] = _out[i] * 2.0f - 1.0f;
     }
