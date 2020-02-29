@@ -318,7 +318,7 @@ void AP_MotorsHeli_Quad::output_to_motors()
 
     // move the servos
     for (uint8_t i=0; i<AP_MOTORS_HELI_QUAD_NUM_MOTORS; i++) {
-        rc_write_angle(AP_MOTORS_MOT_1+i, _out[i] * QUAD_SERVO_MAX_ANGLE);
+        rc_write_swash(AP_MOTORS_MOT_1+i, _out[i]);
     }
 
     switch (_spool_state) {
