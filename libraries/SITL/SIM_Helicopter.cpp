@@ -74,8 +74,8 @@ void Helicopter::update(const struct sitl_input &input)
     float rsc_scale = rsc/rsc_setpoint;
 
     float thrust = 0;
-    float roll_rate = 0;
-    float pitch_rate = 0;
+    static float roll_rate = 0;
+    static float pitch_rate = 0;
     float yaw_rate = 0;
     float torque_effect_accel = 0;
     float lateral_x_thrust = 0;
@@ -113,8 +113,8 @@ void Helicopter::update(const struct sitl_input &input)
     case HELI_FRAME_CONVENTIONAL: {
         // simulate a traditional helicopter
 
-        float Ma1s = 522.0f;
-        float Lb1s = 922.0f;
+        float Ma1s = 642.0f;
+        float Lb1s = 2312.0f;
         float Mu = 0.003f;
         float Lv = -0.006;
         float Xu = -0.125;
@@ -137,20 +137,39 @@ void Helicopter::update(const struct sitl_input &input)
         float roll_cyclic = (swash1 - swash2) / cyclic_scalar;
         float pitch_cyclic = ((swash1+swash2) / 2.0f - swash3) / cyclic_scalar;
         Vector2f ctrl_pos = Vector2f(roll_cyclic, pitch_cyclic);
-        update_rotor_dynamics(gyro, ctrl_pos, _tpp_angle, dt);
 
         float yaw_cmd = 2.0f * tail_rotor - 1.0f; // convert range to -1 to 1
         float tail_rotor_torque = (21.6f * 2.96f * yaw_cmd - 2.96f * gyro.z) * sq(rpm[0] * 0.104667f) / sq(157.0f);
         float tail_rotor_thrust =  -1.0f * tail_rotor_torque * izz / tr_dist;  //right pedal produces left body accel
 
+        float roll_rate_dot = _rotor_states[0] * Lb1s + Lv * velocity_air_bf.y;
+        float pitch_rate_dot = _rotor_states[1] * Ma1s + Mu * velocity_air_bf.x;
+        compute_rotor_states_dot(roll_rate, pitch_rate, ctrl_pos, _rotor_states, _rotor_states_dot);
+
         // rotational acceleration, in rad/s/s, in body frame
-        rot_accel.x = _tpp_angle.x * Lb1s + Lv * velocity_air_bf.y;
-        rot_accel.y = _tpp_angle.y * Ma1s + Mu * velocity_air_bf.x;
+        // yaw axis only. pitch and roll rely on rotor states and are computed after rotor states are integrated.
         rot_accel.z = tail_rotor_torque + torque_effect_accel;
 
-        lateral_y_thrust = tail_rotor_thrust / mass + GRAVITY_MSS * _tpp_angle.x + Yv * velocity_air_bf.y;
-        lateral_x_thrust = -1.0f * GRAVITY_MSS * _tpp_angle.y + Xu * velocity_air_bf.x;
+        lateral_y_thrust = tail_rotor_thrust / mass + GRAVITY_MSS * _rotor_states[0] + Yv * velocity_air_bf.y;
+        lateral_x_thrust = -1.0f * GRAVITY_MSS * _rotor_states[1] + Xu * velocity_air_bf.x;
         accel_body = Vector3f(lateral_x_thrust, lateral_y_thrust, -thrust / mass + velocity_air_bf.z * Zw);
+
+        // determine pitch and roll rate affected by lead-lag rotor mode
+        integrate_rotor_states(_rotor_states, _rotor_states_dot, dt);
+        roll_rate += roll_rate_dot * dt;
+        pitch_rate += pitch_rate_dot * dt;
+
+        // Determine pitch and roll body angular rates from output states
+        gyro = compute_output_states(gyro, roll_rate, pitch_rate, _rotor_states, _rotor_states_dot);
+        // Set pitch and roll accelerations to zero since updated pitch and roll rates were calculated
+        rot_accel.x = 0.0f;
+        rot_accel.y = 0.0f;
+
+        // set internal pitch and roll rates to zero if on the ground
+        if (on_ground()) {
+            pitch_rate = 0.0f;
+            roll_rate = 0.0f;
+        }
 
         break;
     }
@@ -282,6 +301,36 @@ void Helicopter::update_rotor_dynamics(Vector3f gyros, Vector2f ctrl_pos, Vector
     tpp_angle.x += b1s_dot * dt;
     tpp_angle.y += a1s_dot * dt;
 
+}
+
+void Helicopter::compute_rotor_states_dot(float roll, float pitch, Vector2f ctrl_pos, float *state, float *state_dot)
+{
+
+    state_dot[0]=-roll-12.9975*state[0]+15.15575*state[1]-8.40403*ctrl_pos.y+26.36664*ctrl_pos.x; //b1s_dot
+    state_dot[1]=-pitch-17.0211*state[0]-12.9975*state[1]+33.9865*ctrl_pos.y+8.731883*ctrl_pos.x;  //a1s_dot
+    state_dot[2]=state[3];                                                                           //x1p_dot
+    state_dot[3]=1.609639*roll-4086.6*state[2]-27.0929*state[3];                                  //x2p_dot
+    state_dot[4]=1.609639*roll-1492.84*state[2]-11.7082*state[3];                                 //etap_dot
+    state_dot[5]=state[6];                                                                           //x1q_dot
+    state_dot[6]=0.83848*pitch-4086.6*state[5]-27.0929*state[6];                                   //x2q_dot
+    state_dot[7]=0.83848*pitch-125.329*state[5]-8.28358*state[6];                                  //etaq_dot
+
+}
+
+Vector3f Helicopter::compute_output_states(Vector3f gyros, float roll, float pitch, float *state, float *state_dot)
+{
+
+    gyros.x = 1.609639 * roll - 1492.84 * state[2] - 11.7082 * state[3];
+    gyros.y = 0.83848 * pitch - 125.329 * state[5] - 8.28358 * state[6];
+    return gyros;
+}
+
+void Helicopter::integrate_rotor_states(float *state, float *state_dot, float dt)
+{
+
+    for (int cnt = 0; cnt < 8; cnt++) {
+        state[cnt] += state_dot[cnt] * dt;
+    }
 }
 
 float Helicopter::update_rpm(bool interlock, float dt)

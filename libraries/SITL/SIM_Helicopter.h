@@ -41,6 +41,9 @@ protected:
 
     void update_rotor_dynamics(Vector3f gyros, Vector2f ctrl_pos, Vector2f &tpp_angle, float dt);
     float update_rpm(bool interlock, float dt);
+    void compute_rotor_states_dot(float roll, float pitch, Vector2f ctrl_pos, float *state, float *state_dot);
+    Vector3f compute_output_states(Vector3f gyros, float roll, float pitch, float *state, float *state_dot);
+    void integrate_rotor_states(float *state, float *state_dot, float dt);
 
     // buffers to provide time delay
     struct servos_stored {
@@ -71,15 +74,17 @@ private:
     float izz = 0.2f;
     float tr_dist = 0.85f;
     float tr_accel_max = 50.0f; //rad/s/s
-    float cyclic_scalar = 7.2; // converts swashplate servo ouputs to cyclic blade pitch
+    float cyclic_scalar = 6.0; // converts swashplate servo ouputs to cyclic blade pitch
     float thrust_scale;
     float tail_thrust_scale;
     Vector2f _tpp_angle;
+    float _rotor_states[8]; //{b1s,a1s,x1p,x2p,etap,x1q,x2q,etaq}
+    float _rotor_states_dot[8];
     float torque_scale;
     float torque_mpog;
     float hover_coll = 5.0f;
     bool motor_interlock;
-    uint8_t _time_delay = 30;
+    uint8_t _time_delay = 50;
     enum frame_types {
         HELI_FRAME_CONVENTIONAL,
         HELI_FRAME_DUAL,
