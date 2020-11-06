@@ -174,13 +174,13 @@ protected:
                         AP_InertialNav *inertial_nav);
 
     void control_attitude();
-    virtual void backup_gains_and_initialise();
-    virtual void load_orig_gains() = 0;
-    virtual void load_tuned_gains() = 0;
-    virtual void load_intra_test_gains() = 0;
+    void backup_gains_and_initialise();
+    void load_orig_gains();
+    void load_tuned_gains();
+    void load_intra_test_gains();
+    virtual void load_test_gains();
     virtual void test_init() = 0;
     virtual void test_run(const float dir_sign) = 0;
-    virtual void load_test_gains() = 0;
     void update_gcs(uint8_t message_id);
     bool roll_enabled();
     bool pitch_enabled();
@@ -290,8 +290,8 @@ protected:
     float    test_angle_min;                        // the minimum angle achieved during TESTING_ANGLE step
     float    test_angle_max;                        // the maximum angle achieved during TESTING_ANGLE step
     uint32_t step_start_time_ms;                    // start time of current tuning step (used for timeout checks)
-    uint32_t step_time_limit_ms;                    // time limit of current autotune process
     uint32_t level_start_time_ms;                   // start time of waiting for level
+    uint32_t step_time_limit_ms;                    // time limit of current autotune process
     int8_t   counter;                               // counter for tuning gains
     float    target_rate, start_rate;               // target and start rate
     float    target_angle, start_angle;             // target and start angles
@@ -337,6 +337,11 @@ protected:
     AP_AHRS_View *ahrs_view;
     AP_InertialNav *inertial_nav;
     AP_Motors *motors;
+
+    virtual bool allow_zero_rate_p() = 0;
+    virtual float get_intra_test_ri() = 0;
+    virtual float get_load_tuned_ri() = 0;
+    virtual float get_load_tuned_yaw_rd() = 0;
 
     // Functions added for heli autotune
 

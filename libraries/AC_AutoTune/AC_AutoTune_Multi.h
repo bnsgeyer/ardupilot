@@ -39,11 +39,7 @@ public:
 protected:
     void test_init() override;
     void test_run(const float dir_sign) override;
-    void backup_gains_and_initialise() override;
     void do_gcs_announcements() override;
-    void load_orig_gains() override;
-    void load_tuned_gains() override;
-    void load_intra_test_gains() override;
     void load_test_gains() override;
     void updating_rate_p_up_all(uint8_t test_axis) override;
     void updating_rate_p_down_all(uint8_t test_axis) override {};
@@ -65,6 +61,10 @@ protected:
     void Log_AutoTuneDetails() override;
     void Log_Write_AutoTune(uint8_t axis, uint8_t tune_step, float meas_target, float meas_min, float meas_max, float new_gain_rp, float new_gain_rd, float new_gain_sp, float new_ddt);
     void Log_Write_AutoTuneDetails(float angle_cd, float rate_cds);
+    bool allow_zero_rate_p() override {return false;}
+    float get_intra_test_ri() override;
+    float get_load_tuned_ri() override;
+    float get_load_tuned_yaw_rd() override {return 0.0f;}
 
 private:
 

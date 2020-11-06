@@ -43,11 +43,7 @@ public:
 protected:
     void test_init() override;
     void test_run(const float dir_sign) override;
-    void backup_gains_and_initialise() override;
     void do_gcs_announcements() override;
-    void load_orig_gains() override;
-    void load_tuned_gains() override;
-    void load_intra_test_gains() override;
     void load_test_gains() override;
     void updating_rate_ff_up(float &tune_ff, float rate_target, float meas_rate, float meas_command);
     void updating_rate_p_up(float &tune_p, float *freq, float *gain, float *phase, uint8_t &frq_cnt, float gain_incr, float max_gain);
@@ -70,8 +66,10 @@ protected:
     void Log_AutoTuneDetails() override;
     void Log_Write_AutoTune(uint8_t _axis, uint8_t tune_step, float dwell_freq, float meas_gain, float meas_phase, float new_gain_rff, float new_gain_rp, float new_gain_rd, float new_gain_sp);
     void Log_Write_AutoTuneDetails(float motor_cmd, float tgt_rate_rads, float rate_rads);
-
-
+    bool allow_zero_rate_p() override {return true;}
+    float get_intra_test_ri() override;
+    float get_load_tuned_ri() override;
+    float get_load_tuned_yaw_rd() override {return tune_yaw_rd;}
 private:
 
 };
