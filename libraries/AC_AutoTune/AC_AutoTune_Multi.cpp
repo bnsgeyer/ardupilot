@@ -599,7 +599,7 @@ void AC_AutoTune_Multi::Log_Write_AutoTuneDetails(float angle_cd, float rate_cds
 
 float AC_AutoTune_Multi::get_intra_test_ri()
 {
-    float ret;
+    float ret = 0.0f;
     if (roll_enabled()) {
         ret = orig_roll_rp * AUTOTUNE_PI_RATIO_FOR_TESTING;
     }
@@ -614,7 +614,7 @@ float AC_AutoTune_Multi::get_intra_test_ri()
 
 float AC_AutoTune_Multi::get_load_tuned_ri()
 {
-    float ret;
+    float ret = 0.0f;
     if (roll_enabled()) {
         ret = tune_roll_rp*AUTOTUNE_PI_RATIO_FINAL;
     }

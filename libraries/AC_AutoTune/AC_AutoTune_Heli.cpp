@@ -660,7 +660,7 @@ void AC_AutoTune_Heli::Log_Write_AutoTuneDetails(float motor_cmd, float tgt_rate
 
 float AC_AutoTune_Heli::get_intra_test_ri()
 {
-    float ret;
+    float ret = 0.0f;
     if (roll_enabled()) {
         ret = orig_roll_rff * AUTOTUNE_FFI_RATIO_FOR_TESTING;
     }
@@ -675,7 +675,7 @@ float AC_AutoTune_Heli::get_intra_test_ri()
 
 float AC_AutoTune_Heli::get_load_tuned_ri()
 {
-    float ret;
+    float ret = 0.0f;
     if (roll_enabled()) {
         ret = tune_roll_rff*AUTOTUNE_FFI_RATIO_FINAL;
     }
