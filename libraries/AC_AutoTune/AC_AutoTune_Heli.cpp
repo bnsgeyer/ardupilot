@@ -534,7 +534,7 @@ void AC_AutoTune_Heli::updating_max_gains(float *freq, float *gain, float *phase
             max_gain_p.freq = linear_interpolate(freq[frq_cnt-1],freq[frq_cnt],161.0f,phase[frq_cnt-1],phase[frq_cnt]);
             max_gain_p.gain = linear_interpolate(gain[frq_cnt-1],gain[frq_cnt],161.0f,phase[frq_cnt-1],phase[frq_cnt]);
             max_gain_p.phase = 161.0f;
-            max_gain_p.max_allowed = pow(10.0f,-1 * (log10(max_gain_p.gain) * 20.0f + 2.42) / 20.0f);
+            max_gain_p.max_allowed = powf(10.0f,-1 * (log10(max_gain_p.gain) * 20.0f + 2.42) / 20.0f);
             find_max_p = 1;
     gcs().send_text(MAV_SEVERITY_INFO, "AutoTune: Max rate P freq=%f gain=%f ph=%f rate_d=%f", (double)(max_gain_p.freq), (double)(max_gain_p.gain), (double)(max_gain_p.phase), (double)(max_gain_p.max_allowed));
         }
@@ -544,7 +544,7 @@ void AC_AutoTune_Heli::updating_max_gains(float *freq, float *gain, float *phase
             max_gain_d.freq = linear_interpolate(freq[frq_cnt-1],freq[frq_cnt],251.0f,phase[frq_cnt-1],phase[frq_cnt]);
             max_gain_d.gain = linear_interpolate(gain[frq_cnt-1],gain[frq_cnt],251.0f,phase[frq_cnt-1],phase[frq_cnt]);
             max_gain_d.phase = 251.0f;
-            max_gain_d.max_allowed = pow(10.0f,-1 * (log10(max_gain_d.freq * max_gain_d.gain) * 20.0f + 2.42) / 20.0f);
+            max_gain_d.max_allowed = powf(10.0f,-1 * (log10(max_gain_d.freq * max_gain_d.gain) * 20.0f + 2.42) / 20.0f);
             find_max_d = 1;
     gcs().send_text(MAV_SEVERITY_INFO, "AutoTune: Max Rate D freq=%f gain=%f ph=%f rate_d=%f", (double)(max_gain_d.freq), (double)(max_gain_d.gain), (double)(max_gain_d.phase), (double)(max_gain_d.max_allowed));
         }
