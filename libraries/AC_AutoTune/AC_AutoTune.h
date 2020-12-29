@@ -134,8 +134,8 @@ protected:
 
     // Added generic twitch test functions for multi
     void twitch_test_init();
-    void twitch_test_rate(uint8_t test_axis, const float dir_sign, float input_rate,  float &output_rate_min, float &output_rate_max, float &output_accel_max);
-    void twitch_test_angle(uint8_t test_axis, const float dir_sign, float input_angle, float &output_angle_min, float &output_angle_max, float &output_rate_min, float &output_rate_max, float &output_accel_max);
+    void twitch_test_rate(uint8_t test_axis, const float dir_sign);
+    void twitch_test_angle(uint8_t test_axis, const float dir_sign);
 
     // replace multi specific updating gain functions with generic forms that covers all axes
     virtual void updating_rate_p_up_all(uint8_t test_axis)=0;

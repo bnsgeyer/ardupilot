@@ -127,9 +127,9 @@ void AC_AutoTune_Multi::test_run(const float dir_sign)
 
 
     if ((tune_type == SP_DOWN) || (tune_type == SP_UP)) {
-        twitch_test_angle(axis, dir_sign, target_angle, test_angle_min, test_angle_max, test_rate_min, test_rate_max, test_accel_max);
+        twitch_test_angle(axis, dir_sign);
     } else {
-        twitch_test_rate(axis, dir_sign, target_rate, test_rate_min, test_rate_max, test_accel_max);
+        twitch_test_rate(axis, dir_sign);
     }
 }
 

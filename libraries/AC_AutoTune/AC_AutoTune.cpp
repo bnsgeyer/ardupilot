@@ -438,17 +438,23 @@ void AC_AutoTune::control_attitude()
             step_start_time_ms = now;
             step_time_limit_ms = AUTOTUNE_TESTING_STEP_TIMEOUT_MS;
             // set gains to their to-be-tested values
+            twitch_first_iter = true;
+            test_rate_max = 0.0f;
+            test_rate_min = 0.0f;
+            test_angle_max = 0.0f;
+            test_angle_min = 0.0f;
+            rotation_rate_filt.reset(0.0f);
+            rate_max = 0.0f;
             load_gains(GAIN_TEST);
         } else {
             // when waiting for level we use the intra-test gains
             load_gains(GAIN_INTRA_TEST);
         }
 
-        rotation_rate_filt.reset(0.0f);
-        rate_max = 0.0f;
+//        rotation_rate_filt.reset(0.0f);
+//        rate_max = 0.0f;
 
         // Initialize test specific variables
-        test_init();
         start_angles = Vector3f(roll_cd, pitch_cd, desired_yaw_cd);  // heli specific
         switch (axis) {
         case ROLL:
@@ -467,6 +473,7 @@ void AC_AutoTune::control_attitude()
             start_angle = ahrs_view->yaw_sensor;
             break;
         }
+        test_init();
 
         break;
     }
@@ -1239,11 +1246,11 @@ void AC_AutoTune::get_poshold_attitude(float &roll_cd_out, float &pitch_cd_out, 
 void AC_AutoTune::twitch_test_init()
 {
 // Initialize twitch test variables
-    twitch_first_iter = true;
+/*    twitch_first_iter = true;
     test_rate_max = 0.0f;
     test_rate_min = 0.0f;
     test_angle_max = 0.0f;
-    test_angle_min = 0.0f;
+    test_angle_min = 0.0f; */
     float target_max_rate;
     switch (axis) {
     case ROLL:
@@ -1268,7 +1275,7 @@ void AC_AutoTune::twitch_test_init()
 
 }
 
-void AC_AutoTune::twitch_test_rate(uint8_t test_axis, const float dir_sign, float input_rate, float &output_rate_min, float &output_rate_max, float &output_accel_max)
+void AC_AutoTune::twitch_test_rate(uint8_t test_axis, const float dir_sign)
 {
         // Testing rate P and D gains so will set body-frame rate targets.
         // Rate controller will use existing body-frame rates and convert to motor outputs
@@ -1278,19 +1285,19 @@ void AC_AutoTune::twitch_test_rate(uint8_t test_axis, const float dir_sign, floa
         switch (test_axis) {
         case ROLL:
             // override body-frame roll rate
-            attitude_control->rate_bf_roll_target(dir_sign * input_rate + start_rate);
+            attitude_control->rate_bf_roll_target(dir_sign * target_rate + start_rate);
             gyro_reading = ahrs_view->get_gyro().x;
             lean_angle = dir_sign * (ahrs_view->roll_sensor - (int32_t)start_angle);
             break;
         case PITCH:
             // override body-frame pitch rate
-            attitude_control->rate_bf_pitch_target(dir_sign * input_rate + start_rate);
+            attitude_control->rate_bf_pitch_target(dir_sign * target_rate + start_rate);
             gyro_reading = ahrs_view->get_gyro().y;
             lean_angle = dir_sign * (ahrs_view->pitch_sensor - (int32_t)start_angle);
             break;
         case YAW:
             // override body-frame yaw rate
-            attitude_control->rate_bf_yaw_target(dir_sign * input_rate + start_rate);
+            attitude_control->rate_bf_yaw_target(dir_sign * target_rate + start_rate);
             gyro_reading = ahrs_view->get_gyro().z;
             lean_angle = dir_sign * wrap_180_cd(ahrs_view->yaw_sensor-(int32_t)start_angle);
             break;
@@ -1304,13 +1311,13 @@ void AC_AutoTune::twitch_test_rate(uint8_t test_axis, const float dir_sign, floa
         if (tune_type == RP_UP) {
             twitching_test_rate(rotation_rate, target_rate*(1+0.5f*aggressiveness), test_rate_min, test_rate_max);
         } else {
-            twitching_test_rate(rotation_rate, input_rate, output_rate_min, output_rate_max);
+            twitching_test_rate(rotation_rate, target_rate, test_rate_min, test_rate_max);
         }
-        twitching_measure_acceleration(output_accel_max, rotation_rate, rate_max);
-        twitching_abort_rate(lean_angle, rotation_rate, abort_angle, output_rate_min);
+        twitching_measure_acceleration(test_accel_max, rotation_rate, rate_max);
+        twitching_abort_rate(lean_angle, rotation_rate, abort_angle, test_rate_min);
 
 }
-void AC_AutoTune::twitch_test_angle(uint8_t test_axis, const float dir_sign, float input_angle, float &output_angle_min, float &output_angle_max, float &output_rate_min, float &output_rate_max, float &output_accel_max)
+void AC_AutoTune::twitch_test_angle(uint8_t test_axis, const float dir_sign)
 {
         // step angle targets on first iteration
         if (twitch_first_iter) {
@@ -1319,15 +1326,15 @@ void AC_AutoTune::twitch_test_angle(uint8_t test_axis, const float dir_sign, flo
             switch (test_axis) {
             case ROLL:
                 // request roll to 20deg
-                attitude_control->input_angle_step_bf_roll_pitch_yaw(dir_sign * input_angle, 0.0f, 0.0f);
+                attitude_control->input_angle_step_bf_roll_pitch_yaw(dir_sign * target_angle, 0.0f, 0.0f);
                 break;
             case PITCH:
                 // request pitch to 20deg
-                attitude_control->input_angle_step_bf_roll_pitch_yaw(0.0f, dir_sign * input_angle, 0.0f);
+                attitude_control->input_angle_step_bf_roll_pitch_yaw(0.0f, dir_sign * target_angle, 0.0f);
                 break;
             case YAW:
                 // request pitch to 20deg
-                attitude_control->input_angle_step_bf_roll_pitch_yaw(0.0f, 0.0f, dir_sign * input_angle);
+                attitude_control->input_angle_step_bf_roll_pitch_yaw(0.0f, 0.0f, dir_sign * target_angle);
                 break;
             }
         }
@@ -1354,8 +1361,8 @@ void AC_AutoTune::twitch_test_angle(uint8_t test_axis, const float dir_sign, flo
         rotation_rate = rotation_rate_filt.apply(filter_value,
                         AP::scheduler().get_loop_period_s());
 
-        twitching_test_angle(lean_angle, rotation_rate, input_angle*(1+0.5f*aggressiveness), output_angle_min, output_angle_max, output_rate_min, output_rate_max);
-        twitching_measure_acceleration(output_accel_max, rotation_rate - dir_sign * start_rate, rate_max);
+        twitching_test_angle(lean_angle, rotation_rate, target_angle*(1+0.5f*aggressiveness), test_angle_min, test_angle_max, test_rate_min, test_rate_max);
+        twitching_measure_acceleration(test_accel_max, rotation_rate - dir_sign * start_rate, rate_max);
 
 }
 
