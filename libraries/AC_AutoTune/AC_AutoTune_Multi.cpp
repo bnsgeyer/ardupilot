@@ -107,30 +107,13 @@ void AC_AutoTune_Multi::test_init()
 
     twitch_test_init();
 
-    if ((tune_type == SP_DOWN) || (tune_type == SP_UP)) {
-        rotation_rate_filt.reset(start_rate);
-    } else {
-        rotation_rate_filt.reset(0);
-    }
-
-
 }
 
 void AC_AutoTune_Multi::test_run(const float dir_sign)
 {
 
-    // disable rate limits
-    attitude_control->use_sqrt_controller(false);
-    // hold current attitude
-    attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+    twitch_test_run(axis, dir_sign);
 
-
-
-    if ((tune_type == SP_DOWN) || (tune_type == SP_UP)) {
-        twitch_test_angle(axis, dir_sign);
-    } else {
-        twitch_test_rate(axis, dir_sign);
-    }
 }
 
 // load_test_gains - load the to-be-tested gains for a single axis

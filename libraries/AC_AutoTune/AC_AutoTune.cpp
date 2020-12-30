@@ -451,9 +451,6 @@ void AC_AutoTune::control_attitude()
             load_gains(GAIN_INTRA_TEST);
         }
 
-//        rotation_rate_filt.reset(0.0f);
-//        rate_max = 0.0f;
-
         // Initialize test specific variables
         start_angles = Vector3f(roll_cd, pitch_cd, desired_yaw_cd);  // heli specific
         switch (axis) {
@@ -473,6 +470,8 @@ void AC_AutoTune::control_attitude()
             start_angle = ahrs_view->yaw_sensor;
             break;
         }
+
+        // tests must be initialized last as some rely on variables above
         test_init();
 
         break;
@@ -1245,80 +1244,45 @@ void AC_AutoTune::get_poshold_attitude(float &roll_cd_out, float &pitch_cd_out, 
 
 void AC_AutoTune::twitch_test_init()
 {
-// Initialize twitch test variables
-/*    twitch_first_iter = true;
-    test_rate_max = 0.0f;
-    test_rate_min = 0.0f;
-    test_angle_max = 0.0f;
-    test_angle_min = 0.0f; */
     float target_max_rate;
     switch (axis) {
     case ROLL:
-        rotation_rate_filt.set_cutoff_frequency(attitude_control->get_rate_roll_pid().filt_D_hz()*2.0f);
         target_max_rate = MAX(AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, step_scaler*AUTOTUNE_TARGET_RATE_RLLPIT_CDS);
         target_rate = constrain_float(ToDeg(attitude_control->max_rate_step_bf_roll())*100.0f, AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, target_max_rate);
         target_angle = constrain_float(ToDeg(attitude_control->max_angle_step_bf_roll())*100.0f, AUTOTUNE_TARGET_MIN_ANGLE_RLLPIT_CD, AUTOTUNE_TARGET_ANGLE_RLLPIT_CD);
+        rotation_rate_filt.set_cutoff_frequency(attitude_control->get_rate_roll_pid().filt_D_hz()*2.0f);
         break;
     case PITCH:
-        rotation_rate_filt.set_cutoff_frequency(attitude_control->get_rate_pitch_pid().filt_D_hz()*2.0f);
         target_max_rate = MAX(AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, step_scaler*AUTOTUNE_TARGET_RATE_RLLPIT_CDS);
         target_rate = constrain_float(ToDeg(attitude_control->max_rate_step_bf_pitch())*100.0f, AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, target_max_rate);
         target_angle = constrain_float(ToDeg(attitude_control->max_angle_step_bf_pitch())*100.0f, AUTOTUNE_TARGET_MIN_ANGLE_RLLPIT_CD, AUTOTUNE_TARGET_ANGLE_RLLPIT_CD);
+        rotation_rate_filt.set_cutoff_frequency(attitude_control->get_rate_pitch_pid().filt_D_hz()*2.0f);
         break;
     case YAW:
-        rotation_rate_filt.set_cutoff_frequency(AUTOTUNE_Y_FILT_FREQ);
         target_max_rate = MAX(AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, step_scaler*AUTOTUNE_TARGET_RATE_YAW_CDS);
         target_rate = constrain_float(ToDeg(attitude_control->max_rate_step_bf_yaw()*0.75f)*100.0f, AUTOTUNE_TARGET_MIN_RATE_YAW_CDS, target_max_rate);
         target_angle = constrain_float(ToDeg(attitude_control->max_angle_step_bf_yaw()*0.75f)*100.0f, AUTOTUNE_TARGET_MIN_ANGLE_YAW_CD, AUTOTUNE_TARGET_ANGLE_YAW_CD);
+        rotation_rate_filt.set_cutoff_frequency(AUTOTUNE_Y_FILT_FREQ);
         break;
+    }
+
+    if ((tune_type == SP_DOWN) || (tune_type == SP_UP)) {
+        rotation_rate_filt.reset(start_rate);
+    } else {
+        rotation_rate_filt.reset(0);
     }
 
 }
 
-void AC_AutoTune::twitch_test_rate(uint8_t test_axis, const float dir_sign)
+//run twitch test
+void AC_AutoTune::twitch_test_run(uint8_t test_axis, const float dir_sign)
 {
-        // Testing rate P and D gains so will set body-frame rate targets.
-        // Rate controller will use existing body-frame rates and convert to motor outputs
-        // for all axes except the one we override here.
-        // capture this iterations rotation rate and lean angle
-        float gyro_reading = 0;
-        switch (test_axis) {
-        case ROLL:
-            // override body-frame roll rate
-            attitude_control->rate_bf_roll_target(dir_sign * target_rate + start_rate);
-            gyro_reading = ahrs_view->get_gyro().x;
-            lean_angle = dir_sign * (ahrs_view->roll_sensor - (int32_t)start_angle);
-            break;
-        case PITCH:
-            // override body-frame pitch rate
-            attitude_control->rate_bf_pitch_target(dir_sign * target_rate + start_rate);
-            gyro_reading = ahrs_view->get_gyro().y;
-            lean_angle = dir_sign * (ahrs_view->pitch_sensor - (int32_t)start_angle);
-            break;
-        case YAW:
-            // override body-frame yaw rate
-            attitude_control->rate_bf_yaw_target(dir_sign * target_rate + start_rate);
-            gyro_reading = ahrs_view->get_gyro().z;
-            lean_angle = dir_sign * wrap_180_cd(ahrs_view->yaw_sensor-(int32_t)start_angle);
-            break;
-        }
+    // disable rate limits
+    attitude_control->use_sqrt_controller(false);
+    // hold current attitude
+    attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
 
-        // Add filter to measurements
-        float filter_value = dir_sign * (ToDeg(gyro_reading) * 100.0f - start_rate);
-        rotation_rate = rotation_rate_filt.apply(filter_value,
-                        AP::scheduler().get_loop_period_s());
-
-        if (tune_type == RP_UP) {
-            twitching_test_rate(rotation_rate, target_rate*(1+0.5f*aggressiveness), test_rate_min, test_rate_max);
-        } else {
-            twitching_test_rate(rotation_rate, target_rate, test_rate_min, test_rate_max);
-        }
-        twitching_measure_acceleration(test_accel_max, rotation_rate, rate_max);
-        twitching_abort_rate(lean_angle, rotation_rate, abort_angle, test_rate_min);
-
-}
-void AC_AutoTune::twitch_test_angle(uint8_t test_axis, const float dir_sign)
-{
+    if ((tune_type == SP_DOWN) || (tune_type == SP_UP)) {
         // step angle targets on first iteration
         if (twitch_first_iter) {
             twitch_first_iter = false;
@@ -1338,32 +1302,77 @@ void AC_AutoTune::twitch_test_angle(uint8_t test_axis, const float dir_sign)
                 break;
             }
         }
-
-        // capture this iterations rotation rate and lean angle
-        float gyro_reading = 0;
+    } else {
+        // Testing rate P and D gains so will set body-frame rate targets.
+        // Rate controller will use existing body-frame rates and convert to motor outputs
+        // for all axes except the one we override here.
         switch (test_axis) {
         case ROLL:
-            gyro_reading = ahrs_view->get_gyro().x;
-            lean_angle = dir_sign * (ahrs_view->roll_sensor - (int32_t)start_angle);
+            // override body-frame roll rate
+            attitude_control->rate_bf_roll_target(dir_sign * target_rate + start_rate);
             break;
         case PITCH:
-            gyro_reading = ahrs_view->get_gyro().y;
-            lean_angle = dir_sign * (ahrs_view->pitch_sensor - (int32_t)start_angle);
+            // override body-frame pitch rate
+            attitude_control->rate_bf_pitch_target(dir_sign * target_rate + start_rate);
             break;
         case YAW:
-            gyro_reading = ahrs_view->get_gyro().z;
-            lean_angle = dir_sign * wrap_180_cd(ahrs_view->yaw_sensor-(int32_t)start_angle);
+            // override body-frame yaw rate
+            attitude_control->rate_bf_yaw_target(dir_sign * target_rate + start_rate);
             break;
         }
+    }
 
-        // Add filter to measurements
-        float filter_value = dir_sign * (ToDeg(gyro_reading) * 100.0f);
-        rotation_rate = rotation_rate_filt.apply(filter_value,
-                        AP::scheduler().get_loop_period_s());
+    // capture this iterations rotation rate and lean angle
+    float gyro_reading = 0;
+    switch (test_axis) {
+    case ROLL:
+        gyro_reading = ahrs_view->get_gyro().x;
+        lean_angle = dir_sign * (ahrs_view->roll_sensor - (int32_t)start_angle);
+        break;
+    case PITCH:
+        gyro_reading = ahrs_view->get_gyro().y;
+        lean_angle = dir_sign * (ahrs_view->pitch_sensor - (int32_t)start_angle);
+        break;
+    case YAW:
+        gyro_reading = ahrs_view->get_gyro().z;
+        lean_angle = dir_sign * wrap_180_cd(ahrs_view->yaw_sensor-(int32_t)start_angle);
+        break;
+    }
 
+    // Add filter to measurements
+    float filter_value;
+    switch (tune_type) {
+    case SP_DOWN:
+    case SP_UP:
+        filter_value = dir_sign * (ToDeg(gyro_reading) * 100.0f);
+        break;
+    default:
+        filter_value = dir_sign * (ToDeg(gyro_reading) * 100.0f - start_rate);
+        break;
+    }
+    rotation_rate = rotation_rate_filt.apply(filter_value,
+                    AP::scheduler().get_loop_period_s());
+
+    switch (tune_type) {
+    case RD_UP:
+    case RD_DOWN:
+        twitching_test_rate(rotation_rate, target_rate, test_rate_min, test_rate_max);
+        twitching_measure_acceleration(test_accel_max, rotation_rate, rate_max);
+        twitching_abort_rate(lean_angle, rotation_rate, abort_angle, test_rate_min);
+        break;
+    case RP_UP:
+        twitching_test_rate(rotation_rate, target_rate*(1+0.5f*aggressiveness), test_rate_min, test_rate_max);
+        twitching_measure_acceleration(test_accel_max, rotation_rate, rate_max);
+        twitching_abort_rate(lean_angle, rotation_rate, abort_angle, test_rate_min);
+        break;
+    case SP_DOWN:
+    case SP_UP:
         twitching_test_angle(lean_angle, rotation_rate, target_angle*(1+0.5f*aggressiveness), test_angle_min, test_angle_max, test_rate_min, test_rate_max);
         twitching_measure_acceleration(test_accel_max, rotation_rate - dir_sign * start_rate, rate_max);
-
+        break;
+    default:
+        break;
+    }
 }
 
 void AC_AutoTune::rate_ff_test_init()
