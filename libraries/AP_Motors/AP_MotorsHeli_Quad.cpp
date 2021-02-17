@@ -54,7 +54,7 @@ bool AP_MotorsHeli_Quad::init_outputs()
 
     for (uint8_t i=0; i<AP_MOTORS_HELI_QUAD_NUM_MOTORS; i++) {
         add_motor_num(CH_1+i);
-        SRV_Channels::set_angle(SRV_Channels::get_motor_function(i), QUAD_SERVO_MAX_ANGLE);
+        reset_swash_servo(SRV_Channels::get_motor_function(i));
     }
 
     // set rotor servo range
@@ -162,8 +162,8 @@ void AP_MotorsHeli_Quad::calculate_roll_pitch_collective_factors()
             // reverse yaw for H frame
             clockwise = !clockwise;
         }
-        _rollFactor[CH_1+i]       = -0.25*sinf(radians(angles[i]))/cos45;
-        _pitchFactor[CH_1+i]      =  0.25*cosf(radians(angles[i]))/cos45;
+        _rollFactor[CH_1+i]       = -0.125*sinf(radians(angles[i]))/cos45;
+        _pitchFactor[CH_1+i]      =  0.125*cosf(radians(angles[i]))/cos45;
         _yawFactor[CH_1+i]        = clockwise?-0.25:0.25;
         _collectiveFactor[CH_1+i] = 1;
     }
