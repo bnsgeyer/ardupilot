@@ -72,7 +72,7 @@ void AC_AutoTune_Heli::test_init()
                 curr_test_freq = test_freq[12];
             } else {
                 // reset determine_gain function for first use in the event autotune is restarted
-                test_freq[0] = 2.0f * 3.14159f * 2.0f;
+                test_freq[0] = 4.0f * 3.14159f * 2.0f;
                 curr_test_freq = test_freq[0];
             }
             // reset determine_gain function for first use in the event autotune is restarted
@@ -378,15 +378,15 @@ void AC_AutoTune_Heli::updating_angle_p_up_all(AxisType test_axis)
 
     switch (test_axis) {
     case ROLL:
-        updating_angle_p_up(tune_roll_sp, test_freq, test_gain, test_phase, freq_cnt);
+        updating_angle_p_up_yaw(tune_roll_sp, test_freq, test_gain, test_phase, freq_cnt, 2.1f);
 //        test_accel_max = tune_roll_accel;
         break;
     case PITCH:
-        updating_angle_p_up(tune_pitch_sp, test_freq, test_gain, test_phase, freq_cnt);
+        updating_angle_p_up_yaw(tune_pitch_sp, test_freq, test_gain, test_phase, freq_cnt, 2.1f);
 //        test_accel_max = tune_pitch_accel;
         break;
     case YAW:
-        updating_angle_p_up_yaw(tune_yaw_sp, test_freq, test_gain, test_phase, freq_cnt);
+        updating_angle_p_up_yaw(tune_yaw_sp, test_freq, test_gain, test_phase, freq_cnt, 1.2f);
 //        test_accel_max = tune_yaw_accel;
         break;
     }
@@ -603,11 +603,11 @@ void AC_AutoTune_Heli::updating_angle_p_up(float &tune_p, float *freq, float *ga
     determine_gain_angle(0.0f, 0.0f, 0.0f, curr_test_freq, gain[frq_cnt], phase[frq_cnt], test_accel_max, dwell_complete, true);
 }
 
-void AC_AutoTune_Heli::updating_angle_p_up_yaw(float &tune_p, float *freq, float *gain, float *phase, uint8_t &frq_cnt)
+void AC_AutoTune_Heli::updating_angle_p_up_yaw(float &tune_p, float *freq, float *gain, float *phase, uint8_t &frq_cnt, float max_gain)
 {
     float test_freq_incr = 0.5f * 3.14159f * 2.0f;
     static uint8_t prev_good_frq_cnt;
-    float max_gain = 1.2f;
+    float gain_incr = 0.5f;
 
     if (frq_cnt < 12) {
         if (frq_cnt == 0) {
@@ -634,7 +634,7 @@ void AC_AutoTune_Heli::updating_angle_p_up_yaw(float &tune_p, float *freq, float
     // once finished with sweep of frequencies, cnt = 12 is used to then tune for max response gain
     if (freq_cnt >= 12) {
         if (gain[frq_cnt] < max_gain && phase[frq_cnt] <= 180.0f && phase[frq_cnt] >= 160.0f && tune_p < AUTOTUNE_SP_MAX) {
-            tune_p += 0.5f;
+            tune_p += gain_incr;
             if (tune_p >= AUTOTUNE_SP_MAX) {
                 tune_p = AUTOTUNE_SP_MAX;
                 counter = AUTOTUNE_SUCCESS_COUNT;
