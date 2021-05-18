@@ -42,6 +42,13 @@ Helicopter::Helicopter(const char *frame_str) :
         frame_type = HELI_FRAME_BLADE360;
         _time_delay = 40;
         nominal_rpm = 2100;
+    } else if (strstr(frame_str, "-bell206")) {
+        frame_type = HELI_FRAME_BELL206;
+        _time_delay = 20;
+        nominal_rpm = 395;
+        mass = 1100.0f;
+        tr_dist = 5.0f;
+        hover_lean = -3.2f;
     } else {
         frame_type = HELI_FRAME_CONVENTIONAL;
         _time_delay = 50;
@@ -216,6 +223,63 @@ void Helicopter::update(const struct sitl_input &input)
         break;
     }
 
+    case HELI_FRAME_BELL206: {
+        // simulate a Bell 206 helicopter.  This model was taken from the following reference.
+        // Zion, L, Tishler, M, "Development of a Full Flight Envelope Helicopter Simulation using System Identification",
+        // American Helicopter Society’s 63rd Annual Forum & Technology Display, Virginia Beach, VA, May 1-3, 2007.
+        // The rotor control derivatives were modified as it was too sensitive with the ones in the paper assuming that 
+        // the controls inputs were percent (-100 to 100).
+
+        float Ma1s = 5.648f;
+        float Lb1s = 30.52f;
+        float Mu = 0.006f;
+        float Mv = 0.0f;
+        float Lu = 0.0f;
+        float Lv = -0.03f;
+//        float Lr = -0.6223f;
+        float Lr = 0.0f;
+        float Xu = -0.02162f;
+        float Yv = -0.06006f;
+        float Yr = 1.042f;
+        float Zw = -0.7378f;
+        float Nr = -1.399f;
+        float Nw = 0.0f;
+        float Nv = 0.0f;
+        float Ncol = 0.0f;
+        float Nped = 3.6f;
+        float Zcol = -21.47f;
+
+        float tail_rotor = (_servos_delayed[3]-1000) / 1000.0f;
+
+        // determine RPM
+        rpm[0] = update_rpm(motor_interlock, dt);
+
+        // collective adjusted for coll_min(1460) to coll_max(1740) as 0 to 1 with 1500 being zero thrust
+        float coll = 3.51 * ((swash1+swash2+swash3) / 3.0f - 0.5f);
+
+        // Calculate rotor tip path plane angle
+        float roll_cyclic = 1.283f * (swash1 - swash2);
+        float pitch_cyclic = 1.48f * ((swash1+swash2) / 2.0f - swash3);
+        Vector2f ctrl_pos = Vector2f(roll_cyclic, pitch_cyclic);
+        update_rotor_dynamics(gyro, ctrl_pos, _tpp_angle, dt);
+
+        float yaw_cmd = 1.45f * (2.0f * tail_rotor - 1.0f); // convert range to -1 to 1
+
+        // rotational acceleration, in rad/s/s, in body frame
+        rot_accel.x = _tpp_angle.x * Lb1s + Lu * velocity_air_bf.x + Lv * velocity_air_bf.y + Lr * gyro.z;
+        rot_accel.y = _tpp_angle.y * Ma1s + Mu * velocity_air_bf.x + Mv * velocity_air_bf.y;
+        rot_accel.z = Nv * velocity_air_bf.y + Nr * gyro.z + sq(rpm[0]/nominal_rpm) * Nped * yaw_cmd + Nw * velocity_air_bf.z + sq(rpm[0]/nominal_rpm) * Ncol * (coll - 0.5f);
+
+        lateral_y_thrust = GRAVITY_MSS * _tpp_angle.x + Yv * velocity_air_bf.y + Yr * gyro.z - hover_lean * 0.01745 * GRAVITY_MSS;
+        lateral_x_thrust = -1.0f * GRAVITY_MSS * _tpp_angle.y + Xu * velocity_air_bf.x;
+        float vertical_thrust = Zcol * coll * sq(rpm[0]/nominal_rpm) + velocity_air_bf.z * Zw;
+        accel_body = Vector3f(lateral_x_thrust, lateral_y_thrust, vertical_thrust);
+
+//        accel_body = Vector3f(0.0f, 0.0f, vertical_thrust);
+
+        break;
+    }
+
     case HELI_FRAME_DUAL: {
 
         float Ma1s = 617.5f/5.0f;
@@ -335,6 +399,7 @@ void Helicopter::update_rotor_dynamics(Vector3f gyros, Vector2f ctrl_pos, Vector
 {
 
     float tf_inv;
+    float tf;
     float Lfa1s;
     float Mfb1s;
     float Lflt;
@@ -358,6 +423,15 @@ void Helicopter::update_rotor_dynamics(Vector3f gyros, Vector2f ctrl_pos, Vector
         Lflg = 0.0f;
         Mflt = 0.0f;
         Mflg = 1.9432f;
+    } else if (frame_type == HELI_FRAME_BELL206) {
+        tf = 0.06097;
+        tf_inv = 1.0f / tf;
+        Lfa1s = 3.463f * tf;
+        Mfb1s = 13.54f * tf;
+        Lflt = 0.1207f * 100 * tf;
+        Lflg = -0.04627f * 100 * tf;
+        Mflt = -0.01375f * 100 * tf;
+        Mflg = 0.039655f * 100 * tf;
     } else {
         tf_inv = 1.0f / 0.068232f;
         Lfa1s = 1.2963f;
