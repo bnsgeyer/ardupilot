@@ -14,8 +14,11 @@ void Copter::run_rate_controller()
     attitude_control->set_dt(last_loop_time_s);
     pos_control->set_dt(last_loop_time_s);
 
-    // run low level rate controllers that only require IMU data
-    attitude_control->rate_controller_run(); 
+    // Bypass attitude controller if quadsquad is current flight mode. quadsquad is self contained
+    if (flightmode->mode_number() != Mode::Number::QUADSQUAD && flightmode->mode_number() != Mode::Number::SYSTEMID) {
+        // run low level rate controllers that only require IMU data
+        attitude_control->rate_controller_run();
+    }
 }
 
 /*************************************************************

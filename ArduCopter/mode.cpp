@@ -22,7 +22,8 @@ Mode::Mode(void) :
     channel_pitch(copter.channel_pitch),
     channel_throttle(copter.channel_throttle),
     channel_yaw(copter.channel_yaw),
-    G_Dt(copter.G_Dt)
+    G_Dt(copter.G_Dt),
+    QSahrs(copter.ahrs)
 { };
 
 #if AC_PAYLOAD_PLACE_ENABLED
@@ -172,6 +173,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_autorotate;
             break;
 #endif
+        case Mode::Number::QUADSQUAD:
+            ret = (Mode *)g2.mode_quadsquad_ptr;
+            break;
 
 #if MODE_TURTLE_ENABLED == ENABLED
         case Mode::Number::TURTLE:

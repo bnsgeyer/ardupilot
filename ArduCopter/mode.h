@@ -95,6 +95,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        QUADSQUAD =    29,  // control mode for Ivler project
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -248,6 +249,9 @@ protected:
     RC_Channel *&channel_throttle;
     RC_Channel *&channel_yaw;
     float &G_Dt;
+
+    QS_InnerRateLoopModelClass QS_InnerRateLoop_Obj;
+    AP_AHRS &QSahrs;
 
     // note that we support two entirely different automatic takeoffs:
 
@@ -1599,9 +1603,10 @@ public:
     bool has_manual_throttle() const override { return true; }
     bool allows_arming(AP_Arming::Method method) const override { return false; };
     bool is_autopilot() const override { return false; }
-    bool logs_attitude() const override { return true; }
+    bool logs_attitude() const override { return false; }
 
     void set_magnitude(float input) { waveform_magnitude.set(input); }
+    void set_traj_sw(uint8_t sw_status) { traj_sw = sw_status; }
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -1653,6 +1658,32 @@ private:
         SYSTEMID_STATE_STOPPED,
         SYSTEMID_STATE_TESTING
     } systemid_state;
+
+    struct { //quadsquad specific ipnuts
+        int16_t ch1 ;
+        int16_t ch2 ;
+        int16_t ch3 ;
+        int16_t ch4 ;
+        int16_t ch5 ;
+        int16_t ch6 ;
+        int16_t ch7 ;
+        int16_t ch8 ;
+    } GSInputs;
+
+    bool engage; //quadsquad specific
+    float score; //quadsquad specific
+    float VeSqrSum; //quadsquad
+    float PeSqrSum; //quad squad
+    float pNcmd;
+    float pEcmd;
+    float pDcmd;
+    float vmax;
+    float pmax;
+    float trajectorycount;
+    int log_counter_qs;
+    uint8_t traj_sw;
+    float alpha;
+
 };
 
 class ModeThrow : public Mode {
@@ -1974,3 +2005,58 @@ private:
 
 };
 #endif
+
+class ModeQuadsquad : public Mode {
+
+public:
+
+    ModeQuadsquad(void);
+    Number mode_number() const override { return Number::QUADSQUAD; }
+
+    virtual void run() override;
+    bool init(bool ignore_checks) override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return true; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    void set_traj_sw(uint8_t sw_status) { traj_sw = sw_status; }
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+protected:
+
+    const char *name() const override { return "QUADSQUAD"; }
+    const char *name4() const override { return "QSQD"; }
+
+private:
+
+    struct { //quadsquad specific ipnuts
+        int16_t ch1 ;
+        int16_t ch2 ;
+        int16_t ch3 ;
+        int16_t ch4 ;
+        int16_t ch5 ;
+        int16_t ch6 ;
+        int16_t ch7 ;
+        int16_t ch8 ;
+    } GSInputs;
+
+    bool engage; //quadsquad specific
+    float score; //quadsquad specific
+    float VeSqrSum; //quadsquad
+    float PeSqrSum; //quad squad
+    float pNcmd;
+    float pEcmd;
+    float pDcmd;
+    float vmax;
+    float pmax;
+    float trajectorycount;
+    int log_counter_qs;
+    uint8_t traj_sw;
+
+    AP_Float alpha;
+
+};
+
+

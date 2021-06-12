@@ -72,6 +72,7 @@
 #include <AC_PrecLand/AC_PrecLand_config.h>
 #include <AP_OpticalFlow/AP_OpticalFlow.h>
 #include <AP_Winch/AP_Winch_config.h>
+#include <QS_InnerRateLoop/QS_InnerRateLoop.h>
 
 // Configuration
 #include "defines.h"
@@ -231,6 +232,7 @@ public:
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+    friend class ModeQuadsquad;
 
     Copter(void);
 
@@ -1053,6 +1055,7 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
+    ModeQuadsquad mode_quadsquad;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
