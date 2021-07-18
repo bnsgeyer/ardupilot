@@ -79,7 +79,7 @@ void AC_AutoTune_Heli::test_init()
                 stop_freq = curr_test_freq;
             } else if (tune_type == MAX_GAINS || tune_type == RD_UP) {
                 start_freq = 10.0f;
-                stop_freq = 100.0f;
+                stop_freq = 70.0f;
                 method = 0; //reset the method for rate D and rate P tuning.
             } else {
                 // reset determine_gain function for first use in the event autotune is restarted
@@ -107,7 +107,7 @@ void AC_AutoTune_Heli::test_init()
             curr_test_freq = test_freq[0];
             test_accel_max = 0.0f;
             start_freq = 10.0f;
-            stop_freq = 80.0f;                
+            stop_freq = 60.0f;
         }
         // reset determine_gain function whenever test is initialized
         determine_gain_angle(0.0f, 0.0f, 0.0f, curr_test_freq, test_gain[freq_cnt], test_phase[freq_cnt], test_accel_max, dwell_complete, true);
