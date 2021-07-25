@@ -412,6 +412,7 @@ protected:
         float    ph270_freq;
         float    ph270_gain;
         float    ph270_phase;
+        uint8_t  progress;  // set based on phase of frequency response.  0 - start; 1 - reached 180 deg; 2 - reached 270 deg;
     };
     sweep_data sweep;
 

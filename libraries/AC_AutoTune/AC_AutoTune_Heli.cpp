@@ -33,7 +33,7 @@
 #define AUTOTUNE_RLPF_MIN                  1.0f     // minimum Rate Yaw filter value
 #define AUTOTUNE_RLPF_MAX                  20.0f     // maximum Rate Yaw filter value
 #define AUTOTUNE_RP_MIN                   0.001f     // minimum Rate P value
-#define AUTOTUNE_RP_MAX                   1.0f     // maximum Rate P value
+#define AUTOTUNE_RP_MAX                   0.3f     // maximum Rate P value
 #define AUTOTUNE_SP_MAX                    10.0f     // maximum Stab P value
 #define AUTOTUNE_SP_MIN                    3.0f     // maximum Stab P value
 #define AUTOTUNE_RFF_MAX                   0.5f     // maximum Stab P value
@@ -926,6 +926,8 @@ void AC_AutoTune_Heli::updating_max_gains(float *freq, float *gain, float *phase
             }
             max_gain_p.phase = 161.0f;
             max_gain_p.max_allowed = powf(10.0f,-1 * (log10f(max_gain_p.gain) * 20.0f + 2.42) / 20.0f);
+            // limit max gain allowed to be no more than 2x the max p gain limit to keep initial gains bounded
+            max_gain_p.max_allowed = constrain_float(max_gain_p.max_allowed, 0.0f, 2.0f * AUTOTUNE_RP_MAX);
             found_max_p = true;
             find_middle = false;
 
@@ -953,6 +955,8 @@ void AC_AutoTune_Heli::updating_max_gains(float *freq, float *gain, float *phase
             }
             max_gain_d.phase = 251.0f;
             max_gain_d.max_allowed = powf(10.0f,-1 * (log10f(max_gain_d.freq * max_gain_d.gain) * 20.0f + 2.42) / 20.0f);
+            // limit max gain allowed to be no more than 2x the max d gain limit to keep initial gains bounded
+            max_gain_d.max_allowed = constrain_float(max_gain_d.max_allowed, 0.0f, 2.0f * AUTOTUNE_RD_MAX);
             found_max_d = true;
             find_middle = false;
             gcs().send_text(MAV_SEVERITY_INFO, "AutoTune: Max Rate D freq=%f gain=%f ph=%f rate_d=%f", (double)(max_gain_d.freq), (double)(max_gain_d.gain), (double)(max_gain_d.phase), (double)(max_gain_d.max_allowed));

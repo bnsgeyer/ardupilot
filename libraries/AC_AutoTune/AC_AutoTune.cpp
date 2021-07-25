@@ -1645,6 +1645,7 @@ void AC_AutoTune::dwell_test_init(float filt_freq)
         sweep.maxgain_gain = 0.0f;
         sweep.maxgain_freq = 0.0f;
         sweep.maxgain_phase = 0.0f;
+        sweep.progress = 0;
         curr_test_gain = 0.0f;
         curr_test_phase = 0.0f;
     }
@@ -1809,12 +1810,18 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
 
     // set sweep data if a frequency sweep is being conducted
     if (!is_equal(start_frq,stop_frq) && (float)(now - dwell_start_time_ms) > 2.5f * cycle_time_ms) {
-        if (curr_test_phase <= 160.0f && curr_test_phase >= 150.0f) {
+        // track sweep phase to prevent capturing 180 deg and 270 deg data after phase has wrapped.
+        if (curr_test_phase > 180.0f && sweep.progress == 0) {
+            sweep.progress = 1;
+        } else if (curr_test_phase > 270.0f && sweep.progress == 1) {
+            sweep.progress = 2;
+        }
+        if (curr_test_phase <= 160.0f && curr_test_phase >= 150.0f && sweep.progress == 0) {
             sweep.ph180_freq = curr_test_freq;
             sweep.ph180_gain = curr_test_gain;
             sweep.ph180_phase = curr_test_phase;
         }
-        if (curr_test_phase <= 250.0f && curr_test_phase >= 240.0f) {
+        if (curr_test_phase <= 250.0f && curr_test_phase >= 240.0f && sweep.progress == 1) {
             sweep.ph270_freq = curr_test_freq;
             sweep.ph270_gain = curr_test_gain;
             sweep.ph270_phase = curr_test_phase;
