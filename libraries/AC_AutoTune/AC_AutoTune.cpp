@@ -1648,6 +1648,28 @@ void AC_AutoTune::dwell_test_init(float filt_freq)
         curr_test_gain = 0.0f;
         curr_test_phase = 0.0f;
     }
+
+    // save the trim output from PID controller
+    float ff_term = 0.0f;
+    float p_term = 0.0f;
+    switch (axis) {
+    case ROLL:
+        trim_meas_rate = ahrs_view->get_gyro().x;
+        ff_term = attitude_control->get_rate_roll_pid().get_ff();
+        p_term = attitude_control->get_rate_roll_pid().get_p();
+        break;
+    case PITCH:
+        trim_meas_rate = ahrs_view->get_gyro().y;
+        ff_term = attitude_control->get_rate_pitch_pid().get_ff();
+        p_term = attitude_control->get_rate_pitch_pid().get_p();
+        break;
+    case YAW:
+        trim_meas_rate = ahrs_view->get_gyro().z;
+        ff_term = attitude_control->get_rate_yaw_pid().get_ff();
+        p_term = attitude_control->get_rate_yaw_pid().get_p();
+        break;
+    }
+    trim_pff_out = ff_term + p_term;
 }
 
 void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float stop_frq, float &dwell_gain, float &dwell_phase)
@@ -1717,7 +1739,11 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
             attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, att_hold_gain * (trim_attitude_cd.y - filt_attitude_cd.y), 0.0f);
             attitude_control->rate_bf_roll_target(target_rate_cds + trim_rate_cds);
         } else {
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+            if (!is_zero(attitude_control->get_rate_roll_pid().ff() + attitude_control->get_rate_roll_pid().kP())) {
+                float trim_tgt_rate_cds = 5730.0f * (trim_pff_out + trim_meas_rate * attitude_control->get_rate_roll_pid().kP()) / (attitude_control->get_rate_roll_pid().ff() + attitude_control->get_rate_roll_pid().kP());
+                attitude_control->rate_bf_roll_target(trim_tgt_rate_cds);
+            }
         }
         break;
     case PITCH:
@@ -1729,7 +1755,11 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
             attitude_control->input_rate_bf_roll_pitch_yaw(att_hold_gain * (trim_attitude_cd.x - filt_attitude_cd.x), 0.0f, 0.0f);
             attitude_control->rate_bf_pitch_target(target_rate_cds + trim_rate_cds);
         } else {
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+            if (!is_zero(attitude_control->get_rate_pitch_pid().ff() + attitude_control->get_rate_pitch_pid().kP())) {
+                float trim_tgt_rate_cds = 5730.0f * (trim_pff_out + trim_meas_rate * attitude_control->get_rate_pitch_pid().kP()) / (attitude_control->get_rate_pitch_pid().ff() + attitude_control->get_rate_pitch_pid().kP());
+                attitude_control->rate_bf_pitch_target(trim_tgt_rate_cds);
+            }
         }
         break;
     case YAW:
@@ -1741,7 +1771,11 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
             attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_yaw_target(target_rate_cds + trim_rate_cds);
         } else {
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+            if (!is_zero(attitude_control->get_rate_yaw_pid().ff() + attitude_control->get_rate_yaw_pid().kP())) {
+                float trim_tgt_rate_cds = 5730.0f * (trim_pff_out + trim_meas_rate * attitude_control->get_rate_yaw_pid().kP()) / (attitude_control->get_rate_yaw_pid().ff() + attitude_control->get_rate_yaw_pid().kP());
+                attitude_control->rate_bf_yaw_target(trim_tgt_rate_cds);
+            }
         }
         break;
     }

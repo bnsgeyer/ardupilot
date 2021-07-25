@@ -232,7 +232,8 @@ void AC_AutoTune_Heli::load_test_gains()
             attitude_control->get_rate_roll_pid().kI(orig_roll_ri);
             attitude_control->set_accel_roll_max(500000.0f);
         } else {
-            attitude_control->get_rate_roll_pid().kI(0.0f);
+            // freeze integrator to hold trim by making i term small during rate controller tuning
+            attitude_control->get_rate_roll_pid().kI(0.01f * orig_roll_ri);
         }
         attitude_control->get_rate_roll_pid().ff(tune_roll_rff);
         attitude_control->get_rate_roll_pid().filt_T_hz(orig_roll_fltt);
@@ -242,12 +243,14 @@ void AC_AutoTune_Heli::load_test_gains()
             attitude_control->get_rate_pitch_pid().kI(orig_pitch_ri);
             attitude_control->set_accel_pitch_max(500000.0f);
         } else {
-            attitude_control->get_rate_pitch_pid().kI(0.0f);
+            // freeze integrator to hold trim by making i term small during rate controller tuning
+            attitude_control->get_rate_pitch_pid().kI(0.01f * orig_pitch_ri);
         }
         attitude_control->get_rate_pitch_pid().ff(tune_pitch_rff);
         attitude_control->get_rate_pitch_pid().filt_T_hz(orig_pitch_fltt);
         break;
     case YAW:
+        // freeze integrator to hold trim by making i term small during rate controller tuning
         attitude_control->get_rate_yaw_pid().kI(tune_yaw_rp*0.01f);
         attitude_control->get_rate_yaw_pid().kD(tune_yaw_rd);
         attitude_control->get_rate_yaw_pid().ff(tune_yaw_rff);

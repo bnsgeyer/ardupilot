@@ -395,7 +395,8 @@ protected:
     float    waveform_freq_rads;  //current frequency for chirp waveform
     float    start_freq;  //start freq for dwell test
     float    stop_freq;   //ending freq for dwell test
-
+    float    trim_pff_out;  // trim output of the PID rate controller for P, I and FF terms
+    float    trim_meas_rate;  // trim measured gyro rate
 
     LowPassFilterFloat  command_filt;               // filtered command
     LowPassFilterFloat  target_rate_filt;            // filtered target rotation rate in radians/second
