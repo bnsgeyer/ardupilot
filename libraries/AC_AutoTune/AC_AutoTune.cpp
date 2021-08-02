@@ -1706,15 +1706,20 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
         velocity_bf.y = velocity_ned.x * ahrs_view->sin_yaw() + velocity_ned.y * ahrs_view->cos_yaw();
     }
 
+    // keep controller from requesting too high of a rate
+    float target_rate_mag_cds = dwell_freq * tgt_attitude * 5730.0f;
+    if (target_rate_mag_cds > 6000.0f) {
+        target_rate_mag_cds = 6000.0f;
+    }
     if (settle_time == 0) {
         // give gentler start for the dwell
         if ((float)(now - dwell_start_time_ms) < 0.5f * cycle_time_ms) {
-            target_rate_cds = - dwell_freq * 0.5f * tgt_attitude * 5730.0f * sinf(dwell_freq * (now - dwell_start_time_ms) * 0.001);
+            target_rate_cds = -0.5f * target_rate_mag_cds * sinf(dwell_freq * (now - dwell_start_time_ms) * 0.001);
         } else {
             if (is_equal(start_frq,stop_frq)) {
-                target_rate_cds = - dwell_freq * tgt_attitude * 5730.0f * cosf(dwell_freq * (now - dwell_start_time_ms - 0.25f * cycle_time_ms) * 0.001);
+                target_rate_cds = - target_rate_mag_cds * cosf(dwell_freq * (now - dwell_start_time_ms - 0.25f * cycle_time_ms) * 0.001);
             } else {
-                target_rate_cds = waveform((now - dwell_start_time_ms - 0.5f * cycle_time_ms) * 0.001, (sweep_time_ms - 0.5f * cycle_time_ms) * 0.001f, dwell_freq * tgt_attitude * 5730.0f, start_frq, stop_frq);
+                target_rate_cds = waveform((now - dwell_start_time_ms - 0.5f * cycle_time_ms) * 0.001, (sweep_time_ms - 0.5f * cycle_time_ms) * 0.001f, target_rate_mag_cds, start_frq, stop_frq);
                 dwell_freq = waveform_freq_rads;
             }
         }
