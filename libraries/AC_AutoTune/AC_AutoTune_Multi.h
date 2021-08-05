@@ -30,6 +30,9 @@ public:
     // save gained, called on disarm
     void save_tuning_gains() override;
 
+    // var_info for holding Parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+
 protected:
     // load gains
     void load_test_gains() override;

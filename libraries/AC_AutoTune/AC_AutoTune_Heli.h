@@ -29,6 +29,9 @@ public:
     // save gained, called on disarm
     void save_tuning_gains() override;
 
+    // var_info for holding Parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+
 protected:
 
     void load_test_gains() override;
@@ -107,6 +110,11 @@ protected:
     void do_gcs_announcements() override;
 
     void set_tune_sequence() override;
+
+    AP_Int8  seq_bitmask;
+    AP_Float min_sweep_freq;
+    AP_Float max_sweep_freq;
+    AP_Float max_resp_gain;
 
 private:
     // updating_rate_ff_up - adjust FF to ensure the target is reached

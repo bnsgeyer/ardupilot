@@ -45,10 +45,45 @@
 #define AUTOTUNE_SEQ_BITMASK_ANGLE_P         4
 #define AUTOTUNE_SEQ_BITMASK_MAX_GAIN        8
 
+const AP_Param::GroupInfo AC_AutoTune_Heli::var_info[] = {
+    AP_NESTEDGROUPINFO(AC_AutoTune, 0),
+
+    // @Param: SEQ
+    // @DisplayName: AutoTune Sequence Bitmask
+    // @Description: 2-byte bitmask to select what tuning should be performed.  Max gain automatically performed if Rate D is selected. Values: 7:All,1:VFF Only,2:Rate D Only,4:Angle P Only,8:Max Gain Only,3:VFF and Rate D (incl max gain),5:VFF and Angle P,13:VFF max gain and angle P
+    // @Bitmask: 0:VFF,1:Rate D,2:Angle P,3:Max Gain Only
+    // @User: Standard
+    AP_GROUPINFO("SEQ", 1, AC_AutoTune_Heli, seq_bitmask,  5),
+
+    // @Param: MIN_FRQ
+    // @DisplayName: AutoTune minimum sweep frequency
+    // @Description: Defines the start frequency for sweeps and dwells
+    // @Range: 10 30
+    // @User: Standard
+    AP_GROUPINFO("MIN_FRQ", 2, AC_AutoTune_Heli, min_sweep_freq,  10.0f),
+
+    // @Param: MAX_FRQ
+    // @DisplayName: AutoTune maximum sweep frequency
+    // @Description: Defines the end frequency for sweeps and dwells
+    // @Range: 50 120
+    // @User: Standard
+    AP_GROUPINFO("MAX_FRQ", 3, AC_AutoTune_Heli, max_sweep_freq,  70.0f),
+
+    // @Param: MAX_GN
+    // @DisplayName: AutoTune maximum response gain
+    // @Description: Defines the response gain (output/input) to tune
+    // @Range: 1 2.5
+    // @User: Standard
+    AP_GROUPINFO("MAX_GN", 4, AC_AutoTune_Heli, max_resp_gain,  1.4f),
+
+    AP_GROUPEND
+};
+
 // constructor
 AC_AutoTune_Heli::AC_AutoTune_Heli()
 {
     tune_seq[0] = TUNE_COMPLETE;
+    AP_Param::setup_object_defaults(this, var_info);
 }
 
 void AC_AutoTune_Heli::test_init()
@@ -78,8 +113,8 @@ void AC_AutoTune_Heli::test_init()
                 start_freq = curr_test_freq;
                 stop_freq = curr_test_freq;
             } else if (tune_type == MAX_GAINS || tune_type == RD_UP) {
-                start_freq = 10.0f;
-                stop_freq = 70.0f;
+                start_freq = min_sweep_freq;
+                stop_freq = max_sweep_freq;
                 method = 0; //reset the method for rate D and rate P tuning.
             } else {
                 // reset determine_gain function for first use in the event autotune is restarted
@@ -106,8 +141,8 @@ void AC_AutoTune_Heli::test_init()
             test_freq[0] = 1.5f * 3.14159f * 2.0f;
             curr_test_freq = test_freq[0];
             test_accel_max = 0.0f;
-            start_freq = 10.0f;
-            stop_freq = 60.0f;
+            start_freq = min_sweep_freq;
+            stop_freq = max_sweep_freq;
         }
         // reset determine_gain function whenever test is initialized
         determine_gain_angle(0.0f, 0.0f, 0.0f, curr_test_freq, test_gain[freq_cnt], test_phase[freq_cnt], test_accel_max, dwell_complete, true);
@@ -525,7 +560,7 @@ void AC_AutoTune_Heli::updating_rate_p_up(float &tune_p, float *freq, float *gai
             curr_test_freq = curr_test_freq + 0.5 * test_freq_incr;
             freq[frq_cnt] = curr_test_freq;
         } else if (phase[frq_cnt] <= 180.0f && phase[frq_cnt] >= 160.0f) {
-            if (gain[frq_cnt] < 1.1f && tune_p < 0.6f * max_gain_p.max_allowed) {
+            if (gain[frq_cnt] < max_resp_gain && tune_p < 0.6f * max_gain_p.max_allowed) {
                 tune_p += 0.05f * max_gain_p.max_allowed;
             } else {
                 counter = AUTOTUNE_SUCCESS_COUNT;
@@ -709,7 +744,6 @@ void AC_AutoTune_Heli::updating_rate_d_up(float &tune_d, float *freq, float *gai
 void AC_AutoTune_Heli::updating_angle_p_up(float &tune_p, float *freq, float *gain, float *phase, uint8_t &frq_cnt)
 {
     float test_freq_incr = 0.5f * 3.14159f * 2.0f;
-    float max_gain = 1.2f;
     float gain_incr = 0.5f;
     static float phase_max;
     static float prev_gain;
@@ -730,12 +764,12 @@ void AC_AutoTune_Heli::updating_angle_p_up(float &tune_p, float *freq, float *ga
     if (freq_cnt < 12 && is_equal(start_freq,stop_freq)) {
         if (freq_cnt == 0) {
             freq_cnt_max = 0;
-        } else if (gain[freq_cnt] > max_gain && tune_p > AUTOTUNE_SP_MIN) {
+        } else if (gain[freq_cnt] > max_resp_gain && tune_p > AUTOTUNE_SP_MIN) {
             // exceeded max response gain already, reduce tuning gain to remain under max response gain
             tune_p -= gain_incr;
             // force counter to stay on frequency
             freq_cnt -= 1;
-        } else if (gain[freq_cnt] > max_gain && tune_p <= AUTOTUNE_SP_MIN) {
+        } else if (gain[freq_cnt] > max_resp_gain && tune_p <= AUTOTUNE_SP_MIN) {
             // exceeded max response gain at the minimum allowable tuning gain. terminate testing.
             tune_p = AUTOTUNE_SP_MIN;
             counter = AUTOTUNE_SUCCESS_COUNT;
@@ -762,7 +796,7 @@ void AC_AutoTune_Heli::updating_angle_p_up(float &tune_p, float *freq, float *ga
 
     // once finished with sweep of frequencies, cnt = 12 is used to then tune for max response gain
     if (freq_cnt >= 12 && is_equal(start_freq,stop_freq)) {
-        if (gain[freq_cnt] < max_gain && tune_p < AUTOTUNE_SP_MAX && !find_peak) {
+        if (gain[freq_cnt] < max_resp_gain && tune_p < AUTOTUNE_SP_MAX && !find_peak) {
             // keep increasing tuning gain unless phase changes or max response gain is acheived
             if (phase[freq_cnt]-phase_max > 20.0f && phase[freq_cnt] < 210.0f) {
                 freq[freq_cnt] += 0.5 * test_freq_incr;
@@ -780,7 +814,7 @@ void AC_AutoTune_Heli::updating_angle_p_up(float &tune_p, float *freq, float *ga
             }
             curr_test_freq = freq[freq_cnt];
             prev_gain = gain[freq_cnt];
-        } else if (gain[freq_cnt] > 1.1f * max_gain && tune_p > AUTOTUNE_SP_MIN && !find_peak) {
+        } else if (gain[freq_cnt] > 1.1f * max_resp_gain && tune_p > AUTOTUNE_SP_MIN && !find_peak) {
                 tune_p -= gain_incr;
         } else if (find_peak) {
             // find the frequency where the response gain is maximum
@@ -794,8 +828,8 @@ void AC_AutoTune_Heli::updating_angle_p_up(float &tune_p, float *freq, float *ga
             prev_gain = gain[freq_cnt];
         } else {
             // adjust tuning gain so max response gain is not exceeded
-            if (prev_gain < max_gain && gain[freq_cnt] > max_gain) {
-                float adj_factor = (max_gain - gain[freq_cnt]) / (gain[freq_cnt] - prev_gain);
+            if (prev_gain < max_resp_gain && gain[freq_cnt] > max_resp_gain) {
+                float adj_factor = (max_resp_gain - gain[freq_cnt]) / (gain[freq_cnt] - prev_gain);
                 tune_p = tune_p + gain_incr * adj_factor; 
             }
             counter = AUTOTUNE_SUCCESS_COUNT;
@@ -819,7 +853,6 @@ void AC_AutoTune_Heli::updating_angle_p_up_yaw(float &tune_p, float *freq, float
 {
     float test_freq_incr = 0.5f * 3.14159f * 2.0f;
     static uint8_t prev_good_frq_cnt;
-    float max_gain = 1.2f;
 
     if (frq_cnt < 12) {
         if (frq_cnt == 0) {
@@ -845,7 +878,7 @@ void AC_AutoTune_Heli::updating_angle_p_up_yaw(float &tune_p, float *freq, float
 
     // once finished with sweep of frequencies, cnt = 12 is used to then tune for max response gain
     if (freq_cnt >= 12) {
-        if (gain[frq_cnt] < max_gain && phase[frq_cnt] <= 180.0f && phase[frq_cnt] >= 160.0f && tune_p < AUTOTUNE_SP_MAX) {
+        if (gain[frq_cnt] < max_resp_gain && phase[frq_cnt] <= 180.0f && phase[frq_cnt] >= 160.0f && tune_p < AUTOTUNE_SP_MAX) {
             tune_p += 0.5f;
             if (tune_p >= AUTOTUNE_SP_MAX) {
                 tune_p = AUTOTUNE_SP_MAX;
@@ -854,10 +887,10 @@ void AC_AutoTune_Heli::updating_angle_p_up_yaw(float &tune_p, float *freq, float
                 curr_test_freq = freq[0];
                 freq_cnt = 0;
             }
-        } else if (gain[frq_cnt] < max_gain && phase[frq_cnt] > 180.0f) {
+        } else if (gain[frq_cnt] < max_resp_gain && phase[frq_cnt] > 180.0f) {
             curr_test_freq = curr_test_freq - 0.5 * test_freq_incr;
             freq[frq_cnt] = curr_test_freq;
-        } else if (gain[frq_cnt] < max_gain && phase[frq_cnt] < 160.0f) {
+        } else if (gain[frq_cnt] < max_resp_gain && phase[frq_cnt] < 160.0f) {
             curr_test_freq = curr_test_freq + 0.5 * test_freq_incr;
             freq[frq_cnt] = curr_test_freq;
         } else {
