@@ -99,7 +99,6 @@ void AC_AutoTune_Heli::test_init()
                 curr_test_freq = test_freq[12];
                 start_freq = curr_test_freq;
                 stop_freq = curr_test_freq;
-//            } else if (!is_zero(max_rate_p.freq) && (tune_type == RD_UP || tune_type == RP_UP)) {
             } else if (method == 1 && tune_type == RP_UP) {
                 freq_cnt = 12;
                 test_freq[12] = sweep.maxgain_freq;

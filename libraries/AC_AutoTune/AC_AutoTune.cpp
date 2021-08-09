@@ -124,6 +124,7 @@ bool AC_AutoTune::init_internals(bool _use_poshold,
     // initialise position controller
     init_position_controller();
 
+    // initialize test variables
     if (meas_peak_info_buffer == nullptr) {
         meas_peak_info_buffer = new ObjectBuffer<peak_info>(AUTOTUNE_DWELL_CYCLES);
     }
@@ -137,6 +138,12 @@ bool AC_AutoTune::init_internals(bool _use_poshold,
         FALLTHROUGH;
 
     case UNINITIALISED:
+        // initializes dwell test sequence for rate_p_up and rate_d_up tests for tradheli
+        freq_cnt = 0;
+        start_freq = 0.0f;
+        stop_freq = 0.0f;
+        ff_up_first_iter = true;
+
         // autotune has never been run
         // so store current gains as original gains
         backup_gains_and_initialise();
@@ -148,6 +155,13 @@ bool AC_AutoTune::init_internals(bool _use_poshold,
 
     case TUNING:
         // we are restarting tuning so restart where we left off
+        // reset test variables to continue where we left off
+        // reset dwell test variables if sweep was interrupted in order to restart sweep
+        if (!is_equal(start_freq,stop_freq)) {
+            freq_cnt = 0;
+            start_freq = 0.0f;
+            stop_freq = 0.0f;
+        }
         // reset gains to tuning-start gains (i.e. low I term)
         load_gains(GAIN_INTRA_TEST);
         AP::logger().Write_Event(LogEvent::AUTOTUNE_RESTART);
@@ -191,13 +205,6 @@ bool AC_AutoTune::init_position_controller(void)
 
     // initialise the vertical position controller
     pos_control->init_z_controller();
-
-    ff_up_first_iter = true;
-
-    // re-initializes dwell test sequence for rate_p_up and rate_d_up tests for tradheli
-    freq_cnt = 0;
-    start_freq = 0.0f;
-    stop_freq = 0.0f;
 
     return true;
 }
@@ -1689,8 +1696,8 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
 
     // keep controller from requesting too high of a rate
     float target_rate_mag_cds = dwell_freq * tgt_attitude * 5730.0f;
-    if (target_rate_mag_cds > 6000.0f) {
-        target_rate_mag_cds = 6000.0f;
+    if (target_rate_mag_cds > 5000.0f) {
+        target_rate_mag_cds = 5000.0f;
     }
     if (settle_time == 0) {
         // give gentler start for the dwell
