@@ -939,7 +939,7 @@ void AC_AutoTune_Heli::updating_max_gains(float *freq, float *gain, float *phase
         stop_freq = curr_test_freq;
 
     } else if (frq_cnt < 12 && is_equal(start_freq,stop_freq)) {
-        if (frq_cnt > 2 && phase[frq_cnt] > 161.0f && phase[frq_cnt] < 200.0f &&
+        if (frq_cnt > 2 && phase[frq_cnt] > 161.0f && phase[frq_cnt] < 270.0f &&
             !find_middle && !found_max_p) {
             find_middle = true;
         } else if (find_middle && !found_max_p) {
@@ -968,7 +968,7 @@ void AC_AutoTune_Heli::updating_max_gains(float *freq, float *gain, float *phase
 
             gcs().send_text(MAV_SEVERITY_INFO, "AutoTune: Max rate P freq=%f gain=%f ph=%f rate_p=%f", (double)(max_gain_p.freq), (double)(max_gain_p.gain), (double)(max_gain_p.phase), (double)(max_gain_p.max_allowed));
         }
-        if (frq_cnt > 2 && phase[frq_cnt] > 251.0f && phase[frq_cnt] < 330.0f &&
+        if (frq_cnt > 2 && phase[frq_cnt] > 251.0f && phase[frq_cnt] < 360.0f &&
             !find_middle && !found_max_d && found_max_p) {
             find_middle = true;
         } else if (find_middle && found_max_p && !found_max_d) {
