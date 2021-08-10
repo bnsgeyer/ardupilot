@@ -162,6 +162,9 @@ bool AC_AutoTune::init_internals(bool _use_poshold,
             start_freq = 0.0f;
             stop_freq = 0.0f;
         }
+        step = WAITING_FOR_LEVEL;
+        step_start_time_ms = AP_HAL::millis();
+        level_start_time_ms = step_start_time_ms;
         // reset gains to tuning-start gains (i.e. low I term)
         load_gains(GAIN_INTRA_TEST);
         AP::logger().Write_Event(LogEvent::AUTOTUNE_RESTART);
