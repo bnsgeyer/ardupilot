@@ -465,6 +465,13 @@ void AC_AutoTune_Heli::updating_max_gains_all(AxisType test_axis)
         break;
     case YAW:
         updating_max_gains(&test_freq[0], &test_gain[0], &test_phase[0], freq_cnt, max_rate_p, max_rate_d, tune_yaw_rp, tune_yaw_rd);
+        // rate P and rate D can be non zero for yaw and need to be included in the max allowed gain
+        if (!is_zero(max_rate_p.max_allowed) && counter == AUTOTUNE_SUCCESS_COUNT) {
+            max_rate_p.max_allowed += tune_yaw_rp;
+        }
+        if (!is_zero(max_rate_d.max_allowed) && counter == AUTOTUNE_SUCCESS_COUNT) {
+            max_rate_d.max_allowed += tune_yaw_rd;
+        }
         break;
     }
 }
