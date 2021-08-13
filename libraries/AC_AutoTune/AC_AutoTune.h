@@ -176,6 +176,9 @@ protected:
     // returns true if rate P gain of zero is acceptable for this vehicle
     virtual bool allow_zero_rate_p() = 0;
 
+    // returns true if max tested accel is used for parameter
+    virtual bool set_accel_to_max_test_value() = 0;
+
     // returns true if pilot is allowed to make inputs during test
     virtual bool allow_pilot_rp_input() = 0;
 

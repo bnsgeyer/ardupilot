@@ -613,15 +613,24 @@ void AC_AutoTune::control_attitude()
                 switch (axis) {
                 case ROLL:
                     tune_roll_sp = MAX(get_sp_min(), tune_roll_sp * AUTOTUNE_SP_BACKOFF);
-                    tune_roll_accel = MAX(AUTOTUNE_RP_ACCEL_MIN, test_accel_max * AUTOTUNE_ACCEL_RP_BACKOFF);
+                    // trad heli uses original parameter value rather than max demostrated through test
+                    if (set_accel_to_max_test_value()) {
+                        tune_roll_accel = MAX(AUTOTUNE_RP_ACCEL_MIN, test_accel_max * AUTOTUNE_ACCEL_RP_BACKOFF);
+                    }
                     break;
                 case PITCH:
                     tune_pitch_sp = MAX(get_sp_min(), tune_pitch_sp * AUTOTUNE_SP_BACKOFF);
-                    tune_pitch_accel = MAX(AUTOTUNE_RP_ACCEL_MIN, test_accel_max * AUTOTUNE_ACCEL_RP_BACKOFF);
+                    // trad heli uses original parameter value rather than max demostrated through test
+                    if (set_accel_to_max_test_value()) {
+                        tune_pitch_accel = MAX(AUTOTUNE_RP_ACCEL_MIN, test_accel_max * AUTOTUNE_ACCEL_RP_BACKOFF);
+                    }
                     break;
                 case YAW:
                     tune_yaw_sp = MAX(get_sp_min(), tune_yaw_sp * AUTOTUNE_SP_BACKOFF);
-                    tune_yaw_accel = MAX(AUTOTUNE_Y_ACCEL_MIN, test_accel_max * AUTOTUNE_ACCEL_Y_BACKOFF);
+                    // trad heli uses original parameter value rather than max demostrated through test
+                    if (set_accel_to_max_test_value()) {
+                        tune_yaw_accel = MAX(AUTOTUNE_Y_ACCEL_MIN, test_accel_max * AUTOTUNE_ACCEL_Y_BACKOFF);
+                    }
                     break;
                 }
                 break;

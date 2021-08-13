@@ -96,6 +96,9 @@ protected:
     // returns true if rate P gain of zero is acceptable for this vehicle
     bool allow_zero_rate_p() override { return true; }
 
+    // returns true if max tested accel is used for parameter
+    bool set_accel_to_max_test_value() override { return false; }
+
     // returns true if pilot is allowed to make inputs during test
     bool allow_pilot_rp_input() override
     {

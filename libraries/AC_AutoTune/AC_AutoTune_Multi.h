@@ -83,6 +83,9 @@ protected:
     // returns true if pilot is allowed to make inputs during test
     bool allow_pilot_rp_input() override { return false; }
 
+    // returns true if max tested accel is used for parameter
+    bool set_accel_to_max_test_value() override { return true; }
+
     // get minimum rate P (for any axis)
     float get_rp_min() const override;
 
