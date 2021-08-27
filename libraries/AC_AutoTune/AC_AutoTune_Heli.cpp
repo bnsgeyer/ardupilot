@@ -444,7 +444,7 @@ void AC_AutoTune_Heli::updating_angle_p_up_all(AxisType test_axis)
         updating_angle_p_up(tune_pitch_sp, test_freq, test_gain, test_phase, freq_cnt);
         break;
     case YAW:
-        updating_angle_p_up_yaw(tune_yaw_sp, test_freq, test_gain, test_phase, freq_cnt);
+        updating_angle_p_up(tune_yaw_sp, test_freq, test_gain, test_phase, freq_cnt);
         break;
     }
 }
@@ -1056,7 +1056,11 @@ void AC_AutoTune_Heli::Log_AutoTune()
 
 void AC_AutoTune_Heli::Log_AutoTuneDetails()
 {
-    Log_Write_AutoTuneDetails(command_out, filt_target_rate, rotation_rate);
+    if (tune_type == SP_UP) {
+        Log_Write_AutoTuneDetails(command_out, 0.0f, 0.0f, filt_target_rate, rotation_rate);
+    } else {
+        Log_Write_AutoTuneDetails(command_out, filt_target_rate, rotation_rate, 0.0f, 0.0f);
+    }
 }
 
 void AC_AutoTune_Heli::Log_AutoTuneSweep()
@@ -1085,7 +1089,7 @@ void AC_AutoTune_Heli::Log_Write_AutoTune(uint8_t _axis, uint8_t tune_step, floa
     AP::logger().Write(
         "ATNH",
         "TimeUS,Axis,TuneStep,Freq,Gain,Phase,RFF,RP,RD,SP,ACC",
-        "s----------",
+        "s--E-d-----",
         "F--000-----",
         "QBBffffffff",
         AP_HAL::micros64(),
@@ -1102,7 +1106,7 @@ void AC_AutoTune_Heli::Log_Write_AutoTune(uint8_t _axis, uint8_t tune_step, floa
 }
 
 // Write an Autotune data packet
-void AC_AutoTune_Heli::Log_Write_AutoTuneDetails(float motor_cmd, float tgt_rate_rads, float rate_rads)
+void AC_AutoTune_Heli::Log_Write_AutoTuneDetails(float motor_cmd, float tgt_rate_rads, float rate_rads, float tgt_ang_rad, float ang_rad)
 {
     // @LoggerMessage: ATDH
     // @Description: Heli AutoTune data packet
@@ -1111,16 +1115,20 @@ void AC_AutoTune_Heli::Log_Write_AutoTuneDetails(float motor_cmd, float tgt_rate
     // @Field: Cmd: current motor command
     // @Field: TRate: current target angular rate
     // @Field: Rate: current angular rate
+    // @Field: TAng: current target angle
+    // @Field: Ang: current angle
     AP::logger().Write(
         "ATDH",
-        "TimeUS,Cmd,TRate,Rate",
-        "s-kk",
-        "F000",
-        "Qfff",
+        "TimeUS,Cmd,TRate,Rate,TAng,Ang",
+        "s-kkdd",
+        "F00000",
+        "Qfffff",
         AP_HAL::micros64(),
         motor_cmd,
         tgt_rate_rads*57.3,
-        rate_rads*57.3f);
+        rate_rads*57.3f,
+        tgt_ang_rad*57.3,
+        ang_rad*57.3f);
 }
 
 // Write an Autotune data packet
@@ -1136,7 +1144,7 @@ void AC_AutoTune_Heli::Log_Write_AutoTuneSweep(float freq, float gain, float pha
     AP::logger().Write(
         "ATSH",
         "TimeUS,freq,gain,phase",
-        "s---",
+        "sE-d",
         "F000",
         "Qfff",
         AP_HAL::micros64(),
