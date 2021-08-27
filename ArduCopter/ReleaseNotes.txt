@@ -1,5 +1,14 @@
 ArduPilot Copter Release Notes:
 ------------------------------------------------------------------
+Copter 4.1.0-beta7-ATNH-rc2 27-Aug-2021
+Changes from 4.1.0-beta7
+1) Second implementation of Heli Autotune
+    a) includes rate P and rate D tuning
+    b) adds frequency sweeps to angle P, max gain, and rate d tuning before dwells
+    c) adds bitmask parameter to select which tuning to conduct
+    d) adds min and max frequency parameters to set limits of frequency sweep
+    e  adds max response gain parameter
+------------------------------------------------------------------
 Copter 4.1.0-beta7 14-Aug-2021
 Changes from 4.1.0-beta6
 1) Enhancements
