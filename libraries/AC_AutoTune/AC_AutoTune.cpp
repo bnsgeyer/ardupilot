@@ -1741,7 +1741,11 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
         command_reading = motors->get_roll();
         tgt_rate_reading = attitude_control->rate_bf_targets().x;
         if (settle_time == 0) {
-            float trim_rate_cds = 5730.0f * trim_command / tune_roll_rff + att_hold_gain * (trim_attitude_cd.x - filt_attitude_cd.x) - 5730.0f * vel_hold_gain * velocity_bf.y;
+            float ff_rate_contr = 0.0f;
+            if (tune_roll_rff > 0.0f) {
+                ff_rate_contr = 5730.0f * trim_command / tune_roll_rff;
+            }
+            float trim_rate_cds = ff_rate_contr + att_hold_gain * (trim_attitude_cd.x - filt_attitude_cd.x) - 5730.0f * vel_hold_gain * velocity_bf.y;
             attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, att_hold_gain * (trim_attitude_cd.y - filt_attitude_cd.y), 0.0f);
             attitude_control->rate_bf_roll_target(target_rate_cds + trim_rate_cds);
         } else {
@@ -1757,7 +1761,11 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
         command_reading = motors->get_pitch();
         tgt_rate_reading = attitude_control->rate_bf_targets().y;
         if (settle_time == 0) {
-            float trim_rate_cds = 5730.0f * trim_command / tune_pitch_rff + att_hold_gain * (trim_attitude_cd.y - filt_attitude_cd.y) + 5730.0f * vel_hold_gain * velocity_bf.x;
+            float ff_rate_contr = 0.0f;
+            if (tune_pitch_rff > 0.0f) {
+                ff_rate_contr = 5730.0f * trim_command / tune_pitch_rff;
+            }
+            float trim_rate_cds = ff_rate_contr + att_hold_gain * (trim_attitude_cd.y - filt_attitude_cd.y) + 5730.0f * vel_hold_gain * velocity_bf.x;
             attitude_control->input_rate_bf_roll_pitch_yaw(att_hold_gain * (trim_attitude_cd.x - filt_attitude_cd.x), 0.0f, 0.0f);
             attitude_control->rate_bf_pitch_target(target_rate_cds + trim_rate_cds);
         } else {
@@ -1773,7 +1781,11 @@ void AC_AutoTune::dwell_test_run(uint8_t freq_resp_input, float start_frq, float
         command_reading = motors->get_yaw();
         tgt_rate_reading = attitude_control->rate_bf_targets().z;
         if (settle_time == 0) {
-            float trim_rate_cds = 5730.0f * trim_command / tune_yaw_rp + att_hold_gain * wrap_180_cd(trim_attitude_cd.z - filt_attitude_cd.z);
+            float rp_rate_contr = 0.0f;
+            if (tune_yaw_rp > 0.0f) {
+                rp_rate_contr = 5730.0f * trim_command / tune_yaw_rp;
+            }
+            float trim_rate_cds = rp_rate_contr + att_hold_gain * wrap_180_cd(trim_attitude_cd.z - filt_attitude_cd.z);
             attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_yaw_target(target_rate_cds + trim_rate_cds);
         } else {
