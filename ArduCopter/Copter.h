@@ -559,6 +559,7 @@ private:
         uint8_t dynamic_flight          : 1;    // 0   // true if we are moving at a significant speed (used to turn on/off leaky I terms)
         uint8_t inverted_flight         : 1;    // 1   // true for inverted flight mode
         uint8_t in_autorotation         : 1;    // 2   // true when heli is in autorotation
+        uint8_t start_engine            : 1;     //3 //true for turbine start condition
     } heli_flags_t;
     heli_flags_t heli_flags;
 
