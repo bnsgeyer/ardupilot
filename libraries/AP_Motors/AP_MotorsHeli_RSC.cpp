@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 #include <AP_HAL/AP_HAL.h>
-
+#include <GCS_MAVLink/GCS.h>
 #include "AP_MotorsHeli_RSC.h"
 
 extern const AP_HAL::HAL& hal;
@@ -231,6 +231,8 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
 
             // control output forced to zero
             _control_output = 0.0f;
+			//turbine start flag on
+			_starting = true;
             break;
 
         case ROTOR_CONTROL_IDLE:
@@ -241,8 +243,17 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
                 // if in autorotation and using an external governor, set the output to tell the governor to use bailout ramp
                 _control_output = constrain_float( _rsc_arot_bailout_pct/100.0f , 0.0f, 0.4f);
             } else {
-                // set rotor control speed to idle speed parameter, this happens instantly and ignores ramping
-                _control_output = get_idle_output();
+                if (_turbine_start && _starting == true ) {			
+			_control_output += 0.001f;
+			
+			         if(_control_output >= 1.0f) {
+						_control_output = get_idle_output();
+						gcs().send_text(MAV_SEVERITY_INFO, "Turbine startup");
+				       _starting = false;
+				      }
+             } else{
+			 _control_output = get_idle_output();			 
+			 } 	 
             }
             break;
 
