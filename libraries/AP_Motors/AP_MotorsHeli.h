@@ -230,6 +230,9 @@ protected:
     // updates the takeoff collective flag indicating that current collective is greater than collective required to indicate takeoff.
     void update_takeoff_collective_flag(float coll_out);
 
+    // update turbine start flag
+    void update_turbine_start();
+
     // enum values for HOVER_LEARN parameter
     enum HoverLearn {
         HOVER_LEARN_DISABLED = 0,
