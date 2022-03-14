@@ -305,6 +305,8 @@ public:
     // limits the acceleration and deceleration of a velocity request
     static float input_shaping_ang_vel(float target_ang_vel, float desired_ang_vel, float accel_max, float dt);
 
+    static float input_shaping_rate(float error_rate, float input_tc, float accel_max, float target_ang_vel, float dt);
+
     // calculates the expected angular velocity correction from an angle error based on the AC_AttitudeControl settings.
     // This function can be used to predict the delay associated with angle requests.
     void input_shaping_rate_predictor(const Vector2f &error_angle, Vector2f& target_ang_vel, float dt) const;
@@ -411,6 +413,10 @@ protected:
 
     // rate controller input smoothing time constant
     AP_Float            _input_tc;
+
+    // rate controller input smoothing time constant
+    AP_Float            _rate_rp_tc;
+    AP_Float            _rate_y_tc;
 
     // Intersampling period in seconds
     float               _dt;
