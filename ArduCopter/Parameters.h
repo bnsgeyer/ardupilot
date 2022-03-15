@@ -658,12 +658,16 @@ public:
 #if MODE_ACRO_ENABLED == ENABLED || MODE_SPORT_ENABLED == ENABLED
     // Acro parameters
     AP_Float                acro_rp_rate;
+    AP_Float                acro_rate_rp_tc;
 #endif
 
 #if MODE_ACRO_ENABLED == ENABLED || MODE_DRIFT_ENABLED == ENABLED
     AP_Float                acro_y_rate;
+    AP_Float                acro_rate_y_tc;
 #endif
 
+    AP_Float                pilot_rate_rp_tc;
+    AP_Float                pilot_rate_y_tc;
     AP_Float                pilot_y_rate;
     AP_Float                pilot_y_expo;
     AP_Int8                 surftrak_mode;

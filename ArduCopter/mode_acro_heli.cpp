@@ -87,6 +87,10 @@ void ModeAcro_Heli::run()
             target_yaw = channel_yaw->get_control_in_zero_dz();
         }
 
+        // set rate shaping time constants
+        attitude_control->set_roll_pitch_rate_tc(g2.acro_rate_rp_tc);
+        attitude_control->set_yaw_rate_tc(g2.acro_rate_y_tc);
+
         // run attitude controller
         if (g2.acro_options.get() & uint8_t(AcroOptions::RATE_LOOP_ONLY)) {
             attitude_control->input_rate_bf_roll_pitch_yaw_2(target_roll, target_pitch, target_yaw);

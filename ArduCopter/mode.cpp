@@ -962,6 +962,9 @@ float Mode::get_pilot_desired_yaw_rate(float yaw_in)
         return 0.0f;
     }
 
+    // set rate shaping time constants
+    attitude_control->set_yaw_rate_tc(g2.pilot_rate_y_tc);
+
     // convert pilot input to the desired yaw rate
     return g2.pilot_y_rate * 100.0 * input_expo(yaw_in, g2.pilot_y_expo);
 }
