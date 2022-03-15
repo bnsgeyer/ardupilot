@@ -365,6 +365,12 @@ public:
     // enable inverted flight on backends that support it
     virtual void set_inverted_flight(bool inverted) {}
     
+    // Sets the roll and pitch rate shaping time constant
+    void set_roll_pitch_rate_tc(float input_tc) { _rate_rp_tc = input_tc; }
+
+    // Sets the yaw rate shaping time constant
+    void set_yaw_rate_tc(float input_tc) { _rate_y_tc = input_tc; }
+
     // User settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -413,10 +419,6 @@ protected:
 
     // rate controller input smoothing time constant
     AP_Float            _input_tc;
-
-    // rate controller input smoothing time constant
-    AP_Float            _rate_rp_tc;
-    AP_Float            _rate_y_tc;
 
     // Intersampling period in seconds
     float               _dt;
@@ -483,6 +485,10 @@ protected:
 
     // Yaw feed forward percent to allow zero yaw actuator output during extreme roll and pitch corrections
     float               _feedforward_scalar = 1.0f;
+
+    // rate controller input smoothing time constant
+    float               _rate_rp_tc;
+    float               _rate_y_tc;
 
     // References to external libraries
     const AP_AHRS_View&  _ahrs;

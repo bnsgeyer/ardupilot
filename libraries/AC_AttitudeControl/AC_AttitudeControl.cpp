@@ -144,26 +144,6 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("INPUT_TC", 20, AC_AttitudeControl, _input_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
 
-    // @Param: RATE_RP_TC
-    // @DisplayName: Roll/Pitch Rate control input time constant
-    // @Description: Roll and pitch rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
-    // @Units: s
-    // @Range: 0 1
-    // @Increment: 0.01
-    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
-    // @User: Standard
-    AP_GROUPINFO("RATE_RP_TC", 21, AC_AttitudeControl, _rate_rp_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
-
-    // @Param: RATE_Y_TC
-    // @DisplayName: Yaw Rate control input time constant
-    // @Description: Yaw rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
-    // @Units: s
-    // @Range: 0 1
-    // @Increment: 0.01
-    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
-    // @User: Standard
-    AP_GROUPINFO("RATE_Y_TC", 22, AC_AttitudeControl, _rate_y_tc, AC_ATTITUDE_CONTROL_INPUT_TC_DEFAULT),
-
     AP_GROUPEND
 };
 
