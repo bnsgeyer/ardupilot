@@ -2,6 +2,7 @@
 #include <AP_Logger/AP_Logger.h>
 #include <AP_RPM/AP_RPM.h>
 #include <AP_AHRS/AP_AHRS.h>
+#include <GCS_MAVLink/GCS.h>
 
 //Autorotation controller defaults
 #define AROT_BAIL_OUT_TIME                            2.0f     // Default time for bail out controller to run (unit: s)
@@ -16,7 +17,12 @@
 #define FWD_SPD_CONTROLLER_GND_SPEED_TARGET           1100     // Default target ground speed for speed height controller (unit: cm/s)
 #define FWD_SPD_CONTROLLER_MAX_ACCEL                  60      // Default acceleration limit for speed height controller (unit: cm/s/s)
 #define AP_FW_VEL_P                       0.9f
+#define TCH_P                                    0.1f
 #define AP_FW_VEL_FF                      0.15f
+#define AP_FLARE_ALT                      800
+#define AP_T_TO_G                            0.55f
+#define AP_COLL_FF                           0.6f
+#define GUIDED                                   0
 
 
 const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
@@ -114,17 +120,66 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Increment: 0.01
     // @User: Advanced
     AP_GROUPINFO("FW_V_FF", 11, AC_Autorotation, _param_fwd_k_ff, AP_FW_VEL_FF),
+	
+	// @Param: FLARE_ALT
+    // @DisplayName: flare altitude
+    // @Description: altitude at which flare begins
+    // @Range: 0 3000
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("FLARE_ALT", 12, AC_Autorotation, _param_flr_alt, AP_FLARE_ALT),
+	
+	// @Param:T_TO_G
+    // @DisplayName: time to ground
+    // @Description: time between flare completed and touchdown
+    // @Range: 0 200
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("T_TO_G", 13, AC_Autorotation,  _param_time_to_ground, AP_T_TO_G),
+	
+	// @Param: TCH_P
+	// @DisplayName: P gain for vertical touchdown controller
+	// @Description: proportional term based on sink rate error
+	// @Range: 0.3 1
+	// @Increment: 0.01
+	// @User: Advanced
+	AP_SUBGROUPINFO(_p_coll_tch, "TCH_", 14, AC_Autorotation, AC_P),
+	
+	// @Param: COLL_FF
+    // @DisplayName: collective feedforward
+    // @Description: feedforward term based on rpm decay during touchdown
+    // @Range: 0 1
+    // @Increment: 0.05
+    // @User: Advanced
+    AP_GROUPINFO("COLL_FF", 15, AC_Autorotation, _param_coll_ff, AP_COLL_FF),
+	
+	// @Param: GUIDED
+    // @DisplayName: 
+    // @Description: whether if control inputs come from radio control or attitude targets
+    // @Range: 0 1
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("GUIDED", 16, AC_Autorotation, _param_guided, GUIDED),
 
     AP_GROUPEND
 };
 
 // Constructor
-AC_Autorotation::AC_Autorotation() :
+AC_Autorotation::AC_Autorotation(AP_InertialNav& inav) :
+    _inav(inav),
     _p_hs(HS_CONTROLLER_HEADSPEED_P),
-    _p_fw_vel(AP_FW_VEL_P)
+    _p_fw_vel(AP_FW_VEL_P),
+	_p_coll_tch(TCH_P)
     {
         AP_Param::setup_object_defaults(this, var_info);
     }
+	
+void AC_Autorotation::guided_input_safety_check()
+{	
+     if ((_param_guided > 1) || (_param_guided < 0)) {
+            _param_guided = 0;
+        }
+}
 
 // Initialisation of head speed controller
 void AC_Autorotation::init_hs_controller()
@@ -144,6 +199,8 @@ void AC_Autorotation::init_hs_controller()
 
     // Protect against divide by zero
     _param_head_speed_set_point.set(MAX(_param_head_speed_set_point,500));
+	
+    _flare_completed = false;
 }
 
 
@@ -383,4 +440,90 @@ float AC_Autorotation::calc_speed_forward(void)
     float speed_forward = (groundspeed_vector.x*ahrs.cos_yaw() + groundspeed_vector.y*ahrs.sin_yaw())* 100; //(c/s)
     return speed_forward;
 }
+
+void AC_Autorotation::flare_controller(float dt)
+{
+		
+  // Specify forward velocity component and determine delta velocity with respect to time
+    _speed_forward = calc_speed_forward(); //(cm/s)
+    _delta_speed_fwd = _speed_forward - _speed_forward_last; //(cm/s)
+    _speed_forward_last = _speed_forward; //(cm/s)
+    float current_alt = _inav.get_altitude();
+    _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, current_alt, 0.0f, _param_flr_alt);
+
+	// get p
+	_vel_p = _p_fw_vel.get_p(_desired_speed - _speed_forward);
+
+    //calculate acceleration target based on PI controller
+    _accel_target = _vel_p ;
+
+    // filter correction acceleration
+    _accel_target_filter.set_cutoff_frequency(10.0f);
+    _accel_target_filter.apply(_accel_target, _dt);
+
+    //Limits the maximum change in pitch attitude based on acceleration
+    if (_accel_target > _accel_out_last + _accel_max) {
+		        _accel_target = _accel_out_last + _accel_max;
+      } else if (_accel_target < _accel_out_last - _accel_max) {
+		        _accel_target = _accel_out_last - _accel_max;
+	 }
+
+	//Limiting acceleration based on velocity gained during the previous time step 
+	if (fabsf(_delta_speed_fwd) > _accel_max * _dt) {
+		        _flag_limit_accel = true;
+	   } else {
+	            _flag_limit_accel = false;
+		}
+
+	 if ((_flag_limit_accel && fabsf(_accel_target) < fabsf(_accel_out_last)) || !_flag_limit_accel) {
+	       _accel_out = _accel_target;
+	    } else {
+	       _accel_out = _accel_out_last;
+	    }
+	       _accel_out_last = _accel_out;
+				
+	  update_hs_glide_controller(dt);
+	  _pitch_target = atanf(-_accel_out/(GRAVITY_MSS * 100.0f))*(18000.0f/M_PI);			
+      _entry_sink_rate = _inav.get_velocity_z();
+	  _entry_coll = get_last_collective();
+	  if(_inav.get_altitude()>0.0f){
+		_distance_to_ground = MIN(_radar_alt, _inav.get_altitude());
+		_entry_alt = _distance_to_ground;			   
+		}else {
+		_entry_alt = _radar_alt;	
+		}	 	          
+}
+
+void AC_Autorotation::touchdown_controller()
+{
+	 _current_rpm = get_rpm(true);
+	 if ((_param_head_speed_set_point - _current_rpm) >=0){
+				_rpm_decay = constrain_float((_param_head_speed_set_point -  _current_rpm)/400.0f, 0.0f, 1.0f);
+		}
+	 float current_sink_rate = _inav.get_velocity_z();	
+	 float desired_sink_rate; 
+	 if(_radar_alt>=10.0f){
+			 desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, 0.0f, _entry_alt);
+	}else{
+			desired_sink_rate = 0.0f;
+	}
+	  _collective_out =  _entry_coll + (_p_coll_tch.get_p(desired_sink_rate - current_sink_rate))*0.1f + _rpm_decay*_param_coll_ff;
+	  set_collective(5.0f);
+	  _pitch_target = 0.0f;
+}
+
+void AC_Autorotation::get_entry_speed()
+{
+		_flare_entry_speed = calc_speed_forward();
+}
+
+void AC_Autorotation::time_to_ground()		
+{
+   if(_inav.get_velocity_z() < 0.0f ) {
+			_time_to_ground = -(_inav.get_altitude()/_inav.get_velocity_z()); 
+	    }else {
+	    	_time_to_ground = _param_time_to_ground +1.0f; 	
+		}	
+}	
+
 
