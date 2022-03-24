@@ -207,6 +207,9 @@ void Copter::heli_update_autorotation()
         heli_flags.in_autorotation = true;
         motors->set_in_autorotation(heli_flags.in_autorotation);
         motors->set_enable_bailout(true);
+        if (rangefinder_alt_ok()) {
+            g2.arot.set_ground_distance(rangefinder_state.alt_cm);
+        }
     } else {
         heli_flags.in_autorotation = false;
         motors->set_in_autorotation(heli_flags.in_autorotation);
