@@ -19,6 +19,7 @@
 #define AP_MOTORS_HELI_RSC_RAMP_TIME            1       // 1 second to ramp output to main rotor ESC to setpoint
 #define AP_MOTORS_HELI_RSC_RUNUP_TIME           10      // 10 seconds for rotor to reach full speed
 #define AP_MOTORS_HELI_RSC_BAILOUT_TIME         1       // time in seconds to ramp motors when bailing out of autorotation
+#define AP_MOTORS_HELI_RSC_AROT_PCT             0
 
 // Throttle Curve Defaults
 #define AP_MOTORS_HELI_RSC_THRCRV_0_DEFAULT     25

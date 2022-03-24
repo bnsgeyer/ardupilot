@@ -144,7 +144,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_RSC::var_info[] = {
     // @Units: %
     // @Increment: 1
     // @User: Standard
-    AP_GROUPINFO("AROT_PCT", 18, AP_MotorsHeli_RSC, _ext_gov_arot_pct, 0),
+    AP_GROUPINFO("AROT_PCT", 18, AP_MotorsHeli_RSC, _ext_gov_arot_pct, AP_MOTORS_HELI_RSC_AROT_PCT),
 
     // @Param: CLDWN_TIME
     // @DisplayName: Cooldown Time
@@ -292,7 +292,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
             _governor_fault = false;
             if (_in_autorotation) {
                 // if in autorotation and using an external governor, set the output to tell the governor to use bailout ramp
-                _control_output = constrain_float( _rsc_arot_bailout_pct/100.0f , 0.0f, 0.4f);
+                _control_output = constrain_float( _ext_gov_arot_pct/100.0f , 0.0f, 0.4f);
                 if(!_autorotating){
                     gcs().send_text(MAV_SEVERITY_CRITICAL, "Autorotation");
                     _autorotating =true;				
