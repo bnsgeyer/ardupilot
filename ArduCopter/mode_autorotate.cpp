@@ -285,7 +285,7 @@ void ModeAutorotate::run()
             float pilot_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
 
             // Pitch target is calculated in autorotation phase switch above
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(pilot_roll, _pitch_target, pilot_yaw_rate);
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(pilot_roll, _pitch_target, pilot_yaw_rate, g2.pilot_rate_y_tc);
             break;
         }
 

@@ -50,15 +50,11 @@ void ModeAcro::run()
         break;
     }
 
-    // set rate shaping time constants
-    attitude_control->set_roll_pitch_rate_tc(g2.acro_rate_rp_tc);
-    attitude_control->set_yaw_rate_tc(g2.acro_rate_y_tc);
-
     // run attitude controller
     if (g2.acro_options.get() & uint8_t(AcroOptions::RATE_LOOP_ONLY)) {
-        attitude_control->input_rate_bf_roll_pitch_yaw_2(target_roll, target_pitch, target_yaw);
+        attitude_control->input_rate_bf_roll_pitch_yaw_2(target_roll, target_pitch, target_yaw, g2.acro_rate_rp_tc, g2.acro_rate_y_tc);
     } else {
-        attitude_control->input_rate_bf_roll_pitch_yaw(target_roll, target_pitch, target_yaw);
+        attitude_control->input_rate_bf_roll_pitch_yaw(target_roll, target_pitch, target_yaw, g2.acro_rate_rp_tc, g2.acro_rate_y_tc);
     }
 
     // output pilot's throttle without angle boost

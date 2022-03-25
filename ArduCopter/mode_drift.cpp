@@ -114,11 +114,8 @@ void ModeDrift::run()
         break;
     }
 
-    // set rate shaping time constants
-    attitude_control->set_yaw_rate_tc(g2.acro_rate_y_tc);
-
     // call attitude controller
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
+    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate, g2.acro_rate_y_tc);
 
     // output pilot's throttle with angle boost
     const float assisted_throttle = get_throttle_assist(vel.z, get_pilot_desired_throttle());

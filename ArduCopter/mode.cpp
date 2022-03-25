@@ -498,14 +498,14 @@ void Mode::zero_throttle_and_relax_ac(bool spool_up)
     } else {
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
     }
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f);
+    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f, 0.0f);
     attitude_control->set_throttle_out(0.0f, false, copter.g.throttle_filt);
 }
 
 void Mode::zero_throttle_and_hold_attitude()
 {
     // run attitude controller
-    attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+    attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     attitude_control->set_throttle_out(0.0f, false, copter.g.throttle_filt);
 }
 
@@ -544,7 +544,7 @@ void Mode::make_safe_ground_handling(bool force_throttle_unlimited)
     pos_control->relax_z_controller(0.0f);   // forces throttle output to decay to zero
     pos_control->update_z_controller();
     // we may need to move this out
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f);
+    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 /*
@@ -961,9 +961,6 @@ float Mode::get_pilot_desired_yaw_rate(float yaw_in)
     if (copter.failsafe.radio || !copter.ap.rc_receiver_present) {
         return 0.0f;
     }
-
-    // set rate shaping time constants
-    attitude_control->set_yaw_rate_tc(g2.pilot_rate_y_tc);
 
     // convert pilot input to the desired yaw rate
     return g2.pilot_y_rate * 100.0 * input_expo(yaw_in, g2.pilot_y_expo);

@@ -55,7 +55,7 @@ void AutoTune::run()
         float target_roll, target_pitch, target_yaw_rate;
         get_pilot_desired_rp_yrate_cd(target_roll, target_pitch, target_yaw_rate);
 
-        copter.attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
+        copter.attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate, copter.g2.pilot_rate_y_tc);
         copter.pos_control->relax_z_controller(0.0f);
         copter.pos_control->update_z_controller();
     } else {
