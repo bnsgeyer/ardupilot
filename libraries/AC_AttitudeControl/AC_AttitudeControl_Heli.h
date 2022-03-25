@@ -59,12 +59,15 @@ public:
 
     // passthrough_bf_roll_pitch_rate_yaw - roll and pitch are passed through directly, body-frame rate target for yaw
     void passthrough_bf_roll_pitch_rate_yaw(float roll_passthrough, float pitch_passthrough, float yaw_rate_bf_cds) override;
+    void input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc) override {
+        AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(roll_rate_bf_cds, pitch_rate_bf_cds, yaw_rate_bf_cds, rate_rp_tc, rate_y_tc);
+    }
 
     // Integrate vehicle rate into _att_error_rot_vec_rad
     void integrate_bf_rate_error_to_angle_errors();
 
     // subclass non-passthrough too, for external gyro, no flybar
-    void input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc) override;
+    void input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds) override;
 
 	// rate_controller_run - run lowest level body-frame rate controller and send outputs to the motors
 	// should be called at 100hz or more
@@ -96,7 +99,10 @@ public:
     void set_throttle_out(float throttle_in, bool apply_angle_boost, float filt_cutoff) override;
 
     // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
-    void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc) override;
+    void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds) override;
+    void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc) override {
+        AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds, rate_y_tc);
+    }
 
     // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
     void input_euler_angle_roll_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_angle_cd, bool slew_yaw) override;

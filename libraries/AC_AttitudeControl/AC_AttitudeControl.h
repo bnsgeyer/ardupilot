@@ -154,32 +154,39 @@ public:
     virtual void input_quaternion(Quaternion& attitude_desired_quat, Vector3f ang_vel_target);
 
     // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
+    virtual void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds);
     virtual void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc);
+
     // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
     virtual void input_euler_angle_roll_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_angle_cd, bool slew_yaw);
 
     // Command euler yaw rate and pitch angle with roll angle specified in body frame
     // (implemented only in AC_AttitudeControl_TS for tailsitter quadplanes)
     virtual void input_euler_rate_yaw_euler_angle_pitch_bf_roll(bool plane_controls, float euler_roll_angle_cd, 
-        float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc) {}
+        float euler_pitch_angle_cd, float euler_yaw_rate_cds) {}
 
     // Command an euler roll, pitch, and yaw rate with angular velocity feedforward and smoothing
-    virtual void input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds, float rate_rp_tc, float rate_y_tc);
+    virtual void input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds);
+    void input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular velocity with angular velocity feedforward and smoothing
+    virtual void input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds);
     virtual void input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular velocity with angular velocity feedforward and smoothing
-    virtual void input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
+    virtual void input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds);
+    void input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular velocity with angular velocity smoothing using rate loops only with integrated rate error stabilization
-    virtual void input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
+    virtual void input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds);
+    void input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular step (i.e change) in body frame angle
     virtual void input_angle_step_bf_roll_pitch_yaw(float roll_angle_step_bf_cd, float pitch_angle_step_bf_cd, float yaw_angle_step_bf_cd);
 
     // Command a thrust vector in the earth frame and a heading angle and/or rate
     virtual void input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds);
+    void input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds, float rate_y_tc);
     virtual void input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_angle_cd, float heading_rate_cds);
     void input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_cd) {input_thrust_vector_heading(thrust_vector, heading_cd, 0.0f);}
 
@@ -504,6 +511,10 @@ protected:
 
     // true in inverted flight mode
     bool _inverted_flight;
+
+    // time constants variables
+    float _rate_rp_tc;
+    float _rate_y_tc;
 
 public:
     // log a CTRL message

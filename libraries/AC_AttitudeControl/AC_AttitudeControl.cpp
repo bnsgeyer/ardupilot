@@ -258,7 +258,7 @@ void AC_AttitudeControl::input_quaternion(Quaternion& attitude_desired_quat, Vec
 }
 
 // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
-void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc)
+void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds)
 {
     // Convert from centidegrees on public interface to radians
     float euler_roll_angle = radians(euler_roll_angle_cd * 0.01f);
@@ -283,10 +283,10 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
 
         // When yaw acceleration limiting is enabled, the yaw input shaper constrains angular acceleration about the yaw axis, slewing
         // the output rate towards the input rate.
-        if (is_zero(rate_y_tc)) {
+        if (is_zero(_rate_y_tc)) {
             _euler_rate_target.z = input_shaping_ang_vel(_euler_rate_target.z, euler_yaw_rate, euler_accel.z, _dt);
         } else {
-            _euler_rate_target.z = input_shaping_rate((euler_yaw_rate - _euler_rate_target.z), rate_y_tc, euler_accel.z, _euler_rate_target.z, _dt);
+            _euler_rate_target.z = input_shaping_rate((euler_yaw_rate - _euler_rate_target.z), _rate_y_tc, euler_accel.z, _euler_rate_target.z, _dt);
         }
 
         // Convert euler angle derivative of desired attitude into a body-frame angular velocity vector for feedforward
@@ -310,6 +310,13 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler
 
     // Call quaternion attitude controller
     attitude_controller_run_quat();
+}
+
+// Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing using rate yaw time constant
+void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc)
+{
+    _rate_y_tc = rate_y_tc;
+    input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
 }
 
 // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
@@ -372,7 +379,7 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_yaw(float euler_roll_angle
 }
 
 // Command an euler roll, pitch, and yaw rate with angular velocity feedforward and smoothing
-void AC_AttitudeControl::input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds, float rate_rp_tc, float rate_y_tc)
+void AC_AttitudeControl::input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds)
 {
     // Convert from centidegrees on public interface to radians
     float euler_roll_rate = radians(euler_roll_rate_cds * 0.01f);
@@ -388,17 +395,17 @@ void AC_AttitudeControl::input_euler_rate_roll_pitch_yaw(float euler_roll_rate_c
 
         // When acceleration limiting is enabled, the input shaper constrains angular acceleration, slewing
         // the output rate towards the input rate.
-        if (is_zero(rate_rp_tc)) {
+        if (is_zero(_rate_rp_tc)) {
             _euler_rate_target.x = input_shaping_ang_vel(_euler_rate_target.x, euler_roll_rate, euler_accel.x, _dt);
             _euler_rate_target.y = input_shaping_ang_vel(_euler_rate_target.y, euler_pitch_rate, euler_accel.y, _dt);
         } else {
-            _euler_rate_target.x = input_shaping_rate((euler_roll_rate - _euler_rate_target.x), rate_rp_tc, euler_accel.x, _euler_rate_target.x, _dt);
-            _euler_rate_target.y = input_shaping_rate((euler_pitch_rate - _euler_rate_target.y), rate_rp_tc, euler_accel.y, _euler_rate_target.y, _dt);
+            _euler_rate_target.x = input_shaping_rate((euler_roll_rate - _euler_rate_target.x), _rate_rp_tc, euler_accel.x, _euler_rate_target.x, _dt);
+            _euler_rate_target.y = input_shaping_rate((euler_pitch_rate - _euler_rate_target.y), _rate_rp_tc, euler_accel.y, _euler_rate_target.y, _dt);
         }
-        if (is_zero(rate_y_tc)) {
+        if (is_zero(_rate_y_tc)) {
             _euler_rate_target.z = input_shaping_ang_vel(_euler_rate_target.z, euler_yaw_rate, euler_accel.z, _dt);
         } else {
-            _euler_rate_target.z = input_shaping_rate((euler_yaw_rate - _euler_rate_target.z), rate_y_tc, euler_accel.z, _euler_rate_target.z, _dt);
+            _euler_rate_target.z = input_shaping_rate((euler_yaw_rate - _euler_rate_target.z), _rate_y_tc, euler_accel.z, _euler_rate_target.z, _dt);
         }
 
         // Convert euler angle derivative of desired attitude into a body-frame angular velocity vector for feedforward
@@ -422,8 +429,16 @@ void AC_AttitudeControl::input_euler_rate_roll_pitch_yaw(float euler_roll_rate_c
     attitude_controller_run_quat();
 }
 
+// Command an euler roll, pitch, and yaw rate with angular velocity feedforward and smoothing
+void AC_AttitudeControl::input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds, float rate_rp_tc, float rate_y_tc)
+{
+    _rate_rp_tc = rate_rp_tc;
+    _rate_y_tc = rate_y_tc;
+    input_euler_rate_roll_pitch_yaw(euler_roll_rate_cds, euler_pitch_rate_cds, euler_yaw_rate_cds);
+}
+
 // Command an angular velocity with angular velocity feedforward and smoothing
-void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc)
+void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds)
 {
     // Convert from centidegrees on public interface to radians
     float roll_rate_rads = radians(roll_rate_bf_cds * 0.01f);
@@ -437,17 +452,17 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, fl
         // Compute acceleration-limited body frame rates
         // When acceleration limiting is enabled, the input shaper constrains angular acceleration about the axis, slewing
         // the output rate towards the input rate.
-        if (is_zero(rate_rp_tc)) {
+        if (is_zero(_rate_rp_tc)) {
             _ang_vel_target.x = input_shaping_ang_vel(_ang_vel_target.x, roll_rate_rads, get_accel_roll_max_radss(), _dt);
             _ang_vel_target.y = input_shaping_ang_vel(_ang_vel_target.y, pitch_rate_rads, get_accel_pitch_max_radss(), _dt);
         } else {
-            _ang_vel_target.x = input_shaping_rate((roll_rate_rads - _ang_vel_target.x), rate_rp_tc, get_accel_roll_max_radss(), _ang_vel_target.x, _dt);
-            _ang_vel_target.y = input_shaping_rate((pitch_rate_rads - _ang_vel_target.y), rate_rp_tc, get_accel_pitch_max_radss(), _ang_vel_target.y, _dt);
+            _ang_vel_target.x = input_shaping_rate((roll_rate_rads - _ang_vel_target.x), _rate_rp_tc, get_accel_roll_max_radss(), _ang_vel_target.x, _dt);
+            _ang_vel_target.y = input_shaping_rate((pitch_rate_rads - _ang_vel_target.y), _rate_rp_tc, get_accel_pitch_max_radss(), _ang_vel_target.y, _dt);
         }
-        if (is_zero(rate_y_tc)) {
+        if (is_zero(_rate_y_tc)) {
             _ang_vel_target.z = input_shaping_ang_vel(_ang_vel_target.z, yaw_rate_rads, get_accel_yaw_max_radss(), _dt);
         } else {
-            _ang_vel_target.z = input_shaping_rate((yaw_rate_rads - _ang_vel_target.z), rate_y_tc, get_accel_yaw_max_radss(), _ang_vel_target.z, _dt);
+            _ang_vel_target.z = input_shaping_rate((yaw_rate_rads - _ang_vel_target.z), _rate_y_tc, get_accel_yaw_max_radss(), _ang_vel_target.z, _dt);
         }
 
         // Convert body-frame angular velocity into euler angle derivative of desired attitude
@@ -468,8 +483,16 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, fl
     attitude_controller_run_quat();
 }
 
+// Command an angular velocity with angular velocity feedforward and smoothing
+void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc)
+{
+    _rate_rp_tc = rate_rp_tc;
+    _rate_y_tc = rate_y_tc;
+    input_rate_bf_roll_pitch_yaw(roll_rate_bf_cds, pitch_rate_bf_cds, yaw_rate_bf_cds);
+}
+
 // Command an angular velocity with angular velocity smoothing using rate loops only with no attitude loop stabilization
-void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc)
+void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds)
 {
     // Convert from centidegrees on public interface to radians
     float roll_rate_rads = radians(roll_rate_bf_cds * 0.01f);
@@ -479,17 +502,17 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, 
     // Compute acceleration-limited body frame rates
     // When acceleration limiting is enabled, the input shaper constrains angular acceleration about the axis, slewing
     // the output rate towards the input rate.
-    if (is_zero(rate_rp_tc)) {
+    if (is_zero(_rate_rp_tc)) {
         _ang_vel_target.x = input_shaping_ang_vel(_ang_vel_target.x, roll_rate_rads, get_accel_roll_max_radss(), _dt);
         _ang_vel_target.y = input_shaping_ang_vel(_ang_vel_target.y, pitch_rate_rads, get_accel_pitch_max_radss(), _dt);
     } else {
-        _ang_vel_target.x = input_shaping_rate((roll_rate_rads - _ang_vel_target.x), rate_rp_tc, get_accel_roll_max_radss(), _ang_vel_target.x, _dt);
-        _ang_vel_target.y = input_shaping_rate((pitch_rate_rads - _ang_vel_target.y), rate_rp_tc, get_accel_pitch_max_radss(), _ang_vel_target.y, _dt);
+        _ang_vel_target.x = input_shaping_rate((roll_rate_rads - _ang_vel_target.x), _rate_rp_tc, get_accel_roll_max_radss(), _ang_vel_target.x, _dt);
+        _ang_vel_target.y = input_shaping_rate((pitch_rate_rads - _ang_vel_target.y), _rate_rp_tc, get_accel_pitch_max_radss(), _ang_vel_target.y, _dt);
     }
-    if (is_zero(rate_y_tc)) {
+    if (is_zero(_rate_y_tc)) {
         _ang_vel_target.z = input_shaping_ang_vel(_ang_vel_target.z, yaw_rate_rads, get_accel_yaw_max_radss(), _dt);
     } else {
-        _ang_vel_target.z = input_shaping_rate((yaw_rate_rads - _ang_vel_target.z), rate_y_tc, get_accel_yaw_max_radss(), _ang_vel_target.z, _dt);
+        _ang_vel_target.z = input_shaping_rate((yaw_rate_rads - _ang_vel_target.z), _rate_y_tc, get_accel_yaw_max_radss(), _ang_vel_target.z, _dt);
     }
 
     // Update the unused targets attitude based on current attitude to condition mode change
@@ -500,8 +523,16 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, 
     _ang_vel_body = _ang_vel_target;
 }
 
+// Command an angular velocity with angular velocity smoothing using rate loops only with no attitude loop stabilization
+void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc)
+{
+    _rate_rp_tc = rate_rp_tc;
+    _rate_y_tc = rate_y_tc;
+    input_rate_bf_roll_pitch_yaw_2(roll_rate_bf_cds, pitch_rate_bf_cds, yaw_rate_bf_cds);
+}
+
 // Command an angular velocity with angular velocity smoothing using rate loops only with integrated rate error stabilization
-void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc)
+void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds)
 {
     // Convert from centidegrees on public interface to radians
     float roll_rate_rads = radians(roll_rate_bf_cds * 0.01f);
@@ -527,17 +558,17 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, 
     // Compute acceleration-limited body frame rates
     // When acceleration limiting is enabled, the input shaper constrains angular acceleration about the axis, slewing
     // the output rate towards the input rate.
-    if (is_zero(rate_rp_tc)) {
+    if (is_zero(_rate_rp_tc)) {
         _ang_vel_target.x = input_shaping_ang_vel(_ang_vel_target.x, roll_rate_rads, get_accel_roll_max_radss(), _dt);
         _ang_vel_target.y = input_shaping_ang_vel(_ang_vel_target.y, pitch_rate_rads, get_accel_pitch_max_radss(), _dt);
     } else {
-        _ang_vel_target.x = input_shaping_rate((roll_rate_rads - _ang_vel_target.x), rate_rp_tc, get_accel_roll_max_radss(), _ang_vel_target.x, _dt);
-        _ang_vel_target.y = input_shaping_rate((pitch_rate_rads - _ang_vel_target.y), rate_rp_tc, get_accel_pitch_max_radss(), _ang_vel_target.y, _dt);
+        _ang_vel_target.x = input_shaping_rate((roll_rate_rads - _ang_vel_target.x), _rate_rp_tc, get_accel_roll_max_radss(), _ang_vel_target.x, _dt);
+        _ang_vel_target.y = input_shaping_rate((pitch_rate_rads - _ang_vel_target.y), _rate_rp_tc, get_accel_pitch_max_radss(), _ang_vel_target.y, _dt);
     }
-    if (is_zero(rate_y_tc)) {
+    if (is_zero(_rate_y_tc)) {
         _ang_vel_target.z = input_shaping_ang_vel(_ang_vel_target.z, yaw_rate_rads, get_accel_yaw_max_radss(), _dt);
     } else {
-        _ang_vel_target.z = input_shaping_rate((yaw_rate_rads - _ang_vel_target.z), rate_y_tc, get_accel_yaw_max_radss(), _ang_vel_target.z, _dt);
+        _ang_vel_target.z = input_shaping_rate((yaw_rate_rads - _ang_vel_target.z), _rate_y_tc, get_accel_yaw_max_radss(), _ang_vel_target.z, _dt);
     }
 
     // Retrieve quaternion body attitude
@@ -560,6 +591,14 @@ void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, 
 
     // ensure Quaternions stay normalized
     _attitude_ang_error.normalize();
+}
+
+// Command an angular velocity with angular velocity smoothing using rate loops only with integrated rate error stabilization
+void AC_AttitudeControl::input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc)
+{
+    _rate_rp_tc = rate_rp_tc;
+    _rate_y_tc = rate_y_tc;
+    input_rate_bf_roll_pitch_yaw_3(roll_rate_bf_cds, pitch_rate_bf_cds, yaw_rate_bf_cds);
 }
 
 // Command an angular step (i.e change) in body frame angle
@@ -615,7 +654,11 @@ void AC_AttitudeControl::input_thrust_vector_rate_heading(const Vector3f& thrust
 
         // When yaw acceleration limiting is enabled, the yaw input shaper constrains angular acceleration about the yaw axis, slewing
         // the output rate towards the input rate.
-        _ang_vel_target.z = input_shaping_ang_vel(_ang_vel_target.z, heading_rate, get_accel_yaw_max_radss(), _dt);
+        if (is_zero(_rate_y_tc)) {
+            _ang_vel_target.z = input_shaping_ang_vel(_ang_vel_target.z, heading_rate, get_accel_yaw_max_radss(), _dt);
+        } else {
+            _ang_vel_target.z = input_shaping_rate((heading_rate - _ang_vel_target.z), _rate_y_tc, get_accel_yaw_max_radss(), _ang_vel_target.z, _dt);
+        }
 
         // Limit the angular velocity
         ang_vel_limit(_ang_vel_target, radians(_ang_vel_roll_max), radians(_ang_vel_pitch_max), get_slew_yaw_max_rads());
@@ -634,6 +677,13 @@ void AC_AttitudeControl::input_thrust_vector_rate_heading(const Vector3f& thrust
 
     // Call quaternion attitude controller
     attitude_controller_run_quat();
+}
+
+// Command a thrust vector and heading rate
+void AC_AttitudeControl::input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds, float rate_y_tc)
+{
+    _rate_y_tc = rate_y_tc;
+    input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds);
 }
 
 // Command a thrust vector, heading and heading rate
