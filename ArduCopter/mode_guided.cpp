@@ -206,10 +206,10 @@ void ModeGuided::wp_control_run()
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from waypoint controller, yaw rate from pilot
-        attitude_control->input_thrust_vector_rate_heading(wp_nav->get_thrust_vector(), target_yaw_rate);
+        attitude_control->input_thrust_vector_rate_heading(wp_nav->get_thrust_vector(), target_yaw_rate, g2.pilot_rate_y_tc);
     } else if (auto_yaw.mode() == AUTO_YAW_RATE) {
         // roll & pitch from waypoint controller, yaw rate from mavlink command or mission item
-        attitude_control->input_thrust_vector_rate_heading(wp_nav->get_thrust_vector(), auto_yaw.rate_cds());
+        attitude_control->input_thrust_vector_rate_heading(wp_nav->get_thrust_vector(), auto_yaw.rate_cds(), g2.pilot_rate_y_tc);
     } else {
         // roll, pitch from waypoint controller, yaw heading from GCS or auto_heading()
         attitude_control->input_thrust_vector_heading(wp_nav->get_thrust_vector(), auto_yaw.yaw());
@@ -710,10 +710,10 @@ void ModeGuided::pos_control_run()
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from position controller, yaw rate from pilot
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate, g2.pilot_rate_y_tc);
     } else if (auto_yaw.mode() == AUTO_YAW_RATE) {
         // roll & pitch from position controller, yaw rate from mavlink command or mission item
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds());
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds(), g2.pilot_rate_y_tc);
     } else {
         // roll & pitch from position controller, yaw heading from GCS or auto_heading()
         attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.yaw(), auto_yaw.rate_cds());
@@ -774,10 +774,10 @@ void ModeGuided::accel_control_run()
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from position controller, yaw rate from pilot
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate, g2.pilot_rate_y_tc);
     } else if (auto_yaw.mode() == AUTO_YAW_RATE) {
         // roll & pitch from position controller, yaw rate from mavlink command or mission item
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds());
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds(), g2.pilot_rate_y_tc);
     } else {
         // roll & pitch from position controller, yaw heading from GCS or auto_heading()
         attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.yaw(), auto_yaw.rate_cds());
@@ -849,10 +849,10 @@ void ModeGuided::velaccel_control_run()
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from position controller, yaw rate from pilot
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate, g2.pilot_rate_y_tc);
     } else if (auto_yaw.mode() == AUTO_YAW_RATE) {
         // roll & pitch from position controller, yaw rate from mavlink command or mission item
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds());
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds(), g2.pilot_rate_y_tc);
     } else {
         // roll & pitch from position controller, yaw heading from GCS or auto_heading()
         attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.yaw(), auto_yaw.rate_cds());
@@ -886,7 +886,7 @@ void ModeGuided::pause_control_run()
     pos_control->update_z_controller();
 
     // call attitude controller
-    attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), 0.0);
+    attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), 0.0, g2.pilot_rate_y_tc);
 }
 
 // posvelaccel_control_run - runs the guided position, velocity and acceleration controller
@@ -961,10 +961,10 @@ void ModeGuided::posvelaccel_control_run()
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from position controller, yaw rate from pilot
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate, g2.pilot_rate_y_tc);
     } else if (auto_yaw.mode() == AUTO_YAW_RATE) {
         // roll & pitch from position controller, yaw rate from mavlink command or mission item
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds());
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), auto_yaw.rate_cds(), g2.pilot_rate_y_tc);
     } else {
         // roll & pitch from position controller, yaw heading from GCS or auto_heading()
         attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.yaw(), auto_yaw.rate_cds());

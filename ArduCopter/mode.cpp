@@ -728,7 +728,7 @@ void Mode::land_run_horizontal_control()
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from waypoint controller, yaw rate from pilot
-        attitude_control->input_thrust_vector_rate_heading(thrust_vector, target_yaw_rate);
+        attitude_control->input_thrust_vector_rate_heading(thrust_vector, target_yaw_rate, g2.pilot_rate_y_tc);
     } else {
         // roll, pitch from waypoint controller, yaw heading from auto_heading()
         attitude_control->input_thrust_vector_heading(thrust_vector, auto_yaw.yaw());
