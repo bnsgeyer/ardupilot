@@ -683,7 +683,7 @@ void AC_AttitudeControl::input_thrust_vector_rate_heading(const Vector3f& thrust
 void AC_AttitudeControl::input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds, float rate_y_tc)
 {
     _rate_y_tc = rate_y_tc;
-    input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds);
+    input_thrust_vector_rate_heading(thrust_vector, heading_rate_cds);
 }
 
 // Command a thrust vector, heading and heading rate
