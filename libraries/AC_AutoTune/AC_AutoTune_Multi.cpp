@@ -1079,7 +1079,7 @@ void AC_AutoTune_Multi::twitch_test_run(AxisType test_axis, const float dir_sign
     // disable rate limits
     attitude_control->use_sqrt_controller(false);
     // hold current attitude
-    attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+    attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 
     if ((tune_type == SP_DOWN) || (tune_type == SP_UP)) {
         // step angle targets on first iteration

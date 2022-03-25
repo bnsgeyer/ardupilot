@@ -237,7 +237,7 @@ void AC_AutoTune::run()
 
     // if pilot override call attitude controller
     if (pilot_override || mode != TUNING) {
-        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll_cd, target_pitch_cd, target_yaw_rate_cds);
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll_cd, target_pitch_cd, target_yaw_rate_cds, 0.0f);
     } else {
         // somehow get attitude requests from autotuning
         control_attitude();

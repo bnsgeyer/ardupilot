@@ -774,19 +774,19 @@ void AC_AutoTune_Heli::rate_ff_test_run(float max_angle_cd, float target_rate_cd
                    || (ahrs_view->roll_sensor >= -max_angle_cd + start_angle && !is_positive(dir_sign)))
                    && ff_test_phase == 0) {
             rate_request_cds.apply(target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(rate_request_cds.get(), 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(rate_request_cds.get(), 0.0f, 0.0f, 0.0f, 0.0f);
         } else if (((ahrs_view->roll_sensor > max_angle_cd + start_angle && is_positive(dir_sign))
                    || (ahrs_view->roll_sensor < -max_angle_cd + start_angle && !is_positive(dir_sign)))
                    && ff_test_phase == 0) {
             ff_test_phase = 1;
             rate_request_cds.apply(-target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(rate_request_cds.get(), 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(rate_request_cds.get(), 0.0f, 0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_roll_target(rate_request_cds.get());
         } else if (((ahrs_view->roll_sensor >= -max_angle_cd + start_angle && is_positive(dir_sign))
                    || (ahrs_view->roll_sensor <= max_angle_cd + start_angle && !is_positive(dir_sign)))
                    && ff_test_phase == 1 ) {
             rate_request_cds.apply(-target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(rate_request_cds.get(), 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(rate_request_cds.get(), 0.0f, 0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_roll_target(rate_request_cds.get());
         } else if (((ahrs_view->roll_sensor < -max_angle_cd + start_angle && is_positive(dir_sign))
                    || (ahrs_view->roll_sensor > max_angle_cd + start_angle && !is_positive(dir_sign)))
@@ -794,10 +794,10 @@ void AC_AutoTune_Heli::rate_ff_test_run(float max_angle_cd, float target_rate_cd
             ff_test_phase = 2;
             attitude_control->reset_target_and_rate(false);
             angle_request_cd.reset(ahrs_view->roll_sensor);
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(angle_request_cd.get(), start_angles.y, 0.0f);
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(angle_request_cd.get(), start_angles.y, 0.0f, 0.0f);
         } else if (ff_test_phase == 2 ) {
             angle_request_cd.apply(start_angles.x, AP::scheduler().get_loop_period_s());
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(angle_request_cd.get(), start_angles.y, 0.0f);
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(angle_request_cd.get(), start_angles.y, 0.0f, 0.0f);
             phase_out_time--;
         }
         break;
@@ -813,19 +813,19 @@ void AC_AutoTune_Heli::rate_ff_test_run(float max_angle_cd, float target_rate_cd
                    || (ahrs_view->pitch_sensor >= -max_angle_cd + start_angle && !is_positive(dir_sign)))
                    && ff_test_phase == 0) {
             rate_request_cds.apply(target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, rate_request_cds.get(), 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, rate_request_cds.get(), 0.0f, 0.0f, 0.0f);
         } else if (((ahrs_view->pitch_sensor > max_angle_cd + start_angle && is_positive(dir_sign))
                    || (ahrs_view->pitch_sensor < -max_angle_cd + start_angle && !is_positive(dir_sign)))
                    && ff_test_phase == 0) {
             ff_test_phase = 1;
             rate_request_cds.apply(-target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, rate_request_cds.get(), 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, rate_request_cds.get(), 0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_pitch_target(rate_request_cds.get());
         } else if (((ahrs_view->pitch_sensor >= -max_angle_cd + start_angle && is_positive(dir_sign))
                    || (ahrs_view->pitch_sensor <= max_angle_cd + start_angle && !is_positive(dir_sign)))
                    && ff_test_phase == 1 ) {
             rate_request_cds.apply(-target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, rate_request_cds.get(), 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, rate_request_cds.get(), 0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_pitch_target(rate_request_cds.get());
         } else if (((ahrs_view->pitch_sensor < -max_angle_cd + start_angle && is_positive(dir_sign))
                    || (ahrs_view->pitch_sensor > max_angle_cd + start_angle && !is_positive(dir_sign)))
@@ -833,10 +833,10 @@ void AC_AutoTune_Heli::rate_ff_test_run(float max_angle_cd, float target_rate_cd
             ff_test_phase = 2;
             attitude_control->reset_target_and_rate(false);
             angle_request_cd.reset(ahrs_view->pitch_sensor);
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(start_angles.x, angle_request_cd.get(), 0.0f);
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(start_angles.x, angle_request_cd.get(), 0.0f, 0.0f);
         } else if (ff_test_phase == 2 ) {
             angle_request_cd.apply(start_angles.y, AP::scheduler().get_loop_period_s());
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(start_angles.x, angle_request_cd.get(), 0.0f);
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(start_angles.x, angle_request_cd.get(), 0.0f, 0.0f);
             phase_out_time--;
         }
         break;
@@ -853,19 +853,19 @@ void AC_AutoTune_Heli::rate_ff_test_run(float max_angle_cd, float target_rate_cd
                    || (wrap_180_cd(ahrs_view->yaw_sensor - trim_heading) >= -2.0f * max_angle_cd && !is_positive(dir_sign)))
                    && ff_test_phase == 0) {
             rate_request_cds.apply(target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, rate_request_cds.get());
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, rate_request_cds.get(), 0.0f, 0.0f);
         } else if (((wrap_180_cd(ahrs_view->yaw_sensor - trim_heading) > 2.0f * max_angle_cd && is_positive(dir_sign))
                    || (wrap_180_cd(ahrs_view->yaw_sensor - trim_heading) < -2.0f * max_angle_cd && !is_positive(dir_sign)))
                    && ff_test_phase == 0) {
             ff_test_phase = 1;
             rate_request_cds.apply(-target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, rate_request_cds.get());
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, rate_request_cds.get(), 0.0f, 0.0f);
             attitude_control->rate_bf_yaw_target(rate_request_cds.get());
         } else if (((wrap_180_cd(ahrs_view->yaw_sensor - trim_heading) >= -2.0f * max_angle_cd && is_positive(dir_sign))
                    || (wrap_180_cd(ahrs_view->yaw_sensor - trim_heading) <= 2.0f * max_angle_cd && !is_positive(dir_sign)))
                    && ff_test_phase == 1 ) {
             rate_request_cds.apply(-target_rate_cds, AP::scheduler().get_loop_period_s());
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, rate_request_cds.get());
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, rate_request_cds.get(), 0.0f, 0.0f);
             attitude_control->rate_bf_yaw_target(rate_request_cds.get());
         } else if (((wrap_180_cd(ahrs_view->yaw_sensor - trim_heading) < -2.0f * max_angle_cd && is_positive(dir_sign))
                    || (wrap_180_cd(ahrs_view->yaw_sensor - trim_heading) > 2.0f * max_angle_cd && !is_positive(dir_sign)))
@@ -1048,10 +1048,10 @@ void AC_AutoTune_Heli::dwell_test_run(uint8_t freq_resp_input, float start_frq, 
                 ff_rate_contr = 5730.0f * trim_command / tune_roll_rff;
             }
             trim_rate_cds.x += ff_rate_contr;
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, trim_rate_cds.y, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, trim_rate_cds.y, 0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_roll_target(target_rate_cds + trim_rate_cds.x);
         } else {
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
             if (!is_zero(attitude_control->get_rate_roll_pid().ff() + attitude_control->get_rate_roll_pid().kP())) {
                 float trim_tgt_rate_cds = 5730.0f * (trim_pff_out + trim_meas_rate * attitude_control->get_rate_roll_pid().kP()) / (attitude_control->get_rate_roll_pid().ff() + attitude_control->get_rate_roll_pid().kP());
                 attitude_control->rate_bf_roll_target(trim_tgt_rate_cds);
@@ -1068,10 +1068,10 @@ void AC_AutoTune_Heli::dwell_test_run(uint8_t freq_resp_input, float start_frq, 
                 ff_rate_contr = 5730.0f * trim_command / tune_pitch_rff;
             }
             trim_rate_cds.y += ff_rate_contr;
-            attitude_control->input_rate_bf_roll_pitch_yaw(trim_rate_cds.x, 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(trim_rate_cds.x, 0.0f, 0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_pitch_target(target_rate_cds + trim_rate_cds.y);
         } else {
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
             if (!is_zero(attitude_control->get_rate_pitch_pid().ff() + attitude_control->get_rate_pitch_pid().kP())) {
                 float trim_tgt_rate_cds = 5730.0f * (trim_pff_out + trim_meas_rate * attitude_control->get_rate_pitch_pid().kP()) / (attitude_control->get_rate_pitch_pid().ff() + attitude_control->get_rate_pitch_pid().kP());
                 attitude_control->rate_bf_pitch_target(trim_tgt_rate_cds);
@@ -1088,10 +1088,10 @@ void AC_AutoTune_Heli::dwell_test_run(uint8_t freq_resp_input, float start_frq, 
                 rp_rate_contr = 5730.0f * trim_command / tune_yaw_rp;
             }
             trim_rate_cds.z += rp_rate_contr;
-            attitude_control->input_rate_bf_roll_pitch_yaw(trim_rate_cds.x, trim_rate_cds.y, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(trim_rate_cds.x, trim_rate_cds.y, 0.0f, 0.0f, 0.0f);
             attitude_control->rate_bf_yaw_target(target_rate_cds + trim_rate_cds.z);
         } else {
-            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f);
+            attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
             if (!is_zero(attitude_control->get_rate_yaw_pid().ff() + attitude_control->get_rate_yaw_pid().kP())) {
                 float trim_tgt_rate_cds = 5730.0f * (trim_pff_out + trim_meas_rate * attitude_control->get_rate_yaw_pid().kP()) / (attitude_control->get_rate_yaw_pid().ff() + attitude_control->get_rate_yaw_pid().kP());
                 attitude_control->rate_bf_yaw_target(trim_tgt_rate_cds);
@@ -1286,13 +1286,13 @@ void AC_AutoTune_Heli::angle_dwell_test_run(float start_frq, float stop_frq, flo
     };
     switch (axis) {
     case ROLL:
-        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_angle_cd + trim_angle_cd.x, trim_angle_cd.y, 0.0f);
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_angle_cd + trim_angle_cd.x, trim_angle_cd.y, 0.0f, 0.0f);
         command_reading = motors->get_roll();
         tgt_rate_reading = ((float)attitude_control->get_att_target_euler_cd().x) / 5730.0f;
         gyro_reading = ((float)ahrs_view->roll_sensor) / 5730.0f;
         break;
     case PITCH:
-        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(trim_angle_cd.x, target_angle_cd + trim_angle_cd.y, 0.0f);
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(trim_angle_cd.x, target_angle_cd + trim_angle_cd.y, 0.0f, 0.0f);
         command_reading = motors->get_pitch();
         tgt_rate_reading = ((float)attitude_control->get_att_target_euler_cd().y) / 5730.0f;
         gyro_reading = ((float)ahrs_view->pitch_sensor) / 5730.0f;
