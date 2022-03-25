@@ -666,7 +666,6 @@ public:
     AP_Float                acro_rate_y_tc;
 #endif
 
-    AP_Float                pilot_rate_rp_tc;
     AP_Float                pilot_rate_y_tc;
     AP_Float                pilot_y_rate;
     AP_Float                pilot_y_expo;
