@@ -154,26 +154,26 @@ public:
     virtual void input_quaternion(Quaternion& attitude_desired_quat, Vector3f ang_vel_target);
 
     // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
-    virtual void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds);
+    virtual void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc);
     // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
     virtual void input_euler_angle_roll_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_angle_cd, bool slew_yaw);
 
     // Command euler yaw rate and pitch angle with roll angle specified in body frame
     // (implemented only in AC_AttitudeControl_TS for tailsitter quadplanes)
     virtual void input_euler_rate_yaw_euler_angle_pitch_bf_roll(bool plane_controls, float euler_roll_angle_cd, 
-        float euler_pitch_angle_cd, float euler_yaw_rate_cds) {}
+        float euler_pitch_angle_cd, float euler_yaw_rate_cds, float rate_y_tc) {}
 
     // Command an euler roll, pitch, and yaw rate with angular velocity feedforward and smoothing
-    virtual void input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds);
+    virtual void input_euler_rate_roll_pitch_yaw(float euler_roll_rate_cds, float euler_pitch_rate_cds, float euler_yaw_rate_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular velocity with angular velocity feedforward and smoothing
-    virtual void input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds);
+    virtual void input_rate_bf_roll_pitch_yaw(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular velocity with angular velocity feedforward and smoothing
-    virtual void input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds);
+    virtual void input_rate_bf_roll_pitch_yaw_2(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular velocity with angular velocity smoothing using rate loops only with integrated rate error stabilization
-    virtual void input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds);
+    virtual void input_rate_bf_roll_pitch_yaw_3(float roll_rate_bf_cds, float pitch_rate_bf_cds, float yaw_rate_bf_cds, float rate_rp_tc, float rate_y_tc);
 
     // Command an angular step (i.e change) in body frame angle
     virtual void input_angle_step_bf_roll_pitch_yaw(float roll_angle_step_bf_cd, float pitch_angle_step_bf_cd, float yaw_angle_step_bf_cd);
@@ -305,6 +305,7 @@ public:
     // limits the acceleration and deceleration of a velocity request
     static float input_shaping_ang_vel(float target_ang_vel, float desired_ang_vel, float accel_max, float dt);
 
+    // calculates the accleration correction from an rate error. The angular acceleration is limited.
     static float input_shaping_rate(float error_rate, float input_tc, float accel_max, float target_ang_vel, float dt);
 
     // calculates the expected angular velocity correction from an angle error based on the AC_AttitudeControl settings.
@@ -365,12 +366,6 @@ public:
     // enable inverted flight on backends that support it
     virtual void set_inverted_flight(bool inverted) {}
     
-    // Sets the roll and pitch rate shaping time constant
-    void set_roll_pitch_rate_tc(float input_tc) { _rate_rp_tc = input_tc; }
-
-    // Sets the yaw rate shaping time constant
-    void set_yaw_rate_tc(float input_tc) { _rate_y_tc = input_tc; }
-
     // User settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -485,10 +480,6 @@ protected:
 
     // Yaw feed forward percent to allow zero yaw actuator output during extreme roll and pitch corrections
     float               _feedforward_scalar = 1.0f;
-
-    // rate controller input smoothing time constant
-    float               _rate_rp_tc;
-    float               _rate_y_tc;
 
     // References to external libraries
     const AP_AHRS_View&  _ahrs;
