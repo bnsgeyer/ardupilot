@@ -504,7 +504,7 @@ void AC_Autorotation::touchdown_controller()
 			desired_sink_rate = 0.0f;
 	}
 	  _collective_out =  _entry_coll + (_p_coll_tch.get_p(desired_sink_rate - current_sink_rate))*0.1f + _rpm_decay*_param_coll_ff;
-	  set_collective(5.0f);
+	  set_collective(HS_CONTROLLER_COLLECTIVE_CUTOFF_FREQ);
 	  _pitch_target = 0.0f;
 }
 
