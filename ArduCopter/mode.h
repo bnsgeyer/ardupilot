@@ -1811,6 +1811,7 @@ private:
     float guided_roll;
     float guided_pitch;
     float guided_yaw;
+    uint32_t _touchdown_time_ms;
 
     enum class Autorotation_Phase {
         ENTRY,

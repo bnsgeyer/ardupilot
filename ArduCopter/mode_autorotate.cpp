@@ -16,6 +16,7 @@
 #define AUTOROTATE_ENTRY_TIME          2.0f    // (s) number of seconds that the entry phase operates for
 #define BAILOUT_MOTOR_RAMP_TIME        1.0f    // (s) time set on bailout ramp up timer for motors - See AC_MotorsHeli_Single
 #define HEAD_SPEED_TARGET_RATIO        1.0f    // Normalised target main rotor head speed (unit: -)
+#define TOUCHDOWN_TIME                 5.0f
 
 bool ModeAutorotate::init(bool ignore_checks)
 {
@@ -260,9 +261,10 @@ void ModeAutorotate::run()
         case Autorotation_Phase::TOUCH_DOWN:
         { 
             if (_flags.touch_down_initial == 1) {                
-                gcs().send_text(MAV_SEVERITY_INFO, "Touchdown");                           
+                gcs().send_text(MAV_SEVERITY_INFO, "Touchdown");
                 // Prevent running the initial glide functions again
-                _flags.touch_down_initial = 0;					 
+                _flags.touch_down_initial = 0;
+                _touchdown_time_ms = millis();
             }
 
             g2.arot.touchdown_controller();
@@ -271,7 +273,7 @@ void ModeAutorotate::run()
             if(fabsf(inertial_nav.get_velocity_z()) < 10) {
                 copter.ap.land_complete = true;
             }	
-            if (copter.ap.land_complete && motors->get_spool_state() == AP_Motors::SpoolState::GROUND_IDLE) {
+            if (copter.ap.land_complete && motors->get_spool_state() == AP_Motors::SpoolState::GROUND_IDLE && ((now -  _touchdown_time_ms)/1000.0f > TOUCHDOWN_TIME )) {
                 copter.arming.disarm(AP_Arming::Method::LANDED);
             }
 
