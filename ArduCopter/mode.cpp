@@ -319,6 +319,14 @@ bool Copter::set_mode(Mode::Number mode, ModeReason reason)
     camera.set_is_auto_mode(flightmode->mode_number() == Mode::Number::AUTO);
 #endif
 
+    // set rate shaping time constants
+    attitude_control->set_roll_pitch_rate_tc(g2.acro_rate_rp_tc);
+    if (mode== Mode::Number::ACRO) {
+        attitude_control->set_yaw_rate_tc(g2.acro_rate_y_tc);
+    } else {
+        attitude_control->set_yaw_rate_tc(g2.pilot_rate_y_tc);
+    }
+
     // update notify object
     notify_flight_mode();
 
