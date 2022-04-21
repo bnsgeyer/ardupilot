@@ -322,6 +322,9 @@ private:
     // maximum yaw rate in degrees/second
     AP_Float yaw_rate_max;
 
+    // maximum yaw rate in degrees/second
+    AP_Float yaw_rate_tc;
+
     // landing speed in cm/s
     AP_Int16 land_speed_cms;
 
@@ -368,6 +371,10 @@ private:
     AP_Float acro_roll_rate;
     AP_Float acro_pitch_rate;
     AP_Float acro_yaw_rate;
+
+    // QACRO mode max roll/pitch/yaw rates time constants
+    AP_Float acro_rp_rate_tc;
+    AP_Float acro_y_rate_tc;
 
     // time we last got an EKF yaw reset
     uint32_t ekfYawReset_ms;

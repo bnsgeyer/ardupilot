@@ -101,6 +101,18 @@ bool Mode::enter()
 
         // update RC failsafe, as mode change may have necessitated changing the failsafe throttle
         plane.control_failsafe();
+
+#if HAL_QUADPLANE_ENABLED
+        if (quadplane.available()) {
+            // set rate shaping time constants
+            attitude_control->set_roll_pitch_rate_tc(quadplane.acro_rp_rate_tc.get());
+            if (mode_number() == QACRO) {
+                attitude_control->set_yaw_rate_tc(quadplane.acro_y_rate_tc.get());
+            } else {
+                attitude_control->set_yaw_rate_tc(quadplane.yaw_rate_tc.get());
+            }
+        }
+#endif
     }
 
     return enter_result;

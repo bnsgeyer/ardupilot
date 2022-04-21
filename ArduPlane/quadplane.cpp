@@ -443,6 +443,36 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @User: Standard
     AP_GROUPINFO("LAND_ALTCHG", 31, QuadPlane, landing_detect.detect_alt_change, 0.2),
     
+    // @Param: YAW_RATE_TC
+    // @DisplayName: Yaw Rate control input time constant
+    // @Description: Yaw rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
+    AP_GROUPINFO("YAW_RATE_TC", 32, QuadPlane, yaw_rate_tc, 0.05f),
+
+    // @Param: ACRO_RP_RAT_TC
+    // @DisplayName: Acro Roll/Pitch Rate control input time constant
+    // @Description: Acro roll and pitch rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
+    AP_GROUPINFO("ACRO_RP_RAT_TC", 33, QuadPlane, acro_rp_rate_tc, 0.05f),
+
+    // @Param: ACRO_Y_RAT_TC
+    // @DisplayName: Acro Yaw Rate control input time constant
+    // @Description: Acro yaw rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
+    AP_GROUPINFO("ACRO_Y_RAT_TC", 34, QuadPlane, acro_y_rate_tc, 0.05f),
+
     AP_GROUPEND
 };
 
