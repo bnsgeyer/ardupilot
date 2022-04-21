@@ -88,6 +88,15 @@ bool Sub::set_mode(control_mode_t mode, ModeReason reason)
         // but it should be harmless to disable the fence temporarily in these situations as well
         fence.manual_recovery_start();
 #endif
+
+        // set rate shaping time constants
+        attitude_control.set_roll_pitch_rate_tc(g2.acro_rate_rp_tc);
+        if (control_mode == ACRO) {
+            attitude_control.set_yaw_rate_tc(g2.acro_rate_y_tc);
+        } else {
+            attitude_control.set_yaw_rate_tc(g2.pilot_rate_y_tc);
+        }
+
     } else {
         // Log error that we failed to enter desired flight mode
         AP::logger().Write_Error(LogErrorSubsystem::FLIGHT_MODE, LogErrorCode(mode));

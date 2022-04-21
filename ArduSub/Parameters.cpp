@@ -659,6 +659,36 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     // 19 was airspeed
 
+    // @Param: PILOT_RATE_Y_TC
+    // @DisplayName: Pilot Yaw Rate control input time constant
+    // @Description: Pilot yaw rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
+    AP_GROUPINFO("PILOT_RATE_Y_TC", 20, ParametersG2, pilot_rate_y_tc, 0.05f),
+
+    // @Param: ACRO_RATE_RP_TC
+    // @DisplayName: Acro Roll/Pitch Rate control input time constant
+    // @Description: Acro roll and pitch rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
+    AP_GROUPINFO("ACRO_RATE_RP_TC", 21, ParametersG2, acro_rate_rp_tc, 0.05f),
+
+    // @Param: ACRO_RATE_Y_TC
+    // @DisplayName: Acro Yaw Rate control input time constant
+    // @Description: Acro yaw rate control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
+    AP_GROUPINFO("ACRO_RATE_Y_TC", 22, ParametersG2, acro_rate_y_tc, 0.05f),
+
     AP_GROUPEND
 };
 

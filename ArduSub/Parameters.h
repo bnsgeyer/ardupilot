@@ -338,6 +338,11 @@ public:
 #if AP_SCRIPTING_ENABLED
     AP_Scripting scripting;
 #endif // AP_SCRIPTING_ENABLED
+
+    AP_Float        acro_rate_rp_tc;
+    AP_Float        acro_rate_y_tc;
+    AP_Float        pilot_rate_y_tc;
+
 };
 
 extern const AP_Param::Info        var_info[];
