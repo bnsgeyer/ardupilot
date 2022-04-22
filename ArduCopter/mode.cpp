@@ -207,6 +207,10 @@ bool Copter::set_mode(Mode::Number mode, ModeReason reason)
     // return immediately if we are already in the desired mode
     if (mode == flightmode->mode_number()) {
         control_mode_reason = reason;
+        // set yaw rate time constant during autopilot startup
+        if (reason == ModeReason::INITIALISED && mode == Mode::Number::STABILIZE) {
+            attitude_control->set_yaw_rate_tc(g2.pilot_rate_y_tc);
+        }
         // make happy noise
         if (copter.ap.initialised && (reason != last_reason)) {
             AP_Notify::events.user_mode_change = 1;
