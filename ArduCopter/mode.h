@@ -1780,7 +1780,7 @@ public:
 
     bool init(bool ignore_checks) override;
     void run() override;
-    void set_roll_angle(const Quaternion &attitude_quat, const Vector3f &ang_vel, float climb_rate_cms_or_thrust, bool use_thrust);
+    void set_roll_angle(const Quaternion &q, const Vector3f &ang_vel, float climb_rate_cms_or_thrust, bool use_thrust);
 
     bool is_autopilot() const override { return true; }
     bool requires_GPS() const override { return false; }

@@ -93,7 +93,7 @@ void ModeAutorotate::run()
     float target_roll;
 
     // Grab inertial velocity
-    const Vector3f& vel = inertial_nav.get_velocity();
+    const Vector3f& vel = inertial_nav.get_velocity_neu_cms();
 
     // rotate roll, pitch input from north facing to vehicle's perspective
     float roll_vel =  vel.y * ahrs.cos_yaw() - vel.x * ahrs.sin_yaw(); // body roll vel
@@ -101,7 +101,7 @@ void ModeAutorotate::run()
 
     // gain scheduling for yaw
     float pitch_vel2 = MIN(fabsf(pitch_vel), 2000);
-    pilot_yaw_rate = ((float)pilot_roll/1.0f) * (1.0f - (pitch_vel2 / 5000.0f)) * g.acro_yaw_p;
+    pilot_yaw_rate = ((float)pilot_roll/1.0f) * (1.0f - (pitch_vel2 / 5000.0f)) * g2.acro_y_rate; //****THIS NEEDS FIXED*****
 
     roll_vel = constrain_float(roll_vel, -560.0f, 560.0f);
     pitch_vel = constrain_float(pitch_vel, -560.0f, 560.0f);
@@ -270,7 +270,7 @@ void ModeAutorotate::run()
             g2.arot.touchdown_controller();
             _pitch_target = g2.arot.get_pitch();
 
-            if(fabsf(inertial_nav.get_velocity_z()) < 10) {
+            if(fabsf(inertial_nav.get_velocity_z_up_cms()) < 10) {
                 copter.ap.land_complete = true;
             }	
             if (copter.ap.land_complete && motors->get_spool_state() == AP_Motors::SpoolState::GROUND_IDLE && ((now -  _touchdown_time_ms)/1000.0f > TOUCHDOWN_TIME )) {
@@ -374,7 +374,7 @@ void ModeAutorotate::warning_message(uint8_t message_n)
     }
 }
 
-void ModeAutorotate::set_roll_angle(const Quaternion &q, float climb_rate_cms_or_thrust, bool use_yaw_rate, float yaw_rate_rads, bool use_thrust)
+void ModeAutorotate::set_roll_angle(const Quaternion &q, const Vector3f &ang_vel, float climb_rate_cms_or_thrust, bool use_thrust)
 {
     q.to_euler(guided_roll, guided_pitch, guided_yaw);
     guided_roll = ToDeg(guided_roll) * 100.0f;
