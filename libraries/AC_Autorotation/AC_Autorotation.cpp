@@ -444,7 +444,7 @@ void AC_Autorotation::flare_controller(float dt)
     _speed_forward = calc_speed_forward(); //(cm/s)
     _delta_speed_fwd = _speed_forward - _speed_forward_last; //(cm/s)
     _speed_forward_last = _speed_forward; //(cm/s)
-    float current_alt = _inav.get_altitude();
+    float current_alt = _inav.get_position_z_up_cm();
     _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, current_alt, 0.0f, _param_flr_alt);
 
 	// get p
@@ -480,10 +480,10 @@ void AC_Autorotation::flare_controller(float dt)
 				
 	  update_hs_glide_controller(dt);
 	  _pitch_target = atanf(-_accel_out/(GRAVITY_MSS * 100.0f))*(18000.0f/M_PI);			
-      _entry_sink_rate = _inav.get_velocity_z();
+      _entry_sink_rate = _inav.get_velocity_z_up_cms();
 	  _entry_coll = get_last_collective();
-	  if(_inav.get_altitude()>0.0f){
-		_distance_to_ground = MIN(_radar_alt, _inav.get_altitude());
+	  if(_inav.get_position_z_up_cm()>0.0f){
+		_distance_to_ground = MIN(_radar_alt, _inav.get_position_z_up_cm());
 		_entry_alt = _distance_to_ground;			   
 		}else {
 		_entry_alt = _radar_alt;	
@@ -496,7 +496,7 @@ void AC_Autorotation::touchdown_controller()
 	 if ((_param_head_speed_set_point - _current_rpm) >=0){
 				_rpm_decay = constrain_float((_param_head_speed_set_point -  _current_rpm)/400.0f, 0.0f, 1.0f);
 		}
-	 float current_sink_rate = _inav.get_velocity_z();	
+	 float current_sink_rate = _inav.get_velocity_z_up_cms();	
 	 float desired_sink_rate; 
 	 if(_radar_alt>=10.0f){
 			 desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, 0.0f, _entry_alt);
@@ -515,8 +515,8 @@ void AC_Autorotation::get_entry_speed()
 
 void AC_Autorotation::time_to_ground()		
 {
-   if(_inav.get_velocity_z() < 0.0f ) {
-			_time_to_ground = -(_inav.get_altitude()/_inav.get_velocity_z()); 
+   if(_inav.get_velocity_z_up_cms() < 0.0f ) {
+			_time_to_ground = -(_inav.get_position_z_up_cm()/_inav.get_velocity_z_up_cms()); 
 	    }else {
 	    	_time_to_ground = _param_time_to_ground +1.0f; 	
 		}	
