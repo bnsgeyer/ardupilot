@@ -200,7 +200,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_RSC::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("GOV_TORQUE", 24, AP_MotorsHeli_RSC, _governor_torque, 30),
 	
-    // @Param: BAILOUT TIME
+    // @Param: BLOUT_TIME
     // @DisplayName: Time for in-flight power re-engagement
     // @Description: amount of seconds to move throttle output from idle to throttle curve position during manual autorotations  
     // @Range: 0 10
