@@ -1165,9 +1165,10 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
 
         copter.mode_guided.set_angle(attitude_quat, ang_vel,
                 climb_rate_or_thrust, use_thrust);
+#if MODE_AUTOROTATE_ENABLED == ENABLED
         copter.mode_autorotate.set_roll_angle(attitude_quat, ang_vel,
                 climb_rate_or_thrust, use_thrust);
-
+#endif
         break;
     }
 
