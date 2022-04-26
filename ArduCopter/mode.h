@@ -1812,6 +1812,8 @@ private:
     float guided_pitch;
     float guided_yaw;
     uint32_t _touchdown_time_ms;
+	bool hover_autorotation;
+	bool initial_energy_check;
 
     enum class Autorotation_Phase {
         ENTRY,
