@@ -12,6 +12,7 @@
 #define HS_CONTROLLER_HEADSPEED_P                     0.7f     // Default P gain for head speed controller (unit: -)
 #define HS_CONTROLLER_ENTRY_COL_FILTER                0.7f    // Default low pass filter frequency during the entry phase (unit: Hz)
 #define HS_CONTROLLER_GLIDE_COL_FILTER                0.1f    // Default low pass filter frequency during the glide phase (unit: Hz)
+#define HS_CONTROLLER_CUSHION_COL_FILTER           0.5f
 
 // Speed Height controller specific default definitions for autorotation use
 #define FWD_SPD_CONTROLLER_GND_SPEED_TARGET           1100     // Default target ground speed for speed height controller (unit: cm/s)
@@ -160,6 +161,15 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("GUIDED", 16, AC_Autorotation, _param_guided, GUIDED),
+	
+	// @Param: COL_FILT_C
+    // @DisplayName: Touchdown Phase Collective Filter
+    // @Description: Cut-off frequency for collective low pass filter.  For the touchdown phase.  Acts as a following trim.  
+    // @Units: Hz
+    // @Range: 0.2 0.8
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("COL_FILT_C", 17, AC_Autorotation, _param_col_cushion_cutoff_freq, HS_CONTROLLER_CUSHION_COL_FILTER),
 
     AP_GROUPEND
 };
@@ -253,6 +263,15 @@ void AC_Autorotation::set_collective(float collective_filter_cutoff) const
     if (motors) {
         motors->set_throttle_filter_cutoff(collective_filter_cutoff);
         motors->set_throttle(_collective_out);
+    }
+}
+
+void AC_Autorotation::set_collective_minimum_drag(float col_mid) const
+{
+    AP_Motors *motors = AP::motors();
+    if (motors) {
+        motors->set_throttle_filter_cutoff(_col_cutoff_freq);
+        motors->set_throttle(col_mid);
     }
 }
 
@@ -478,16 +497,7 @@ void AC_Autorotation::flare_controller(float dt)
 	    }
 	       _accel_out_last = _accel_out;
 				
-	  update_hs_glide_controller(dt);
-	  _pitch_target = atanf(-_accel_out/(GRAVITY_MSS * 100.0f))*(18000.0f/M_PI);			
-      _entry_sink_rate = _inav.get_velocity_z_up_cms();
-	  _entry_coll = get_last_collective();
-	  if(_inav.get_position_z_up_cm()>0.0f){
-		_distance_to_ground = MIN(_radar_alt, _inav.get_position_z_up_cm());
-		_entry_alt = _distance_to_ground;			   
-		}else {
-		_entry_alt = _radar_alt;	
-		}	 	          
+	  _pitch_target = atanf(-_accel_out/(GRAVITY_MSS * 100.0f))*(18000.0f/M_PI);				 	          
 }
 
 void AC_Autorotation::touchdown_controller()
@@ -497,14 +507,13 @@ void AC_Autorotation::touchdown_controller()
 				_rpm_decay = constrain_float((_param_head_speed_set_point -  _current_rpm)/400.0f, 0.0f, 1.0f);
 		}
 	 float current_sink_rate = _inav.get_velocity_z_up_cms();	
-	 float desired_sink_rate; 
 	 if(_radar_alt>=10.0f){
-			 desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, 0.0f, _entry_alt);
+			 desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, 10.0f, _entry_alt);
 	}else{
 			desired_sink_rate = 0.0f;
 	}
 	  _collective_out =  _entry_coll + (_p_coll_tch.get_p(desired_sink_rate - current_sink_rate))*0.1f + _rpm_decay*_param_coll_ff;
-	  set_collective(HS_CONTROLLER_COLLECTIVE_CUTOFF_FREQ);
+	  set_collective(HS_CONTROLLER_CUSHION_COL_FILTER);
 	  _pitch_target = 0.0f;
 }
 
@@ -516,7 +525,7 @@ void AC_Autorotation::get_entry_speed()
 void AC_Autorotation::time_to_ground()		
 {
    if(_inav.get_velocity_z_up_cms() < 0.0f ) {
-			_time_to_ground = -(_inav.get_position_z_up_cm()/_inav.get_velocity_z_up_cms()); 
+			_time_to_ground = -(_radar_alt/_inav.get_velocity_z_up_cms()); 
 	    }else {
 	    	_time_to_ground = _param_time_to_ground +1.0f; 	
 		}	

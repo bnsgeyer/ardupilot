@@ -49,6 +49,10 @@ public:
 	float get_ground_distance() const { return _radar_alt; }
 	float get_time_to_ground() const { return _time_to_ground; }
 	void time_to_ground();
+	void set_collective_minimum_drag(float col_mid )const;
+    void set_entry_coll (float last_coll) { _entry_coll = last_coll; }
+    void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
+    void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
 
     // User Settable Parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -95,6 +99,7 @@ private:
 	float _desired_speed;
 	float _time_to_ground;
 	float _distance_to_ground;
+	float desired_sink_rate;
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
@@ -105,6 +110,7 @@ private:
 	AC_P _p_coll_tch;
     AP_Float _param_col_entry_cutoff_freq;
     AP_Float _param_col_glide_cutoff_freq;
+	AP_Float _param_col_cushion_cutoff_freq;
     AP_Int16 _param_accel_max;
     AP_Float _param_bail_time;
     AP_Int8  _param_rpm_instance;
