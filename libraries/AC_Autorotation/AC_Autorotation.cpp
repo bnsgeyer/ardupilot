@@ -130,7 +130,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("FLARE_ALT", 12, AC_Autorotation, _param_flr_alt, AP_FLARE_ALT),
 	
-    // @Param:T_TO_G
+    // @Param: T_TO_G
     // @DisplayName: time to ground
     // @Description: time between flare completed and touchdown
     // @Range: 0 200
