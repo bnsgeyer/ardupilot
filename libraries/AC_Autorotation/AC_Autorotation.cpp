@@ -122,7 +122,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("FW_V_FF", 11, AC_Autorotation, _param_fwd_k_ff, AP_FW_VEL_FF),
 	
-	// @Param: FLARE_ALT
+    // @Param: FLARE_ALT
     // @DisplayName: flare altitude
     // @Description: altitude at which flare begins
     // @Range: 0 3000
@@ -130,7 +130,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("FLARE_ALT", 12, AC_Autorotation, _param_flr_alt, AP_FLARE_ALT),
 	
-	// @Param:T_TO_G
+    // @Param:T_TO_G
     // @DisplayName: time to ground
     // @Description: time between flare completed and touchdown
     // @Range: 0 200
@@ -138,15 +138,15 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("T_TO_G", 13, AC_Autorotation,  _param_time_to_ground, AP_T_TO_G),
 	
-	// @Param: TCH_P
-	// @DisplayName: P gain for vertical touchdown controller
-	// @Description: proportional term based on sink rate error
-	// @Range: 0.3 1
-	// @Increment: 0.01
-	// @User: Advanced
-	AP_SUBGROUPINFO(_p_coll_tch, "TCH_", 14, AC_Autorotation, AC_P),
+    // @Param: TCH_P
+    // @DisplayName: P gain for vertical touchdown controller
+    // @Description: proportional term based on sink rate error
+    // @Range: 0.3 1
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_SUBGROUPINFO(_p_coll_tch, "TCH_", 14, AC_Autorotation, AC_P),
 	
-	// @Param: COLL_FF
+    // @Param: COLL_FF
     // @DisplayName: collective feedforward
     // @Description: feedforward term based on rpm decay during touchdown
     // @Range: 0 1
@@ -154,15 +154,15 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("COLL_FF", 15, AC_Autorotation, _param_coll_ff, AP_COLL_FF),
 	
-	// @Param: GUIDED
-    // @DisplayName: 
+    // @Param: GUIDED
+    // @DisplayName: guided control enable
     // @Description: whether if control inputs come from radio control or attitude targets
     // @Range: 0 1
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("GUIDED", 16, AC_Autorotation, _param_guided, GUIDED),
 	
-	// @Param: COL_FILT_C
+    // @Param: COL_FILT_C
     // @DisplayName: Touchdown Phase Collective Filter
     // @Description: Cut-off frequency for collective low pass filter.  For the touchdown phase.  Acts as a following trim.  
     // @Units: Hz
