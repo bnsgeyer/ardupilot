@@ -31,6 +31,12 @@ bool ModeAutorotate::init(bool ignore_checks)
         return false;
     }
 
+    // Check that interlock is disengaged
+    if (motors->get_interlock()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Autorot Mode Change Fail: Interlock Engaged");
+        return false;
+    }
+
     // Initialise controllers
     // This must be done before RPM value is fetched
     g2.arot.init_hs_controller();
@@ -62,10 +68,6 @@ bool ModeAutorotate::init(bool ignore_checks)
 
     // The decay rate to reduce the head speed from the current to the target
     _hs_decay = ((_initial_rpm/g2.arot.get_hs_set_point()) - HEAD_SPEED_TARGET_RATIO) / AUTOROTATE_ENTRY_TIME;
-	
-    //set motors to idle
-    copter.ap.motor_interlock_switch = false;
-    copter.motors->set_desired_rotor_speed(0.0f);
 
     return true;
 }
@@ -124,42 +126,45 @@ void ModeAutorotate::run()
     // Initialise internal variables
     float curr_vel_z = inertial_nav.get_velocity_z_up_cms();   // Current vertical descent
     //calculate time to impact
+    if(phase_switch != Autorotation_Phase::TOUCH_DOWN){
     g2.arot.time_to_ground();
-    float time_to_impact = g2.arot.get_time_to_ground();
+    time_to_impact = g2.arot.get_time_to_ground();
+	last_tti=time_to_impact;
+    }else {
+	time_to_impact = last_tti;	
+	}	
 
     //----------------------------------------------------------------
     //                  State machine logic
     //----------------------------------------------------------------
-
-     //total energy check     
-     if(initial_energy_check){	
-	        if ( inertial_nav.get_speed_xy_cms() < 250.0f && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
+	
+	if(initial_energy_check){
+	//initial check for total energy monitoring
+	if ( inertial_nav.get_speed_xy_cms() < 250.0f && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
     		hover_autorotation = true;
-    	    }else{
+    	}else{
     		hover_autorotation = false;
     	}
 		initial_energy_check=false;
 	}
 
-	if(hover_autorotation && _flags.entry_initial == 0  && time_to_impact <= g2.arot._param_time_to_ground){
+     //total energy check     
+    if(hover_autorotation){
+		if(_flags.entry_initial == 0  && time_to_impact <= g2.arot._param_time_to_ground){
 		phase_switch = Autorotation_Phase::TOUCH_DOWN;
-	}
-	if(!hover_autorotation && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
+	    }
+	} else {
+		if ( _flags.ss_glide_initial == 1  && _flags.flare_initial == 1 && _flags.touch_down_initial == 1 && g2.arot.get_ground_distance() > g2.arot._param_flr_alt ){
+                 if ((now - _entry_time_start_ms)/1000.0f > AUTOROTATE_ENTRY_TIME )  {
+                 // Flight phase can be progressed to steady state glide
+                 phase_switch = Autorotation_Phase::SS_GLIDE;
+                 }
+          }else if( time_to_impact > g2.arot._param_time_to_ground && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
 		phase_switch = Autorotation_Phase::FLARE;
-	}	
-
-	if(!hover_autorotation && time_to_impact <= g2.arot._param_time_to_ground && _flags.flare_initial == 0 ){
-	  phase_switch = Autorotation_Phase::TOUCH_DOWN;	
-	  }	
-	 // Timer from entry phase to progress to glide phase
-    if (phase_switch == Autorotation_Phase::ENTRY && !hover_autorotation){
-
-       if ((now - _entry_time_start_ms)/1000.0f > AUTOROTATE_ENTRY_TIME )  {
-            // Flight phase can be progressed to steady state glide
-            phase_switch = Autorotation_Phase::SS_GLIDE;
-        }
-
-    }
+	    }else if( time_to_impact <= g2.arot._param_time_to_ground ){
+			phase_switch = Autorotation_Phase::TOUCH_DOWN;
+        }			
+	}
 
 
     //----------------------------------------------------------------
@@ -188,8 +193,14 @@ void ModeAutorotate::run()
 
             }
 
-            if(!hover_autorotation){           
-              _target_head_speed = HEAD_SPEED_TARGET_RATIO;
+            if(!hover_autorotation){ 
+			// Slowly change the target head speed until the target head speed matches the parameter defined value
+           if (g2.arot.get_rpm() > HEAD_SPEED_TARGET_RATIO*1.005f  ||  g2.arot.get_rpm() < HEAD_SPEED_TARGET_RATIO*0.995f) {
+                _target_head_speed -= _hs_decay*G_Dt;
+            } else {
+                _target_head_speed = HEAD_SPEED_TARGET_RATIO;
+            }
+			  g2.arot.get_collective_minimum_drag(motors->get_coll_mid());
                // Set target head speed in head speed controller
                g2.arot.set_target_head_speed(_target_head_speed);
                // Run airspeed/attitude controller
@@ -202,7 +213,6 @@ void ModeAutorotate::run()
                 }else{
             	_pitch_target = 0.0f;
             	g2.arot.set_collective_minimum_drag(motors->get_coll_mid());
-				g2.arot.set_entry_coll(g2.arot.get_last_collective());
 				g2.arot.set_entry_sink_rate(inertial_nav.get_velocity_z_up_cms());
 				g2.arot.set_entry_alt(g2.arot.get_ground_distance());
             }
@@ -265,13 +275,12 @@ void ModeAutorotate::run()
            
             // Run flare controller
             g2.arot.set_dt(G_Dt);
-            g2.arot.flare_controller(G_Dt);
+            g2.arot.flare_controller();
 			// Update head speed/ collective controller
             _flags.bad_rpm = g2.arot.update_hs_glide_controller(G_Dt);
             // Retrieve pitch target 
             _pitch_target = g2.arot.get_pitch();
 			//store entry values for touchdown phase 
-            g2.arot.set_entry_coll(g2.arot.get_last_collective());
 		    g2.arot.set_entry_sink_rate(inertial_nav.get_velocity_z_up_cms());
 			g2.arot.set_entry_alt(g2.arot.get_ground_distance());
 
@@ -284,8 +293,10 @@ void ModeAutorotate::run()
                 // Prevent running the initial touchdown functions again
                 _flags.touch_down_initial = 0;
                 _touchdown_time_ms = millis();
+				g2.arot.set_col_cutoff_freq(g2.arot.get_col_cushion_freq());
+				g2.arot.set_ground_clearance(copter.rangefinder.ground_clearance_cm_orient(ROTATION_PITCH_270));
             }
-
+            g2.arot.set_dt(G_Dt);
             g2.arot.touchdown_controller();
             _pitch_target = g2.arot.get_pitch();
 
@@ -303,10 +314,7 @@ void ModeAutorotate::run()
         {
         if (_flags.bail_out_initial == 1) {
                 // Functions and settings to be done once are done here.
-
-                #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-                    gcs().send_text(MAV_SEVERITY_INFO, "Bailing Out of Autorotation");
-                #endif
+                gcs().send_text(MAV_SEVERITY_INFO, "Bailing Out of Autorotation");            
 
                 // Set bail out timer remaining equal to the parameter value, bailout time 
                 // cannot be less than the motor spool-up time: BAILOUT_MOTOR_RAMP_TIME.
