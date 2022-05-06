@@ -29,6 +29,7 @@ public:
     int16_t get_hs_set_point(void) { return _param_head_speed_set_point; }
     float get_col_entry_freq(void) { return _param_col_entry_cutoff_freq; }
     float get_col_glide_freq(void) { return _param_col_glide_cutoff_freq; }
+	float get_col_cushion_freq(void) { return _param_col_cushion_cutoff_freq; }
     float get_bail_time(void) { return _param_bail_time; }
     float get_last_collective() const { return _collective_out; }
     bool is_enable(void) { return _param_enable; }
@@ -39,7 +40,7 @@ public:
     int32_t get_pitch(void) const { return _pitch_target; }  // Get pitch target
     float calc_speed_forward(void);  // Calculates the forward speed in the horizontal plane
     void set_dt(float delta_sec);
-	void flare_controller(float dt);
+	void flare_controller();
 	void touchdown_controller();
 	void set_ground_distance(float radalt) { _radar_alt = radalt; }
 	void get_entry_speed();
@@ -47,7 +48,6 @@ public:
 	float get_time_to_ground() const { return _time_to_ground; }
 	void time_to_ground();
 	void set_collective_minimum_drag(float col_mid )const;
-    void set_entry_coll (float last_coll) { _entry_coll = last_coll; }
     void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
     void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
 
@@ -87,16 +87,13 @@ private:
     float _accel_out;                // Acceleration value used to calculate pitch target.
 	float _entry_sink_rate;
     float _entry_alt;
-    bool  _flare_completed;
-	bool  _touchdown;
 	float  _radar_alt;
-    float _entry_coll;
 	float  _rpm_decay;
 	float _flare_entry_speed;
 	float _desired_speed;
 	float _time_to_ground;
 	float _distance_to_ground;
-	float desired_sink_rate;
+	float _desired_sink_rate;
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
@@ -112,7 +109,6 @@ private:
     AP_Float _param_bail_time;
     AP_Int8  _param_rpm_instance;
     AP_Float _param_fwd_k_ff;
-	AP_Float _param_coll_ff;
 
     //--------Internal Flags--------
     struct controller_flags {

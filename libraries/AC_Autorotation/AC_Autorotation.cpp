@@ -22,7 +22,6 @@
 #define AP_FW_VEL_FF                      0.15f
 #define AP_FLARE_ALT                      800
 #define AP_T_TO_G                            0.55f
-#define AP_COLL_FF                           0.6f
 #define GUIDED                                   0
 
 
@@ -146,21 +145,13 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @User: Advanced
     AP_SUBGROUPINFO(_p_coll_tch, "TCH_", 14, AC_Autorotation, AC_P),
 	
-    // @Param: COLL_FF
-    // @DisplayName: collective feedforward
-    // @Description: feedforward term based on rpm decay during touchdown
-    // @Range: 0 1
-    // @Increment: 0.05
-    // @User: Advanced
-    AP_GROUPINFO("COLL_FF", 15, AC_Autorotation, _param_coll_ff, AP_COLL_FF),
-	
     // @Param: GUIDED
     // @DisplayName: guided control enable
     // @Description: whether if control inputs come from radio control or attitude targets
     // @Range: 0 1
     // @Increment: 1
     // @User: Advanced
-    AP_GROUPINFO("GUIDED", 16, AC_Autorotation, _param_guided, GUIDED),
+    AP_GROUPINFO("GUIDED", 15, AC_Autorotation, _param_guided, GUIDED),
 	
     // @Param: COL_FILT_C
     // @DisplayName: Touchdown Phase Collective Filter
@@ -169,7 +160,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.2 0.8
     // @Increment: 0.01
     // @User: Advanced
-    AP_GROUPINFO("COL_FILT_C", 17, AC_Autorotation, _param_col_cushion_cutoff_freq, HS_CONTROLLER_CUSHION_COL_FILTER),
+    AP_GROUPINFO("COL_FILT_C", 16, AC_Autorotation, _param_col_cushion_cutoff_freq, HS_CONTROLLER_CUSHION_COL_FILTER),
 
     AP_GROUPEND
 };
@@ -210,7 +201,6 @@ void AC_Autorotation::init_hs_controller()
     // Protect against divide by zero
     _param_head_speed_set_point.set(MAX(_param_head_speed_set_point,500));
 	
-    _flare_completed = false;
 }
 
 
@@ -460,7 +450,7 @@ float AC_Autorotation::calc_speed_forward(void)
     return speed_forward;
 }
 
-void AC_Autorotation::flare_controller(float dt)
+void AC_Autorotation::flare_controller()
 {
 		
   // Specify forward velocity component and determine delta velocity with respect to time
@@ -506,19 +496,18 @@ void AC_Autorotation::flare_controller(float dt)
 
 void AC_Autorotation::touchdown_controller()
 {
-	 _current_rpm = get_rpm(true);
-	 if ((_param_head_speed_set_point - _current_rpm) >=0){
-				_rpm_decay = constrain_float((_param_head_speed_set_point -  _current_rpm)/400.0f, 0.0f, 1.0f);
-		}
-	 float current_sink_rate = _inav.get_velocity_z_up_cms();	
+	float _current_sink_rate = _inav.get_velocity_z_up_cms();	
 	 if(_radar_alt>=10.0f){
-			 desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, 10.0f, _entry_alt);
+			 _desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, 10.0f, _entry_alt);
 	}else{
-			desired_sink_rate = 0.0f;
+			_desired_sink_rate = 0.0f;
 	}
-	  _collective_out =  _entry_coll + (_p_coll_tch.get_p(desired_sink_rate - current_sink_rate))*0.1f + _rpm_decay*_param_coll_ff;
-	  set_collective(HS_CONTROLLER_CUSHION_COL_FILTER);
-	  _pitch_target = 0.0f;
+	
+    _collective_out =  (_p_coll_tch.get_p(_desired_sink_rate - _current_sink_rate))*0.01f + _ff_term_hs;
+	col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
+	_ff_term_hs = col_trim_lpf.apply(_collective_out, _dt);
+    set_collective(HS_CONTROLLER_COLLECTIVE_CUTOFF_FREQ);	 
+	_pitch_target = 0.0f;
 }
 
 void AC_Autorotation::get_entry_speed()
