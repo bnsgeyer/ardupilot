@@ -124,42 +124,35 @@ void ModeAutorotate::run()
     // Initialise internal variables
     float curr_vel_z = inertial_nav.get_velocity_z_up_cms();   // Current vertical descent
     //calculate time to impact
+    if(phase_switch != Autorotation_Phase::TOUCH_DOWN){
     g2.arot.time_to_ground();
-    float time_to_impact = g2.arot.get_time_to_ground();
+    time_to_impact = g2.arot.get_time_to_ground();
+	last_tti=time_to_impact;
+    }else {
+	time_to_impact = last_tti;	
+	}	
 
     //----------------------------------------------------------------
     //                  State machine logic
     //----------------------------------------------------------------
 
      //total energy check     
-     if(initial_energy_check){	
-	        if ( inertial_nav.get_speed_xy_cms() < 250.0f && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
-    		hover_autorotation = true;
-    	    }else{
-    		hover_autorotation = false;
-    	}
-		initial_energy_check=false;
-	}
-
-	if(hover_autorotation && _flags.entry_initial == 0  && time_to_impact <= g2.arot._param_time_to_ground){
+    if(hover_autorotation){
+		if(_flags.entry_initial == 0  && time_to_impact <= g2.arot._param_time_to_ground){
 		phase_switch = Autorotation_Phase::TOUCH_DOWN;
-	}
-	if(!hover_autorotation && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
+	    }
+	} else {
+		if ( _flags.ss_glide_initial == 1  && _flags.flare_initial == 1 && _flags.touch_down_initial == 1 && g2.arot.get_ground_distance() > g2.arot._param_flr_alt ){
+                 if ((now - _entry_time_start_ms)/1000.0f > AUTOROTATE_ENTRY_TIME )  {
+                 // Flight phase can be progressed to steady state glide
+                 phase_switch = Autorotation_Phase::SS_GLIDE;
+                 }
+          }else if( time_to_impact > g2.arot._param_time_to_ground && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
 		phase_switch = Autorotation_Phase::FLARE;
-	}	
-
-	if(!hover_autorotation && time_to_impact <= g2.arot._param_time_to_ground && _flags.flare_initial == 0 ){
-	  phase_switch = Autorotation_Phase::TOUCH_DOWN;	
-	  }	
-	 // Timer from entry phase to progress to glide phase
-    if (phase_switch == Autorotation_Phase::ENTRY && !hover_autorotation){
-
-       if ((now - _entry_time_start_ms)/1000.0f > AUTOROTATE_ENTRY_TIME )  {
-            // Flight phase can be progressed to steady state glide
-            phase_switch = Autorotation_Phase::SS_GLIDE;
-        }
-
-    }
+	    }else if( time_to_impact <= g2.arot._param_time_to_ground ){
+			phase_switch = Autorotation_Phase::TOUCH_DOWN;
+        }			
+	}
 
 
     //----------------------------------------------------------------
@@ -178,7 +171,7 @@ void ModeAutorotate::run()
                 g2.arot.set_col_cutoff_freq(g2.arot.get_col_entry_freq());
 
                 // Target head speed is set to rpm at initiation to prevent unwanted changes in attitude
-                _target_head_speed = _initial_rpm/g2.arot.get_hs_set_point();
+                _target_head_speed = HEAD_SPEED_TARGET_RATIO;
 
                 // Set desired forward speed target
                 g2.arot.set_desired_fwd_speed();
@@ -202,7 +195,6 @@ void ModeAutorotate::run()
                 }else{
             	_pitch_target = 0.0f;
             	g2.arot.set_collective_minimum_drag(motors->get_coll_mid());
-				g2.arot.set_entry_coll(g2.arot.get_last_collective());
 				g2.arot.set_entry_sink_rate(inertial_nav.get_velocity_z_up_cms());
 				g2.arot.set_entry_alt(g2.arot.get_ground_distance());
             }
@@ -265,13 +257,12 @@ void ModeAutorotate::run()
            
             // Run flare controller
             g2.arot.set_dt(G_Dt);
-            g2.arot.flare_controller(G_Dt);
+            g2.arot.flare_controller();
 			// Update head speed/ collective controller
             _flags.bad_rpm = g2.arot.update_hs_glide_controller(G_Dt);
             // Retrieve pitch target 
             _pitch_target = g2.arot.get_pitch();
 			//store entry values for touchdown phase 
-            g2.arot.set_entry_coll(g2.arot.get_last_collective());
 		    g2.arot.set_entry_sink_rate(inertial_nav.get_velocity_z_up_cms());
 			g2.arot.set_entry_alt(g2.arot.get_ground_distance());
 
@@ -284,8 +275,9 @@ void ModeAutorotate::run()
                 // Prevent running the initial touchdown functions again
                 _flags.touch_down_initial = 0;
                 _touchdown_time_ms = millis();
+				g2.arot.set_col_cutoff_freq(g2.arot.get_col_cushion_freq());
             }
-
+            g2.arot.set_dt(G_Dt);
             g2.arot.touchdown_controller();
             _pitch_target = g2.arot.get_pitch();
 
