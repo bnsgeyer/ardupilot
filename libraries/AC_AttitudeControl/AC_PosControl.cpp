@@ -1311,3 +1311,25 @@ bool AC_PosControl::has_good_timing(void) const
     // real boards are assumed to have good timing
     return true;
 }
+
+/// get_stopping_distance_cm - calculates stopping point in NEU cm based on current position, velocity, vehicle acceleration
+///    function does not change the z axis
+void AC_PosControl::get_stopping_distance_cm(float &stopping_dist) const
+{
+    float kP = _p_pos_xy.kP();
+    Vector2f curr_vel = _inav.get_velocity_xy_cms();
+
+    // calculate current velocity
+    float vel_total = curr_vel.length();
+
+    if (!is_positive(vel_total)) {
+        stopping_dist = 0.0f;
+        return;
+    }
+
+    stopping_dist = stopping_distance(constrain_float(vel_total, 0.0, _vel_max_xy_cms), kP, _accel_max_xy_cmss);
+    if (!is_positive(stopping_dist)) {
+        stopping_dist = 0.0f;
+        return;
+    }
+}

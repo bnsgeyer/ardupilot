@@ -138,6 +138,7 @@ public:
     ///     Kinematically consistent target position and desired velocity and accelerations should be provided before calling this function
     void update_xy_controller();
 
+    void get_stopping_distance_cm(float &stopping_dist) const;
     ///
     /// Vertical position controller
     ///

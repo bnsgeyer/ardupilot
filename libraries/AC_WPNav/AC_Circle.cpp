@@ -196,6 +196,16 @@ bool AC_Circle::update(float climb_rate_cms)
         _center.y,
         target_z_cm
     };
+    float stopping_dist;
+    _pos_control.get_stopping_distance_cm(stopping_dist);
+    if ((1.0f - _angle_total/M_2PI) * M_2PI * _radius < stopping_dist) {
+        // ramp angular velocity to zero
+        if (_angular_vel > 0.0f) {
+           _angular_vel -= fabsf(_angular_accel) * dt;
+           _angular_vel = MIN(_angular_vel, 0.0f);
+        }
+
+    }
     if (!is_zero(_radius)) {
         // calculate target position
         target.x += _radius * cosf(-_angle);
