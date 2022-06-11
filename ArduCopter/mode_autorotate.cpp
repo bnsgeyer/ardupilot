@@ -135,6 +135,16 @@ void ModeAutorotate::run()
     //----------------------------------------------------------------
     //                  State machine logic
     //----------------------------------------------------------------
+	
+	if(initial_energy_check){
+	//initial check for total energy monitoring
+	if ( inertial_nav.get_speed_xy_cms() < 250.0f && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
+    		hover_autorotation = true;
+    	}else{
+    		hover_autorotation = false;
+    	}
+		initial_energy_check=false;
+	}
 
      //total energy check     
     if(hover_autorotation){
