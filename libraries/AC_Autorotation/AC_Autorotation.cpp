@@ -457,7 +457,7 @@ void AC_Autorotation::flare_controller()
     _speed_forward = calc_speed_forward(); //(cm/s)
     _delta_speed_fwd = _speed_forward - _speed_forward_last; //(cm/s)
     _speed_forward_last = _speed_forward; //(cm/s)
-    float current_alt = _inav.get_position_z_up_cm();
+    float current_alt = _radar_alt;
     _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, current_alt, 0.0f, _param_flr_alt);
 
 	// get p
