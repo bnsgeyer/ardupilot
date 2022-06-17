@@ -422,12 +422,15 @@ void AC_AutoTune_Heli::load_orig_gains()
 {
     attitude_control->bf_feedforward(orig_bf_feedforward);
     if (roll_enabled()) {
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Load orig roll");
         load_gain_set(ROLL, orig_roll_rp, orig_roll_ri, orig_roll_rd, orig_roll_rff, orig_roll_sp, orig_roll_accel, orig_roll_fltt, 0.0f, orig_roll_smax);
     }
     if (pitch_enabled()) {
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Load orig pitch");
         load_gain_set(PITCH, orig_pitch_rp, orig_pitch_ri, orig_pitch_rd, orig_pitch_rff, orig_pitch_sp, orig_pitch_accel, orig_pitch_fltt, 0.0f, orig_pitch_smax);
     }
     if (yaw_enabled()) {
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Load orig yaw");
         load_gain_set(YAW, orig_yaw_rp, orig_yaw_ri, orig_yaw_rd, orig_yaw_rff, orig_yaw_sp, orig_yaw_accel, orig_yaw_fltt, orig_yaw_rLPF, orig_yaw_smax);
     }
 }
@@ -461,12 +464,15 @@ void AC_AutoTune_Heli::load_intra_test_gains()
     // sanity check the gains
     attitude_control->bf_feedforward(true);
     if (roll_enabled()) {
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Load intra test roll");
         load_gain_set(ROLL, orig_roll_rp, orig_roll_rff * AUTOTUNE_FFI_RATIO_FOR_TESTING, orig_roll_rd, orig_roll_rff, orig_roll_sp, orig_roll_accel, orig_roll_fltt, 0.0f, orig_roll_smax);
     }
     if (pitch_enabled()) {
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Load intra test pitch");
         load_gain_set(PITCH, orig_pitch_rp, orig_pitch_rff * AUTOTUNE_FFI_RATIO_FOR_TESTING, orig_pitch_rd, orig_pitch_rff, orig_pitch_sp, orig_pitch_accel, orig_pitch_fltt, 0.0f, orig_pitch_smax);
     }
     if (yaw_enabled()) {
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Load intra test yaw");
         load_gain_set(YAW, orig_yaw_rp, orig_yaw_rp*AUTOTUNE_PI_RATIO_FOR_TESTING, orig_yaw_rd, orig_yaw_rff, orig_yaw_sp, orig_yaw_accel, orig_yaw_fltt, orig_yaw_rLPF, orig_yaw_smax);
     }
 }
@@ -529,6 +535,9 @@ void AC_AutoTune_Heli::load_gain_set(AxisType s_axis, float rate_p, float rate_i
         attitude_control->get_rate_roll_pid().slew_limit(smax);
         attitude_control->get_angle_roll_p().kP(angle_p);
         attitude_control->set_accel_roll_max_cdss(max_accel);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Roll: Rate: P:%0.4f, I:%0.4f, D:%0.5f, FF:%0.4f",rate_p,rate_i,rate_d,rate_ff);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Roll: Angle P:%0.2f, Max Accel:%0.0f",angle_p,max_accel);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Roll: fltt:%0.0f, flte:%0.0f, slew:%0.0f",rate_fltt,rate_flte,smax);
         break;
     case PITCH:
         attitude_control->get_rate_pitch_pid().kP(rate_p);
@@ -539,6 +548,9 @@ void AC_AutoTune_Heli::load_gain_set(AxisType s_axis, float rate_p, float rate_i
         attitude_control->get_rate_pitch_pid().slew_limit(smax);
         attitude_control->get_angle_pitch_p().kP(angle_p);
         attitude_control->set_accel_pitch_max_cdss(max_accel);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Pitch: Rate: P:%0.4f, I:%0.4f, D:%0.5f, FF:%0.4f",rate_p,rate_i,rate_d,rate_ff);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Pitch: Angle P:%0.2f, Max Accel:%0.0f",angle_p,max_accel);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Pitch: fltt:%0.0f, flte:%0.0f, slew:%0.0f",rate_fltt,rate_flte,smax);
         break;
     case YAW:
         attitude_control->get_rate_yaw_pid().kP(rate_p);
@@ -550,6 +562,9 @@ void AC_AutoTune_Heli::load_gain_set(AxisType s_axis, float rate_p, float rate_i
         attitude_control->get_rate_yaw_pid().filt_E_hz(rate_flte);
         attitude_control->get_angle_yaw_p().kP(angle_p);
         attitude_control->set_accel_yaw_max_cdss(max_accel);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Yaw: Rate: P:%0.4f, I:%0.4f, D:%0.5f, FF:%0.4f",rate_p,rate_i,rate_d,rate_ff);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Yaw: Angle P:%0.2f, Max Accel:%0.0f",angle_p,max_accel);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Yaw: fltt:%0.0f, flte:%0.0f, slew:%0.0f",rate_fltt,rate_flte,smax);
         break;
     }
 }

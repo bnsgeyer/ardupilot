@@ -205,6 +205,9 @@ public:
     // This is used during Autotune to ensure the P term is tuned without being influenced by the acceleration limit of the square root controller.
     void use_sqrt_controller(bool use_sqrt_cont) { _use_sqrt_controller = use_sqrt_cont; }
 
+    // Return sqrt controller setting
+    bool get_use_sqrt_ctrl() { return _use_sqrt_controller; }
+
     // Return 321-intrinsic euler angles in centidegrees representing the rotation from NED earth frame to the
     // attitude controller's target attitude.
     // **NOTE** Using vector3f*deg(100) is more efficient than deg(vector3f)*100 or deg(vector3d*100) because it gives the

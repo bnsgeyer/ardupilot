@@ -96,6 +96,50 @@ void AC_AutoTune::stop()
     update_gcs(AUTOTUNE_MESSAGE_STOPPED);
     AP::logger().Write_Event(LogEvent::AUTOTUNE_OFF);
 
+            float rate_P = attitude_control->get_rate_roll_pid().kP();
+            float rate_I = attitude_control->get_rate_roll_pid().kI();
+            float rate_D = attitude_control->get_rate_roll_pid().kD();
+            float rate_ff = attitude_control->get_rate_roll_pid().ff();
+            float angle_P = attitude_control->get_angle_roll_p().kP();
+            float max_accel = attitude_control->get_accel_roll_max_cdss();
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Roll: Rate: P:%0.4f, I:%0.4f, D:%0.5f, FF:%0.4f",rate_P,rate_I,rate_D,rate_ff);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Roll: Angle P:%0.2f, Max Accel:%0.0f",angle_P,max_accel);
+            float fltt = attitude_control->get_rate_roll_pid().filt_T_hz();
+            float flte = attitude_control->get_rate_roll_pid().filt_E_hz();
+            float slew = attitude_control->get_rate_roll_pid().slew_limit();
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Roll: fltt:%0.0f, flte:%0.0f, slew:%0.0f",fltt,flte,slew);
+
+            rate_P = attitude_control->get_rate_pitch_pid().kP();
+            rate_I = attitude_control->get_rate_pitch_pid().kI();
+            rate_D = attitude_control->get_rate_pitch_pid().kD();
+            rate_ff = attitude_control->get_rate_pitch_pid().ff();
+            angle_P = attitude_control->get_angle_pitch_p().kP();
+            max_accel = attitude_control->get_accel_pitch_max_cdss();
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Pitch: Rate: P:%0.4f, I:%0.4f, D:%0.5f, FF:%0.4f",rate_P,rate_I,rate_D,rate_ff);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Pitch: Angle P:%0.2f, Max Accel:%0.0f",angle_P,max_accel);
+            fltt = attitude_control->get_rate_pitch_pid().filt_T_hz();
+            flte = attitude_control->get_rate_pitch_pid().filt_E_hz();
+            slew = attitude_control->get_rate_pitch_pid().slew_limit();
+            gcs().send_text(MAV_SEVERITY_NOTICE,"Pitch: fltt:%0.0f, flte:%0.0f, slew:%0.0f",fltt,flte,slew);
+
+            rate_P = attitude_control->get_rate_yaw_pid().kP();
+            rate_I = attitude_control->get_rate_yaw_pid().kI();
+            rate_D = attitude_control->get_rate_yaw_pid().kD();
+            rate_ff = attitude_control->get_rate_yaw_pid().ff();
+            angle_P = attitude_control->get_angle_yaw_p().kP();
+            max_accel = attitude_control->get_accel_yaw_max_cdss();
+            gcs().send_text(MAV_SEVERITY_NOTICE,"yaw: Rate: P:%0.4f, I:%0.4f, D:%0.5f, FF:%0.4f",rate_P,rate_I,rate_D,rate_ff);
+            gcs().send_text(MAV_SEVERITY_NOTICE,"yaw: Angle P:%0.2f, Max Accel:%0.0f",angle_P,max_accel);
+            fltt = attitude_control->get_rate_yaw_pid().filt_T_hz();
+            flte = attitude_control->get_rate_yaw_pid().filt_E_hz();
+            slew = attitude_control->get_rate_yaw_pid().slew_limit();
+            gcs().send_text(MAV_SEVERITY_NOTICE,"yaw: fltt:%0.0f, flte:%0.0f, slew:%0.0f",fltt,flte,slew);
+
+            bool sqrtctrl = attitude_control->get_use_sqrt_ctrl();
+            bool ff_enable = attitude_control->get_bf_feedforward();
+            gcs().send_text(MAV_SEVERITY_NOTICE,"check: sqrtcntrl:%s, ff_enable:%s",sqrtctrl ? "true" : "false", ff_enable ? "true" : "false");
+
+
     // Note: we leave the mode as it was so that we know how the autotune ended
     // we expect the caller will change the flight mode back to the flight mode indicated by the flight mode switch
 }
