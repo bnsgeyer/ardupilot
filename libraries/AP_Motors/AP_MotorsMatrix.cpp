@@ -81,25 +81,40 @@ void AP_MotorsMatrix::output_to_motors()
                     _actuator[i] = 0.0f;
                 }
             }
+                    _actuator[0] = 0.5f;
+                    _actuator[1] = 0.5f;
+                    _actuator[2] = 0.0f;
+                    _actuator[3] = 0.5f;
             break;
         }
         case SpoolState::GROUND_IDLE:
             // sends output to motors when armed but not flying
             for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
                 if (motor_enabled[i]) {
-                    set_actuator_with_slew(_actuator[i], actuator_spin_up_to_ground_idle());
+//                    set_actuator_with_slew(_actuator[i], actuator_spin_up_to_ground_idle());
+                    _actuator[i] = 0.0f;
                 }
             }
+                    _actuator[0] = 0.5f;
+                    _actuator[1] = 0.5f;
+                    _actuator[2] = 0.0f;
+                    _actuator[3] = 0.5f;
             break;
         case SpoolState::SPOOLING_UP:
         case SpoolState::THROTTLE_UNLIMITED:
         case SpoolState::SPOOLING_DOWN:
             // set motor output based on thrust requests
-            for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
+/*            for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
                 if (motor_enabled[i]) {
                     set_actuator_with_slew(_actuator[i], thrust_to_actuator(_thrust_rpyt_out[i]));
                 }
-            }
+            } */
+
+
+            _actuator[0] = (_roll_in + 1.0f) * 0.5f;  // roll
+            _actuator[1] = (_pitch_in + 1.0f) * 0.5f;  // pitch
+            _actuator[2] = _throttle_in;  // throttle
+            _actuator[3] = (_yaw_in + 1.0f) * 0.5f;  // yaw
             break;
     }
 
