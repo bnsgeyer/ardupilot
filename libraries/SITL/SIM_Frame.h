@@ -51,6 +51,12 @@ public:
                           const struct sitl_input &input,
                           Vector3f &rot_accel, Vector3f &body_accel, float* rpm,
                           bool use_drag=true);
+
+    // calculate rotational and linear accelerations for x8 frame
+    void calculate_forces_x8(const Aircraft &aircraft,
+                          const struct sitl_input &input,
+                          Vector3f &rot_accel, Vector3f &body_accel, float* rpm,
+                          bool use_drag=true);
     
     float terminal_velocity;
     float terminal_rotation_rate;
@@ -146,5 +152,24 @@ private:
     // load frame parameters from a json model file
     void load_frame_params(const char *model_json);
 
+    struct servos_stored {
+        uint16_t servo1;
+        uint16_t servo2;
+        uint16_t servo3;
+
+    };
+    uint16_t _servos_delayed[3];
+    ObjectBuffer<servos_stored> *servos_stored_buffer;
+    void push_to_buffer(const uint16_t servos_input[16]);
+    void pull_from_buffer(uint16_t servos_delayed[3]);
+
+    // PED
+    struct servo_stored_ped {
+        uint16_t servo;
+    };
+    uint16_t _servo_delayed_ped;
+    ObjectBuffer<servo_stored_ped> *servo_stored_ped_buffer;
+    void push_to_buffer_ped(const uint16_t servos_input[16]);
+    void pull_from_buffer_ped(uint16_t &servo_delayed);
 };
 }

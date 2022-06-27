@@ -20,6 +20,7 @@
 #include <AP_Motors/AP_Motors.h>
 #include <AP_Baro/AP_Baro.h>
 #include <AP_Filesystem/AP_Filesystem.h>
+#include <GCS_MAVLink/GCS.h>
 
 #include <stdio.h>
 #include <sys/stat.h>
@@ -287,6 +288,7 @@ static Frame supported_frames[] =
     Frame("quad",      4, quad_plus_motors),
     Frame("copter",    4, quad_plus_motors),
     Frame("x",         4, quad_x_motors),
+    Frame("x8",        4, quad_x_motors),
     Frame("bfxrev",    4, quad_bf_x_rev_motors),
     Frame("bfx",       4, quad_bf_x_motors),
     Frame("djix",      4, quad_dji_x_motors),
@@ -606,4 +608,197 @@ void Frame::current_and_voltage(float &voltage, float &current)
     for (uint8_t i=0; i<num_motors; i++) {
         current += motors[i].get_current();
     }
+}
+// calculate rotational and linear accelerations for x8 frame
+void Frame::calculate_forces_x8(const Aircraft &aircraft,
+                             const struct sitl_input &input,
+                             Vector3f &rot_accel,
+                             Vector3f &body_accel,
+                             float* rpm,
+                             bool use_drag)
+{
+// calculate rotational and linear accelerations
+
+        const float m2ftd = 1.0f/0.3046f;
+	const float m2ftn = 0.3046f;
+//        const float lin_conv = 5.6f/7.3f;
+/*        const float rot_xx_conv = 87.5f/157.3f;
+        const float rot_yy_conv = 91.0f/148.7f;
+        const float rot_zz_conv = 12.9f/18.5f;
+        float Mu = 1.912f * m2ftd + rot_yy_conv;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; value has been converted from x8+ to x8m
+        float Lv = -1.644f * m2ftd + rot_xx_conv;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; value has been converted from x8+ to x8m
+        float Xu = -0.6112f * lin_conv;  // value has been converted from x8+ to x8m
+        float Yv = -0.4277f * lin_conv;  // value has been converted from x8+ to x8m
+        float Nr = -0.5392f + rot_zz_conv;  // value has been converted from x8+ to x8m
+        float Nped = 18.51f + rot_zz_conv;  // value has been converted from x8+ to x8m
+        float Zcol = -82.28f * m2ftn * lin_conv;  //value has been converted from ft/s/s to m/s/s
+	float Xlon = -17.97f * m2ftn * lin_conv;  //value has been converted from ft/s/s to m/s/s; value has been converted from x8+ to x8m
+	float Mlon = 148.7f + rot_yy_conv;  // value has been converted from x8+ to x8m
+	float Lag = 23.50f;
+	float Lead = 1.32f;
+	float Ylat = 18.49f * m2ftn * lin_conv;  //value has been converted from ft/s/s to m/s/s; value has been converted from x8+ to x8m
+	float Llat = 157.3f + rot_xx_conv;  // value has been converted from x8+ to x8m
+
+*/
+        float Mu = 1.63f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s;
+        float Lv = -1.758f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; 
+        float Xu = -0.474f;
+        float Yv = -0.474f;
+        float Nr = -0.7521f;
+        float Nped = 13.02f;
+        float Zcol = -75.0f * m2ftn;  //value has been converted from ft/s/s to m/s/s
+	float Xlon = -8.8f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
+	float Mlon = 101.02f;
+	float Lag = 27.570f;
+	float Lead = 1.218f;
+	float Ylat = 8.8f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
+	float Llat = 108.63f;
+
+
+        static uint64_t last_calc_us;
+        static uint16_t printed = 2000;
+
+        uint64_t now_us = AP_HAL::micros64();
+        float dt = 0.0f;
+        if (last_calc_us != 0) {
+            dt = (now_us - last_calc_us)*1.0e-6;
+        }
+        last_calc_us = now_us;
+
+	uint16_t _time_delay = 12;
+
+	if (_time_delay == 0 || is_zero(dt)) {
+	    for (uint8_t i = 0; i < 3; i++) {
+		_servos_delayed[i] = input.servos[i];
+            }
+	} else if (servos_stored_buffer == nullptr) {
+            uint16_t buffer_size = constrain_int16(_time_delay, 1, 100) * 0.001f / dt;
+            servos_stored_buffer = new ObjectBuffer<servos_stored>(buffer_size);
+            while (servos_stored_buffer->space() != 0) {
+                push_to_buffer(input.servos);
+            }
+            for (uint8_t i = 0; i < 3; i++) {
+                _servos_delayed[i] = input.servos[i];
+            }
+	} else {
+            pull_from_buffer(_servos_delayed);
+            push_to_buffer(input.servos);
+	}
+
+	uint16_t _time_delay_ped = 29;
+
+	if (_time_delay_ped == 0 || is_zero(dt)) {
+	    _servo_delayed_ped = input.servos[3];
+	} else if (servo_stored_ped_buffer == nullptr) {
+            uint16_t buffer_size = constrain_int16(_time_delay_ped, 1, 100) * 0.001f / dt;
+            servo_stored_ped_buffer = new ObjectBuffer<servo_stored_ped>(buffer_size);
+            while (servo_stored_ped_buffer->space() != 0) {
+                push_to_buffer_ped(input.servos);
+            }
+            _servo_delayed_ped = input.servos[3];
+	} else {
+            pull_from_buffer_ped(_servo_delayed_ped);
+            push_to_buffer_ped(input.servos);
+	}
+
+	static float Dlonlag;
+	static float Dlatlag;
+	static float Dcollag;
+	static float Dpedlag;
+
+	float _roll_in = (_servos_delayed[0] / 500.0f) - 3.0f;  // roll
+	float _pitch_in = (_servos_delayed[1] / 500.0f) - 3.0f;  //pitch
+	float _throttle_in = (_servos_delayed[2] / 1000.0f) - 1.0f;  // throttle
+	float _yaw_in  = (_servo_delayed_ped / 500.0f) - 3.0f;  // yaw
+
+	if (is_zero(_throttle_in)) {
+	   _pitch_in = 0;
+	   _roll_in = 0;
+	   _yaw_in = 0;
+	}
+
+        Vector3f velocity_air_bf = aircraft.get_dcm().transposed() * aircraft.get_velocity_air_ef();
+
+        const Vector3f &gyro = aircraft.get_gyro();
+//        rotational acceleration (in rad/s/s?) in body frame
+        rot_accel.x = (Lv)*(velocity_air_bf.y)+(Llat)*(Dlatlag);
+        rot_accel.y = (Mu)*(velocity_air_bf.x)+(Mlon)*(Dlonlag);
+        rot_accel.z = (Nr)*(gyro.z)+((Nped)-(Lag*Lead))*(Dpedlag)+(Lag*Lead)*(_yaw_in);
+
+        float lateral_y_thrust = (Yv)*(velocity_air_bf.y)+(Ylat)*(Dlatlag);
+        float lateral_x_thrust = (Xu)*(velocity_air_bf.x)+(Xlon)*Dlonlag;
+	float thrust = Zcol * Dcollag - (0.1 * velocity_air_bf.z) + 0.1f * Zcol;
+        body_accel = Vector3f(lateral_x_thrust, lateral_y_thrust, thrust);
+
+	float Dlatlag_dot = (-Lag)*(Dlatlag)+(Lag)*(_roll_in);
+	float Dlonlag_dot = (-Lag)*(Dlonlag)+(Lag)*(_pitch_in);
+	float Dcollag_dot = (-Lag)*(Dcollag)+(Lag)*(_throttle_in);
+	float Dpedlag_dot = (-Lag)*(Dpedlag)+(Lag)*(_yaw_in);
+
+        if (printed > 0) {
+            printed -= 1;
+        } else {
+//        gcs().send_text(MAV_SEVERITY_WARNING, "_roll_in %f _pitch_in %f _throttle_in %f _yaw_in %f", _roll_in, _pitch_in, _throttle_in, _yaw_in);
+//          gcs().send_text(MAV_SEVERITY_WARNING, "input.servos[0] %f 1 %f 2 %f 3 %f", (double)input.servos[0], (double)input.servos[1], (double)input.servos[2], (double)input.servos[3]);
+//        gcs().send_text(MAV_SEVERITY_WARNING, "rot_accel.x %f y %f z %f", rot_accel.x, rot_accel.y, rot_accel.z);
+//        gcs().send_text(MAV_SEVERITY_WARNING, "Dlatlag %f Dlonlag %f Dcollag %f Dpedlag %f", Dlatlag, Dlonlag, Dcollag, Dpedlag);
+//        gcs().send_text(MAV_SEVERITY_WARNING, "body_accel.x %f y %f z %f Dcollag %f", body_accel.x, body_accel.y, body_accel.z, Dcollag);
+//        gcs().send_text(MAV_SEVERITY_WARNING, "Servos delayed[0] %f [1] %f [2] %f ped %f", (double)_servos_delayed[0], (double)_servos_delayed[1], (double)_servos_delayed[2], (double)_servo_delayed_ped);
+          printed = 2000;
+        }
+
+	Dlonlag += Dlonlag_dot * dt;
+	Dlatlag += Dlatlag_dot * dt;
+	Dcollag += Dcollag_dot * dt;
+	Dpedlag += Dpedlag_dot * dt;
+
+}
+
+// push servo input to buffer
+void Frame::push_to_buffer(const uint16_t servos_input[16])
+{
+    servos_stored sample;
+    sample.servo1 = servos_input[0];
+    sample.servo2 = servos_input[1];
+    sample.servo3 = servos_input[2];
+
+    servos_stored_buffer->push(sample);
+
+}
+
+// pull servo delay from buffer
+void Frame::pull_from_buffer(uint16_t servos_delayed[3])
+{
+    servos_stored sample;
+    if (!servos_stored_buffer->pop(sample)) {
+        // no sample
+        return;
+    }
+    servos_delayed[0] = sample.servo1;
+    servos_delayed[1] = sample.servo2;
+    servos_delayed[2] = sample.servo3;
+
+}
+
+// push servo input to buffer PED
+void Frame::push_to_buffer_ped(const uint16_t servos_input[16])
+{
+    servo_stored_ped sample;
+    sample.servo = servos_input[3];
+
+    servo_stored_ped_buffer->push(sample);
+
+}
+
+// pull servo delay from buffer PED
+void Frame::pull_from_buffer_ped(uint16_t &servos_delayed)
+{
+    servo_stored_ped sample;
+    if (!servo_stored_ped_buffer->pop(sample)) {
+        // no sample
+        return;
+    }
+    servos_delayed = sample.servo;
+
+
 }
