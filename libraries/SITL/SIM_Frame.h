@@ -57,6 +57,13 @@ public:
                           bool use_drag=true);
 #endif // AP_SIM_ENABLED
 
+
+    // calculate rotational and linear accelerations for x8 frame
+    void calculate_forces_x8(const Aircraft &aircraft,
+                          const struct sitl_input &input,
+                          Vector3f &rot_accel, Vector3f &body_accel, float* rpm,
+                          bool use_drag=true);
+    
     float terminal_velocity;
     float terminal_rotation_rate;
     uint8_t motor_offset;
@@ -170,5 +177,30 @@ private:
     void parse_float(picojson::value val, const char* label, float &param);
     void parse_vector3(picojson::value val, const char* label, Vector3f &param);
 #endif
+    struct servos_stored {
+        uint16_t servo1;
+        uint16_t servo2;
+
+    };
+    uint16_t _servos_delayed[2];
+    ObjectBuffer<servos_stored> *servos_stored_buffer;
+    void push_to_buffer(const uint16_t servos_input[16]);
+    void pull_from_buffer(uint16_t servos_delayed[2]);
+
+    struct servo_stored {
+        uint16_t servo;
+    };
+    // PED
+    uint16_t _servo_delayed_ped;
+    ObjectBuffer<servo_stored> *servo_stored_ped_buffer;
+    void push_to_buffer_ped(const uint16_t servos_input[16]);
+    void pull_from_buffer_ped(uint16_t &servo_delayed);
+
+    // COL
+    uint16_t _servo_delayed_col;
+    ObjectBuffer<servo_stored> *servo_stored_col_buffer;
+    void push_to_buffer_col(const uint16_t servos_input[16]);
+    void pull_from_buffer_col(uint16_t &servo_delayed);
+
 };
 }
