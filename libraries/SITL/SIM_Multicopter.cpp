@@ -19,6 +19,7 @@
 #include "SIM_Multicopter.h"
 #include <AP_Motors/AP_Motors.h>
 
+#include <GCS_MAVLink/GCS.h>
 #include <stdio.h>
 
 using namespace SITL;
@@ -48,7 +49,12 @@ MultiCopter::MultiCopter(const char *frame_str) :
 // calculate rotational and linear accelerations
 void MultiCopter::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel, Vector3f &body_accel)
 {
-    frame->calculate_forces(*this, input, rot_accel, body_accel);
+
+    if (strncasecmp("x8", frame->name, strlen(frame->name)) == 0) {
+        frame->calculate_forces_x8(*this, input, rot_accel, body_accel);
+    } else {
+        frame->calculate_forces(*this, input, rot_accel, body_accel);
+    }
     add_shove_forces(rot_accel, body_accel);
     add_twist_forces(rot_accel);
 }
