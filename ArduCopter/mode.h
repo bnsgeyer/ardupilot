@@ -1683,6 +1683,7 @@ protected:
 
     const char *name() const override { return "SYSTEMID"; }
     const char *name4() const override { return "SYSI"; }
+    void get_pilot_desired_angle_rates_2(int16_t roll_in, int16_t pitch_in, int16_t yaw_in, float &roll_out, float &pitch_out, float &yaw_out);
 
 private:
 
