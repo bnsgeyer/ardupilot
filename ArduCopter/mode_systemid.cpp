@@ -118,12 +118,18 @@ void ModeSystemId::run()
     // apply simple mode transform to pilot inputs
     update_simple_mode();
 
+#if FRAME_CONFIG == HELI_FRAME
+    float target_roll, target_pitch, target_yaw_rate;
+    get_pilot_desired_angle_rates_2(channel_roll->get_control_in(), channel_pitch->get_control_in(), channel_yaw->norm_input_dz(), target_roll, target_pitch, target_yaw_rate);
+
+#else
     // convert pilot input to lean angles
     float target_roll, target_pitch;
     get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, copter.aparm.angle_max);
 
     // get pilot's desired yaw rate
     float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
+#endif
 
     if (!motors->armed()) {
         // Motors should be Stopped
@@ -257,8 +263,13 @@ void ModeSystemId::run()
             break;
     }
 
+#if FRAME_CONFIG == HELI_FRAME
+    // run attitude controller
+    attitude_control->input_rate_bf_roll_pitch_yaw_2(target_roll, target_pitch, target_yaw_rate);
+#else
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
+#endif
 
     // output pilot's throttle
     if (copter.is_tradheli()) {
@@ -299,6 +310,33 @@ void ModeSystemId::log_data() const
 
     // Full rate logging of attitude, rate and pid loops
     copter.Log_Write_Attitude();
+}
+
+// get_pilot_desired_angle_rates - transform pilot's roll pitch and yaw input into a desired lean angle rates
+// returns desired angle rates in centi-degrees-per-second
+void ModeSystemId::get_pilot_desired_angle_rates_2(int16_t roll_in, int16_t pitch_in, int16_t yaw_in, float &roll_out, float &pitch_out, float &yaw_out)
+{
+
+    // apply circular limit to pitch and roll inputs
+    float total_in = norm(pitch_in, roll_in);
+
+    if (total_in > 1.0f) {
+        float ratio = 1.0f / total_in;
+        roll_in *= ratio;
+        pitch_in *= ratio;
+    }
+
+    // calculate roll, pitch rate requests
+    
+    // roll expo
+    roll_out = g2.command_model_acro_rp.get_rate() * 100.0 * input_expo(roll_in, g2.command_model_acro_rp.get_expo());
+
+    // pitch expo
+    pitch_out = g2.command_model_acro_rp.get_rate() * 100.0 * input_expo(pitch_in, g2.command_model_acro_rp.get_expo());
+
+    // yaw expo
+    yaw_out = g2.command_model_acro_y.get_rate() * 100.0 * input_expo(yaw_in, g2.command_model_acro_y.get_expo());
+
 }
 
 #endif
