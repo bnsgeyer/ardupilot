@@ -394,6 +394,7 @@ void Helicopter::update_rotor_dynamics(Vector3f gyros, Vector2f ctrl_pos, Vector
 {
 
     float tf_inv;
+    float tf;
     float Lfa1s;
     float Mfb1s;
     float Lflt;
@@ -410,14 +411,14 @@ void Helicopter::update_rotor_dynamics(Vector3f gyros, Vector2f ctrl_pos, Vector
         Mflt = 0.0344f;
         Mflg = 0.2292f;
     } else if (frame_type == HELI_FRAME_BELL206) {
-        tf_inv = 1.0f / 0.06097f;
-        Lfa1s = 3.463f/10.0f;
-        Mfb1s = 13.54f/10.0f;
-        float scale_input = 2.0f;
-        Lflt = 0.1207f * scale_input;
-        Lflg = -0.04627f * scale_input;
-        Mflt = -0.01375f * scale_input;
-        Mflg = 0.039655f * scale_input;
+        tf = 0.06097;
+        tf_inv = 1.0f / tf;
+        Lfa1s = 3.463f * tf;
+        Mfb1s = 13.54f * tf;
+        Lflt = 0.1207f * 100 * tf;
+        Lflg = -0.04627f * 100 * tf;
+        Mflt = -0.01375f * 100 * tf;
+        Mflg = 0.039655f * 100 * tf;
     } else {
         tf_inv = 1.0f / 0.068232f;
         Lfa1s = 1.2963f;
