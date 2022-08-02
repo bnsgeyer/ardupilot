@@ -48,6 +48,7 @@ public:
 	float get_time_to_ground() const { return _time_to_ground; }
 	void time_to_ground();
 	void set_collective_minimum_drag(float col_mid )const;
+	void get_collective_minimum_drag(float col_mid )  { _col_mid = col_mid; }
     void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
     void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
 
@@ -94,6 +95,8 @@ private:
 	float _time_to_ground;
 	float _distance_to_ground;
 	float _desired_sink_rate;
+	float _col_mid;
+
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
