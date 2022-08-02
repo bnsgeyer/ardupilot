@@ -186,7 +186,7 @@ void AC_Autorotation::guided_input_safety_check()
 void AC_Autorotation::init_hs_controller()
 {
     // Set initial collective position to be the collective position on initialisation
-    _collective_out = 0.4f;
+    _collective_out = _col_mid;
 
     // Reset feed forward filter
     col_trim_lpf.reset(_collective_out);
@@ -229,11 +229,11 @@ bool AC_Autorotation::update_hs_glide_controller(float dt)
         _ff_term_hs = col_trim_lpf.apply(_collective_out, dt);
 
         // Calculate collective position to be set
-        _collective_out = _p_term_hs + _ff_term_hs;
+        _collective_out = constrain_value((_p_term_hs + _ff_term_hs), 0.0f, 1.0f) ;
 
     } else {
         // RPM sensor is bad set collective to minimum
-        _collective_out = -1.0f;
+        _collective_out = 0.0f;
 
         _flags.bad_rpm_warning = true;
     }
