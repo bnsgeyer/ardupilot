@@ -31,6 +31,12 @@ bool ModeAutorotate::init(bool ignore_checks)
         return false;
     }
 
+    // Check that interlock is disengaged
+    if (motors->get_interlock()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Autorot Mode Change Fail: Interlock Engaged");
+        return false;
+    }
+
     // Initialise controllers
     // This must be done before RPM value is fetched
     g2.arot.init_hs_controller();
@@ -62,10 +68,6 @@ bool ModeAutorotate::init(bool ignore_checks)
 
     // The decay rate to reduce the head speed from the current to the target
     _hs_decay = ((_initial_rpm/g2.arot.get_hs_set_point()) - HEAD_SPEED_TARGET_RATIO) / AUTOROTATE_ENTRY_TIME;
-	
-    //set motors to idle
-    copter.ap.motor_interlock_switch = false;
-    copter.motors->set_desired_rotor_speed(0.0f);
 
     return true;
 }
@@ -181,7 +183,7 @@ void ModeAutorotate::run()
                 g2.arot.set_col_cutoff_freq(g2.arot.get_col_entry_freq());
 
                 // Target head speed is set to rpm at initiation to prevent unwanted changes in attitude
-                _target_head_speed = HEAD_SPEED_TARGET_RATIO;
+                _target_head_speed = _initial_rpm/g2.arot.get_hs_set_point();
 
                 // Set desired forward speed target
                 g2.arot.set_desired_fwd_speed();
@@ -191,8 +193,13 @@ void ModeAutorotate::run()
 
             }
 
-            if(!hover_autorotation){           
-              _target_head_speed = HEAD_SPEED_TARGET_RATIO;
+            if(!hover_autorotation){ 
+			// Slowly change the target head speed until the target head speed matches the parameter defined value
+           if (g2.arot.get_rpm() > HEAD_SPEED_TARGET_RATIO*1.005f  ||  g2.arot.get_rpm() < HEAD_SPEED_TARGET_RATIO*0.995f) {
+                _target_head_speed -= _hs_decay*G_Dt;
+            } else {
+                _target_head_speed = HEAD_SPEED_TARGET_RATIO;
+            }
                // Set target head speed in head speed controller
                g2.arot.set_target_head_speed(_target_head_speed);
                // Run airspeed/attitude controller
