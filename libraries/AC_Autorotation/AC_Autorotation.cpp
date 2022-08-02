@@ -323,32 +323,32 @@ void AC_Autorotation::Log_Write_Autorotation(void) const
 // @Field: hserr: head speed error; difference between current and desired head speed
 // @Field: ColOut: Collective Out
 // @Field: FFCol: FF-term for headspeed controller response
-// @Field: CRPM: current headspeed RPM
 // @Field: SpdF: current forward speed
-// @Field: CmdV: desired forward speed
+// @Field: DH: desired forward speed
 // @Field: p: p-term of velocity response
 // @Field: ff: ff-term of velocity response
 // @Field: AccO: forward acceleration output
 // @Field: AccT: forward acceleration target
 // @Field: PitT: pitch target
+// @Field: DV: desired sink rate during touchdown phase
 
     //Write to data flash log
     AP::logger().WriteStreaming("AROT",
-                       "TimeUS,P,hserr,ColOut,FFCol,CRPM,SpdF,CmdV,p,ff,AccO,AccT,PitT",
+                       "TimeUS,P,hs_e,C_Out,FFCol,SpdF,DH,p,ff,AccO,AccT,PitT,DV",
                          "Qffffffffffff",
                         AP_HAL::micros64(),
                         (double)_p_term_hs,
                         (double)_head_speed_error,
                         (double)_collective_out,
                         (double)_ff_term_hs,
-                        (double)_current_rpm,
-                        (double)_speed_forward,
+                        (double)(_speed_forward*0.01f),
                         (double)_cmd_vel,
                         (double)_vel_p,
                         (double)_vel_ff,
                         (double)_accel_out,
                         (double)_accel_target,
-                        (double)_pitch_target);
+                        (double)_pitch_target,
+						(double)(_desired_sink_rate*0.01f)) ;
 }
 
 
@@ -453,7 +453,7 @@ void AC_Autorotation::flare_controller()
     _delta_speed_fwd = _speed_forward - _speed_forward_last; //(cm/s)
     _speed_forward_last = _speed_forward; //(cm/s)
     float current_alt = _radar_alt;
-    _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, current_alt, 0.0f, _param_flr_alt);
+    _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, current_alt, -(_inav.get_velocity_z_up_cms()*_param_time_to_ground), _param_flr_alt);
 
 	// get p
 	_vel_p = _p_fw_vel.get_p(_desired_speed - _speed_forward);
