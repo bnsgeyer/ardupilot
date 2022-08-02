@@ -200,6 +200,7 @@ void ModeAutorotate::run()
             } else {
                 _target_head_speed = HEAD_SPEED_TARGET_RATIO;
             }
+			  g2.arot.get_collective_minimum_drag(motors->get_coll_mid());
                // Set target head speed in head speed controller
                g2.arot.set_target_head_speed(_target_head_speed);
                // Run airspeed/attitude controller
