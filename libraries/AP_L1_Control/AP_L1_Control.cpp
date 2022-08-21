@@ -196,7 +196,27 @@ void AP_L1_Control::_prevent_indecision(float &Nu)
 void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct Location &next_WP, float dist_min)
 {
 
-    struct Location _current_loc;
+    bool good_wp;
+    Vector2f prev_WP_ne;
+    Vector2f next_WP_ne;
+
+    // convert destination location to vector
+    good_wp = prev_WP.get_vector_xy_from_origin_NE(prev_WP_ne);
+    good_wp = next_WP.get_vector_xy_from_origin_NE(next_WP_ne);
+
+    // set target as vector from EKF origin
+    update_waypoint(prev_WP_ne, next_WP_ne, dist_min);
+
+    if (!good_wp) { }
+
+}
+
+void AP_L1_Control::update_waypoint(const Vector2f &_origin, const Vector2f &_destination, float dist_min)
+{
+
+    Vector2f current_pos;
+    Vector2f origin = _origin * 0.01; // convert to meters
+    Vector2f destination = _destination * 0.01; //convert to meters
     float Nu;
     float xtrackVel;
     float ltrackVel;
@@ -217,16 +237,18 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
     float K_L1 = 4.0f * _L1_damping * _L1_damping;
 
     // Get current position and velocity
-    if (_ahrs.get_location(_current_loc) == false) {
+    Vector3f curr_pos_NED;
+    if (!_ahrs.get_relative_position_NED_origin(curr_pos_NED)) {
         // if no GPS loc available, maintain last nav/target_bearing
         _data_is_stale = true;
         return;
     }
+    current_pos = curr_pos_NED.xy();
 
     Vector2f _groundspeed_vector = _ahrs.groundspeed_vector();
 
     // update _target_bearing_cd
-    _target_bearing_cd = _current_loc.get_bearing_to(next_WP);
+    _target_bearing_cd = get_bearing_cd(current_pos, destination);
 
     //Calculate groundspeed
     float groundSpeed = _groundspeed_vector.length();
@@ -243,13 +265,13 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
     _L1_dist = MAX(0.3183099f * _L1_damping * _L1_period * groundSpeed, dist_min);
 
     // Calculate the NE position of WP B relative to WP A
-    Vector2f AB = prev_WP.get_distance_NE(next_WP);
+    Vector2f AB = destination - origin;
     float AB_length = AB.length();
 
     // Check for AB zero length and track directly to the destination
     // if too small
     if (AB.length() < 1.0e-6f) {
-        AB = _current_loc.get_distance_NE(next_WP);
+        AB = destination - current_pos;
         if (AB.length() < 1.0e-6f) {
             AB = Vector2f(cosf(get_yaw()), sinf(get_yaw()));
         }
@@ -257,7 +279,7 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
     AB.normalize();
 
     // Calculate the NE position of the aircraft relative to WP A
-    const Vector2f A_air = prev_WP.get_distance_NE(_current_loc);
+    Vector2f A_air = current_pos - origin;
 
     // calculate distance to target track, for reporting
     _crosstrack_error = A_air % AB;
@@ -278,7 +300,7 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
     } else if (alongTrackDist > AB_length + groundSpeed*3) {
         // we have passed point B by 3 seconds. Head towards B
         // Calc Nu to fly To WP B
-        const Vector2f B_air = next_WP.get_distance_NE(_current_loc);
+        Vector2f B_air = current_pos - destination;
         Vector2f B_air_unit = (B_air).normalized(); // Unit vector from WP B to aircraft
         xtrackVel = _groundspeed_vector % (-B_air_unit); // Velocity across line
         ltrackVel = _groundspeed_vector * (-B_air_unit); // Velocity along line
@@ -334,7 +356,25 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
 // update L1 control for loitering
 void AP_L1_Control::update_loiter(const struct Location &center_WP, float radius, int8_t loiter_direction)
 {
-    struct Location _current_loc;
+
+    bool good_wp;
+    Vector2f center_WP_ne;
+
+    // convert destination location to vector
+    good_wp = center_WP.get_vector_xy_from_origin_NE(center_WP_ne);
+
+    // set target as vector from EKF origin
+    update_loiter(center_WP_ne, radius, loiter_direction);
+
+    if (!good_wp) { }
+
+}
+
+
+void AP_L1_Control::update_loiter(const Vector2f &_center_pos, float radius, int8_t loiter_direction)
+{
+    Vector2f center_pos = _center_pos * 0.01f; //convert to meters
+    Vector2f current_pos;
 
     // scale loiter radius with square of EAS2TAS to allow us to stay
     // stable at high altitude
@@ -349,11 +389,13 @@ void AP_L1_Control::update_loiter(const struct Location &center_WP, float radius
     float K_L1 = 4.0f * _L1_damping * _L1_damping;
 
     //Get current position and velocity
-    if (_ahrs.get_location(_current_loc) == false) {
+    Vector3f curr_pos_NED;
+    if (!_ahrs.get_relative_position_NED_origin(curr_pos_NED)) {
         // if no GPS loc available, maintain last nav/target_bearing
         _data_is_stale = true;
         return;
     }
+    current_pos = curr_pos_NED.xy();
 
     Vector2f _groundspeed_vector = _ahrs.groundspeed_vector();
 
@@ -362,7 +404,7 @@ void AP_L1_Control::update_loiter(const struct Location &center_WP, float radius
 
 
     // update _target_bearing_cd
-    _target_bearing_cd = _current_loc.get_bearing_to(center_WP);
+    _target_bearing_cd = get_bearing_cd(current_pos, center_pos);
 
 
     // Calculate time varying control parameters
@@ -371,7 +413,7 @@ void AP_L1_Control::update_loiter(const struct Location &center_WP, float radius
     _L1_dist = 0.3183099f * _L1_damping * _L1_period * groundSpeed;
 
     //Calculate the NE position of the aircraft relative to WP A
-    const Vector2f A_air = center_WP.get_distance_NE(_current_loc);
+    Vector2f A_air = current_pos - center_pos;
 
     // Calculate the unit vector from WP A to aircraft
     // protect against being on the waypoint and having zero velocity
