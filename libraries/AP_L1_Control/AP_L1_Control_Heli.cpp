@@ -93,7 +93,7 @@ int32_t AP_L1_Control_Heli::turn_rate_cds(void) const
     float ret;
     float turn_rate_scaling = constrain_float(_turn_rate_scale_factor, 0.2, 2.0);
     ret = turn_rate_scaling * (GRAVITY_MSS / _groundSpeed) * 5730.0f * sinf(radians(nav_roll_cd() * 0.01));
-    ret = constrain_float(ret, -4500, 4500);
+    ret = constrain_float(ret, -12000, 12000);
     return ret;
 }
 
