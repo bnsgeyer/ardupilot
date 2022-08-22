@@ -663,6 +663,10 @@ public:
     AP_Float guided_timeout;
 #endif
 
+    void *L1_controller_ptr;
+    void *helispdhgtctrl_ptr;
+
+
     AP_Int8                 surftrak_mode;
     AP_Int8                 failsafe_dr_enable;
     AP_Int16                failsafe_dr_timeout;

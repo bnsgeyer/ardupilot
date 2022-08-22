@@ -68,6 +68,7 @@ void Copter::init_ardupilot()
 #endif
 #if FRAME_CONFIG == HELI_FRAME
     input_manager.set_loop_rate(scheduler.get_loop_rate_hz());
+    helispdhgtctrl.set_dt(scheduler.get_loop_period_s());
 #endif
 
     init_rc_in();               // sets up rc channels from radio
@@ -466,10 +467,14 @@ void Copter::allocate_motors(void)
     }
     AP_Param::load_object_from_eeprom(pos_control, pos_control->var_info);
 
+#if FRAME_CONFIG != HELI_FRAME
 #if AC_OAPATHPLANNER_ENABLED == ENABLED
     wp_nav = new AC_WPNav_OA(inertial_nav, *ahrs_view, *pos_control, *attitude_control);
 #else
     wp_nav = new AC_WPNav(inertial_nav, *ahrs_view, *pos_control, *attitude_control);
+#endif
+#else
+    wp_nav = new AC_WPNav_Heli(inertial_nav, *ahrs_view, *pos_control, *attitude_control, &helispdhgtctrl, L1_controller);
 #endif
     if (wp_nav == nullptr) {
         AP_BoardConfig::allocation_error("WPNav");

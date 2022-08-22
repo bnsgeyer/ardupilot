@@ -493,8 +493,12 @@ const AP_Param::Info Copter::var_info[] = {
     GOBJECT(ins,            "INS_", AP_InertialSensor),
 
     // @Group: WPNAV_
-    // @Path: ../libraries/AC_WPNav/AC_WPNav.cpp
+    // @Path: ../libraries/AC_WPNav/AC_WPNav.cpp,../libraries/AC_WPNav/AC_WPNav_Heli.cpp
+#if FRAME_CONFIG == HELI_FRAME
+    GOBJECTPTR(wp_nav, "WPNAV_",       AC_WPNav_Heli),
+#else
     GOBJECTPTR(wp_nav, "WPNAV_",       AC_WPNav),
+#endif
 
     // @Group: LOIT_
     // @Path: ../libraries/AC_WPNav/AC_Loiter.cpp
@@ -1137,6 +1141,14 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Standard
     AP_SUBGROUPINFO(command_model_pilot, "PILOT_Y_", 56, ParametersG2, AC_CommandModel),
 
+    // @Group: NAVL1_
+    // @Path: ../libraries/AP_L1_Control/AP_L1_Control_Heli.cpp
+    AP_SUBGROUPPTR(L1_controller_ptr, "NAVL1_", 57, ParametersG2, AP_L1_Control_Heli),
+
+    // @Group: SPDHGT_
+    // @Path: ../libraries/AP_SpdHgtControl/AP_SpdHgtControl_Heli.cpp
+    AP_SUBGROUPPTR(helispdhgtctrl_ptr, "SPDHGT_", 58, ParametersG2, AP_SpdHgtControl_Heli),
+
     AP_GROUPEND
 };
 
@@ -1191,6 +1203,9 @@ ParametersG2::ParametersG2(void)
 #endif
 
     ,command_model_pilot(PILOT_Y_RATE_DEFAULT, PILOT_Y_EXPO_DEFAULT, 0.0f)
+
+    ,L1_controller_ptr(&copter.L1_controller)
+    ,helispdhgtctrl_ptr(&copter.helispdhgtctrl)
 {
     AP_Param::setup_object_defaults(this, var_info);
 }

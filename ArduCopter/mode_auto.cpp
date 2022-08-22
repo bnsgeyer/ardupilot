@@ -975,13 +975,37 @@ void ModeAuto::wp_run()
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
+#if FRAME_CONFIG == HELI_FRAME
+    if (wp_nav->use_l1_navigation()) {
+        copter.failsafe_terrain_set_status(wp_nav->update_l1_wpnav());
+    } else {
+        // run waypoint controller
+        copter.failsafe_terrain_set_status(wp_nav->update_wpnav());
+    }
+#else
     // run waypoint controller
     copter.failsafe_terrain_set_status(wp_nav->update_wpnav());
+#endif
 
     // WP_Nav has set the vertical position control targets
     // run the vertical position controller and set output throttle
     pos_control->update_z_controller();
 
+#if FRAME_CONFIG == HELI_FRAME
+    if (wp_nav->use_l1_navigation()) {
+        target_yaw_rate += wp_nav->get_yaw_rate();
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav->get_l1_roll(), wp_nav->get_l1_pitch(), target_yaw_rate);
+    } else {
+        // call attitude controller
+        if (auto_yaw.mode() == AUTO_YAW_HOLD) {
+            // roll & pitch from waypoint controller, yaw rate from pilot
+            attitude_control->input_thrust_vector_rate_heading(wp_nav->get_thrust_vector(), target_yaw_rate);
+        } else {
+            // roll, pitch from waypoint controller, yaw heading from auto_heading()
+            attitude_control->input_thrust_vector_heading(wp_nav->get_thrust_vector(), auto_yaw.yaw(), auto_yaw.rate_cds());
+        }
+    }
+#else
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from waypoint controller, yaw rate from pilot
@@ -990,6 +1014,7 @@ void ModeAuto::wp_run()
         // roll, pitch from waypoint controller, yaw heading from auto_heading()
         attitude_control->input_thrust_vector_heading(wp_nav->get_thrust_vector(), auto_yaw.yaw(), auto_yaw.rate_cds());
     }
+#endif
 }
 
 // auto_land_run - lands in auto mode
@@ -1489,8 +1514,18 @@ void ModeAuto::do_circle(const AP_Mission::Mission_Command& cmd)
         circle_radius_m *= 10;
     }
 
+#if FRAME_CONFIG == HELI_FRAME
+    if (wp_nav->use_l1_navigation()) {
+        // move to edge of circle (verify_circle) will ensure we begin circling once we reach the edge
+        circle_movetoedge_start(circle_center, 0);
+    } else {
+        // move to edge of circle (verify_circle) will ensure we begin circling once we reach the edge
+        circle_movetoedge_start(circle_center, circle_radius_m);
+    }
+#else
     // move to edge of circle (verify_circle) will ensure we begin circling once we reach the edge
     circle_movetoedge_start(circle_center, circle_radius_m);
+#endif
 }
 
 // do_loiter_time - initiate loitering at a point for a given time period
@@ -1831,6 +1866,26 @@ bool ModeAuto::verify_land()
 
     switch (state) {
         case State::FlyToLocation:
+#if FRAME_CONFIG == HELI_FRAME
+            if (wp_nav->use_l1_navigation()) {
+                if (copter.wp_nav->reached_l1_destination()) {
+                    // initialise landing controller
+                    land_start();
+
+                    // advance to next state
+                    state = State::Descending;
+                }
+            } else {
+                // check if we've reached the location
+                if (copter.wp_nav->reached_wp_destination()) {
+                    // initialise landing controller
+                    land_start();
+
+                    // advance to next state
+                    state = State::Descending;
+                }
+            }
+#else
             // check if we've reached the location
             if (copter.wp_nav->reached_wp_destination()) {
                 // initialise landing controller
@@ -1839,6 +1894,7 @@ bool ModeAuto::verify_land()
                 // advance to next state
                 state = State::Descending;
             }
+#endif
             break;
 
         case State::Descending:
@@ -2039,10 +2095,24 @@ bool ModeAuto::verify_loiter_unlimited()
 // verify_loiter_time - check if we have loitered long enough
 bool ModeAuto::verify_loiter_time(const AP_Mission::Mission_Command& cmd)
 {
+#if FRAME_CONFIG == HELI_FRAME
+    if (wp_nav->use_l1_navigation()) {
+        // check if we have reached the waypoint
+        if ( !copter.wp_nav->reached_l1_destination() ) {
+            return false;
+        }
+    } else {
+        // return immediately if we haven't reached our destination
+        if (!copter.wp_nav->reached_wp_destination()) {
+            return false;
+        }
+    }
+#else
     // return immediately if we haven't reached our destination
     if (!copter.wp_nav->reached_wp_destination()) {
         return false;
     }
+#endif
 
     // start our loiter timer
     if ( loiter_time == 0 ) {
@@ -2114,7 +2184,17 @@ bool ModeAuto::verify_yaw()
 // verify_nav_wp - check if we have reached the next way point
 bool ModeAuto::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
 {
-    // check if we have reached the waypoint
+#if FRAME_CONFIG == HELI_FRAME
+    if (wp_nav->use_l1_navigation()) {
+        // check if we have reached the waypoint
+        if ( !copter.wp_nav->reached_l1_destination() ) {
+            return false;
+        } 
+        gcs().send_text(MAV_SEVERITY_INFO, "Reached command #%i",cmd.index);
+        return true;
+    } else {
+#endif
+     // check if we have reached the waypoint
     if ( !copter.wp_nav->reached_wp_destination() ) {
         return false;
     }
@@ -2138,11 +2218,37 @@ bool ModeAuto::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
         return true;
     }
     return false;
+#if FRAME_CONFIG == HELI_FRAME
+    }
+#endif
+
 }
 
 // verify_circle - check if we have circled the point enough
 bool ModeAuto::verify_circle(const AP_Mission::Mission_Command& cmd)
 {
+#if FRAME_CONFIG == HELI_FRAME
+    if (wp_nav->use_l1_navigation()) {
+        // check if we have reached the waypoint
+        if ( !copter.wp_nav->reached_l1_destination()) {
+            return false;
+        }
+        // check if we have completed circling
+        return fabsf((float)copter.wp_nav->get_angle_total()/36000.0f) >= LOWBYTE(cmd.p1);
+    } else {
+        // check if we've reached the edge
+        if (_mode == SubMode::CIRCLE_MOVE_TO_EDGE) {
+            if (copter.wp_nav->reached_wp_destination()) {
+                // start circling
+                circle_start();
+            }
+            return false;
+        }
+
+        // check if we have completed circling
+        return fabsf(copter.circle_nav->get_angle_total()/float(M_2PI)) >= LOWBYTE(cmd.p1);
+    }
+#else
     // check if we've reached the edge
     if (_mode == SubMode::CIRCLE_MOVE_TO_EDGE) {
         if (copter.wp_nav->reached_wp_destination()) {
@@ -2154,6 +2260,7 @@ bool ModeAuto::verify_circle(const AP_Mission::Mission_Command& cmd)
 
     // check if we have completed circling
     return fabsf(copter.circle_nav->get_angle_total()/float(M_2PI)) >= LOWBYTE(cmd.p1);
+#endif
 }
 
 // verify_spline_wp - check if we have reached the next way point using spline

@@ -52,6 +52,7 @@
 #include <AP_Vehicle/AP_Vehicle.h>          // needed for AHRS build
 #include <AP_InertialNav/AP_InertialNav.h>  // inertial navigation library
 #include <AC_WPNav/AC_WPNav.h>              // ArduCopter waypoint navigation library
+#include <AC_WPNav/AC_WPNav_Heli.h>
 #include <AC_WPNav/AC_Loiter.h>             // ArduCopter Loiter Mode Library
 #include <AC_WPNav/AC_Circle.h>             // circle navigation library
 #include <AP_Declination/AP_Declination.h>  // ArduPilot Mega Declination Helper Library
@@ -69,6 +70,8 @@
 #include <AC_Sprayer/AC_Sprayer.h>          // Crop sprayer library
 #include <AP_ADSB/AP_ADSB.h>                // ADS-B RF based collision avoidance module library
 #include <AP_Proximity/AP_Proximity.h>      // ArduPilot proximity sensor library
+#include <AP_L1_Control/AP_L1_Control_Heli.h>
+#include <AP_SpdHgtControl/AP_SpdHgtControl_Heli.h>
 
 // Configuration
 #include "defines.h"
@@ -78,6 +81,12 @@
     #define AC_AttitudeControl_t AC_AttitudeControl_Heli
 #else
     #define AC_AttitudeControl_t AC_AttitudeControl_Multi
+#endif
+
+#if FRAME_CONFIG == HELI_FRAME
+    #define AC_WPNav_t AC_WPNav_Heli
+#else
+    #define AC_WPNav_t AC_WPNav
 #endif
 
 #if FRAME_CONFIG == HELI_FRAME
@@ -461,12 +470,17 @@ private:
     // To-Do: move inertial nav up or other navigation variables down here
     AC_AttitudeControl_t *attitude_control;
     AC_PosControl *pos_control;
-    AC_WPNav *wp_nav;
+    AC_WPNav_t *wp_nav;
     AC_Loiter *loiter_nav;
 
 #if MODE_CIRCLE_ENABLED == ENABLED
     AC_Circle *circle_nav;
 #endif
+
+    AP_SpdHgtControl_Heli helispdhgtctrl{ahrs};
+
+    // L1 Controller and SpdHgt controller declarations
+    AP_L1_Control_Heli L1_controller{ahrs, &helispdhgtctrl};
 
     // System Timers
     // --------------

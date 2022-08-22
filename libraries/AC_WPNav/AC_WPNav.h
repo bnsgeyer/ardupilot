@@ -52,7 +52,7 @@ public:
     ///     speed_cms is the desired max speed to travel between waypoints.  should be a positive value or omitted to use the default speed
     ///     updates target roll, pitch targets and I terms based on vehicle lean angles
     ///     should be called once before the waypoint controller is used but does not need to be called before subsequent updates to destination
-    void wp_and_spline_init(float speed_cms = 0.0f, Vector3f stopping_point = Vector3f{});
+    virtual void wp_and_spline_init(float speed_cms = 0.0f, Vector3f stopping_point = Vector3f{});
 
     /// set current target horizontal speed during wp navigation
     void set_speed_xy(float speed_cms);
@@ -97,8 +97,8 @@ public:
     /// set_wp_destination waypoint using location class
     ///     provide the next_destination if known
     ///     returns false if conversion from location to vector from ekf origin cannot be calculated
-    bool set_wp_destination_loc(const Location& destination);
-    bool set_wp_destination_next_loc(const Location& destination);
+    virtual bool set_wp_destination_loc(const Location& destination);
+    virtual bool set_wp_destination_next_loc(const Location& destination);
 
     // get destination as a location.  Altitude frame will be absolute (AMSL) or above terrain
     // returns false if unable to return a destination (for example if origin has not yet been set)
@@ -111,7 +111,7 @@ public:
     /// set_wp_destination waypoint using position vector (distance from ekf origin in cm)
     ///     terrain_alt should be true if destination.z is a desired altitude above terrain
     virtual bool set_wp_destination(const Vector3f& destination, bool terrain_alt = false);
-    bool set_wp_destination_next(const Vector3f& destination, bool terrain_alt = false);
+    virtual bool set_wp_destination_next(const Vector3f& destination, bool terrain_alt = false);
 
     /// set waypoint destination using NED position vector from ekf origin in meters
     ///     provide next_destination_NED if known
