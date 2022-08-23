@@ -146,10 +146,6 @@ private:
         ANGLE   = 1,
     };
 
-    // Feedforward test used to determine Rate FF gain
-    void rate_ff_test_init();
-    void rate_ff_test_run(float max_angle_cds, float target_rate_cds, float dir_sign);
-
     // initialize dwell test or angle dwell test variables
     void dwell_test_init(float start_frq, float stop_frq, float filt_freq, DwellType dwell_type);
 
@@ -158,7 +154,7 @@ private:
 
     // updating_rate_ff_up - adjust FF to ensure the target is reached
     // FF is adjusted until rate requested is acheived
-    void updating_rate_ff_up(float &tune_ff, float rate_target, float meas_rate, float meas_command);
+    void updating_rate_ff_up(float &tune_ff, float *freq, float *gain, float *phase, uint8_t &frq_cnt);
 
     // updating_rate_p_up - uses maximum allowable gain determined from max_gain test to determine rate p gain that does not exceed exceed max response gain
     void updating_rate_p_up(float &tune_p, float *freq, float *gain, float *phase, uint8_t &frq_cnt, max_gain_data &max_gain_p);
