@@ -38,6 +38,14 @@ const AP_Param::GroupInfo AP_L1_Control_Heli::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("TURN_SF",   3, AP_L1_Control_Heli, _turn_rate_scale_factor, 1.0f),
 
+    // @Param: SPEED_MIN
+    // @DisplayName: Minimum speed for L1 Nav
+    // @Description: Min speed for L1 Nav
+    // @Range: 5.0 20.0
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("SPEED_MIN",   4, AP_L1_Control_Heli, _speed_min, 5.0f),
+
     AP_GROUPEND
 };
 

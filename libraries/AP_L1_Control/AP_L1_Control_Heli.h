@@ -115,6 +115,8 @@ private:
     AP_Float _L1_damping;
     // turn rate scale factor
     AP_Float _turn_rate_scale_factor;
+    // minimum speed for L1 Nav
+    AP_Float _speed_min;
 
     // previous value of cross-track velocity
     float _last_Nu;
@@ -137,6 +139,7 @@ private:
     bool _reverse = false;
     float get_yaw() const;
     float get_yaw_sensor() const;
+    float get_speed_min() { return _speed_min; }
 
     /*
       meta data to support counting the number of circles in a loiter
