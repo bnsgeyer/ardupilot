@@ -33,26 +33,10 @@ public:
     bool set_wp_destination_loc(const Location& destination) override;
     bool set_wp_destination_next_loc(const Location& destination) override;
 
-    // returns object avoidance adjusted destination which is always the same as get_wp_destination
-    // having this function unifies the AC_WPNav_OA and AC_WPNav interfaces making vehicle code simpler
-    bool get_oa_wp_destination(Location& destination) const override { return false; }
-
     /// set_wp_destination waypoint using position vector (distance from ekf origin in cm)
     ///     terrain_alt should be true if destination.z is a desired altitude above terrain
     bool set_wp_destination(const Vector3f& destination, bool terrain_alt = false) override;
     bool set_wp_destination_next(const Vector3f& destination, bool terrain_alt = false) override;
-
-    /// get_wp_distance_to_destination - get horizontal distance to destination in cm
-    float get_wp_distance_to_destination() const override { return 0.0f; }
-
-    /// get_bearing_to_destination - get bearing to next waypoint in centi-degrees
-    int32_t get_wp_bearing_to_destination() const override { return 0; };
-
-    /// reached_destination - true when we have come within RADIUS cm of the waypoint
-    bool reached_wp_destination() const override { return false; };
-
-    /// update_wpnav - run the wp controller - should be called at 100hz or higher
-    bool update_wpnav() override { return false; };
 
     /// set the L1 navigation controller origin and destination
     void set_L1_wp_origin_and_destination(const Vector3f& destination);
@@ -74,6 +58,9 @@ public:
     // get desired yaw rate to coordinate turns
     int32_t get_yaw_rate() const { return _L1_controller.turn_rate_cds(); }
 
+    // set stopping at waypoint
+    void set_stopping_at_wp(bool stopping) { _stopping_at_waypoint = stopping; }
+
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -86,6 +73,10 @@ protected:
     Vector3f _prev_WP_pos;
     Vector3f _this_WP_pos;
     Vector3f _next_WP_pos;
+
+    bool is_L1nav_active;
+    uint8_t _l1_loiter_type; // set L1 Nav loiter type
+
 
 private:
 
