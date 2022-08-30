@@ -1393,14 +1393,17 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
 // returns true on success, false on failure which should only happen due to a failure to retrieve terrain data
 bool ModeAuto::set_next_wp(const AP_Mission::Mission_Command& current_cmd, const Location &default_loc)
 {
+    wp_nav->set_stopping_at_wp(false);
     // do not add next wp if current command has a delay meaning the vehicle will stop at the destination
     if (current_cmd.p1 > 0) {
+    wp_nav->set_stopping_at_wp(true);
         return true;
     }
 
     // do not add next wp if there are no more navigation commands
     AP_Mission::Mission_Command next_cmd;
     if (!mission.get_next_nav_cmd(current_cmd.index+1, next_cmd)) {
+    wp_nav->set_stopping_at_wp(true);
         return true;
     }
 
