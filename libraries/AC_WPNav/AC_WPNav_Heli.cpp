@@ -55,9 +55,6 @@ void AC_WPNav_Heli::wp_and_spline_init(float speed_cms, Vector3f stopping_point)
     _helispdhgtctrl->set_desired_speed(_wp_speed_cms);
     _helispdhgtctrl->set_max_accel(_wp_accel_cmss);
 
-
-    gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: initialized wp prev pos x:%f y:%f", double(_prev_WP_pos.x), double(_prev_WP_pos.y));
-    //
 }
 
 /// set_wp_destination waypoint using location class
@@ -83,7 +80,7 @@ bool AC_WPNav_Heli::set_wp_destination_next_loc(const Location& destination)
 bool AC_WPNav_Heli::set_wp_destination(const Vector3f& destination, bool terrain_alt)
 {
 
-    // set next wp location for L1 Navigation
+    // set destination wp location for L1 Navigation
     set_L1_wp_origin_and_destination(destination);
 
     return AC_WPNav::set_wp_destination(destination, terrain_alt);
@@ -96,7 +93,9 @@ bool AC_WPNav_Heli::set_wp_destination(const Vector3f& destination, bool terrain
 bool AC_WPNav_Heli::set_wp_destination_next(const Vector3f& destination, bool terrain_alt)
 {
 
-//    set_L1_wp_destination_next(destination);
+    // set next wp destination
+    _next_WP_pos = destination;
+
     return AC_WPNav::set_wp_destination_next(destination, terrain_alt);
 
 }
@@ -120,7 +119,8 @@ void AC_WPNav_Heli::set_L1_wp_origin_and_destination(const Vector3f& destination
 //    destination.get_alt_cm(Location::ALT_FRAME_ABOVE_ORIGIN, temp_alt);
 //    _pos_control.set_alt_target(temp_alt);
 
-    gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: set origin and dest wp x:%f y:%f", double(_this_WP_pos.x), double(_this_WP_pos.y));
+    gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: prev wp pos x:%f y:%f", double(_prev_WP_pos.x), double(_prev_WP_pos.y));
+    gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: this wp pos x:%f y:%f", double(_this_WP_pos.x), double(_this_WP_pos.y));
 
     _reached_l1_destination = false;
 
@@ -130,6 +130,7 @@ void AC_WPNav_Heli::set_L1_wp_origin_and_destination(const Vector3f& destination
 bool AC_WPNav_Heli::update_l1_wpnav()
 {
     bool ret = true;
+    _desired_speed = _wp_speed_cms;
 
     AP_Mission *_mission = AP_Mission::get_singleton();
     // get dt from pos controller
@@ -156,7 +157,6 @@ bool AC_WPNav_Heli::update_l1_wpnav()
     }
 
     _helispdhgtctrl->set_max_accel(_wp_accel_cmss);
-    float desired_speed = _wp_speed_cms;
     Vector3f curr_pos = _inav.get_position_neu_cm();
     float speed_forward = _inav.get_velocity_xy_cms().x*_ahrs.cos_yaw() + _inav.get_velocity_xy_cms().y*_ahrs.sin_yaw();
     Vector2f dist_vec = curr_pos.xy() - _this_WP_pos.xy();
@@ -171,11 +171,11 @@ bool AC_WPNav_Heli::update_l1_wpnav()
     // if last nav command is waypoint then stop at waypoint
     
     if (dist < stop_distance || _stopping_at_waypoint) {
-        desired_speed = 100.0f;
+        _desired_speed = 100.0f;
     }
 
 
-    _helispdhgtctrl->set_desired_speed(desired_speed);
+    _helispdhgtctrl->set_desired_speed(_desired_speed);
     _helispdhgtctrl->update_speed_controller();
     _wp_last_l1_update = AP_HAL::millis();
 
@@ -185,7 +185,8 @@ bool AC_WPNav_Heli::update_l1_wpnav()
 
 bool AC_WPNav_Heli::advance_l1_wp_target_along_track(float dt)
 {
-
+    static bool print_text = false;
+    static uint16_t pcnt = 2000;
     // set up for altitude calculation
     int32_t temp_alt;
     int32_t wp_alt = int32_t(_this_WP_pos.z);
@@ -219,6 +220,10 @@ bool AC_WPNav_Heli::advance_l1_wp_target_along_track(float dt)
     _L1_controller.update_waypoint(_prev_WP_pos.xy(), flex_this_WP_pos.xy());
     float acceptance_distance_m = 5.0f; // default to: if overflown - let it fly up to the point
 
+    float speed_forward = _inav.get_velocity_xy_cms().x*_ahrs.cos_yaw() + _inav.get_velocity_xy_cms().y*_ahrs.sin_yaw();
+    float stop_distance = 0.6f * sq(speed_forward) / _wp_accel_cmss;
+    Vector2f currpos_to_nextwp = _this_WP_pos.xy() - curr_pos.xy();
+
     if (!_stopping_at_waypoint) {
         float next_ground_course_cd = get_bearing_cd(_this_WP_pos.xy(), _next_WP_pos.xy());
         // get the heading of the current leg
@@ -226,13 +231,60 @@ bool AC_WPNav_Heli::advance_l1_wp_target_along_track(float dt)
 
         // work out the angle we need to turn through
         float next_turn_angle = wrap_180_cd(next_ground_course_cd - ground_course_cd) * 0.01f;
+        float angle_max = 45.0f;
+            if (print_text) {
+                gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: ground_course:%f next course:%f", double(ground_course_cd * 0.01f), double(next_ground_course_cd * 0.01f));
+                gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: turn angle:%f", double(180.0f - fabs(next_turn_angle)));
+            }
 
         acceptance_distance_m = _L1_controller.turn_distance(_wp_radius_cm * 0.01f, next_turn_angle);
+
+        if (180.0f - fabs(next_turn_angle) < 90) {
+            float next_turn_radius = sq(0.01f * _wp_speed_cms) * cos(angle_max / 57.3f)/(9.81f*safe_sqrt(1 - sq(cos(angle_max / 57.3))));
+            float required_turn_radius = 0.01f * _wp_radius_cm * tan(0.5f * (180.0f - fabs(next_turn_angle)) / 57.3);
+            if (print_text) {
+                gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: turn radius:%f required radius:%f", double(next_turn_radius), double(required_turn_radius));
+            }
+            if (required_turn_radius < next_turn_radius) {
+                float turn_speed = 100.0 * safe_sqrt(required_turn_radius * 9.81f / cos(angle_max / 57.3)) * safe_sqrt(safe_sqrt(1 - sq(cos(angle_max / 57.3))));
+                float brake_dist = stop_distance - 0.6f * sq(turn_speed) / _wp_accel_cmss;
+                if (currpos_to_nextwp.length() < acceptance_distance_m * 100.0f + 2.0f * brake_dist) {
+                    // aircraft must slow down to make turn
+                    _desired_speed = turn_speed;
+                }
+                if (print_text) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "L1Nav: brake dist:%f acceptance_dist:%f", double(brake_dist), double(acceptance_distance_m * 100.0f));
+                }
+            }
+        }
     }
-    Vector2f currpos_to_nextwp = _this_WP_pos.xy() - curr_pos.xy();
+    if (pcnt > 0) {
+        pcnt -= 1;
+        print_text = false;
+    } else {
+        pcnt = 2000;
+        print_text = true;
+    }
+
+    if (_in_turn == true) {
+        Vector2f currpos_to_turn_wp = _turn_WP_pos.xy() - curr_pos.xy();
+        if (currpos_to_turn_wp.length() > _turn_accept_dist) {
+            _desired_speed = _wp_speed_cms;
+            _in_turn = false;
+        }
+    }
+
     if ( currpos_to_nextwp.length() <= acceptance_distance_m * 100.0f) {
         _reached_l1_destination = true;
+        if (!_stopping_at_waypoint) {
+            _in_turn = true;
+            _turn_WP_pos.xy() = _this_WP_pos.xy();
+            _turn_accept_dist = acceptance_distance_m * 100.0f;
+        }
     }
+
+        
+
 
         // have we flown past the waypoint?
 //        if (location_passed_point(curr_loc, _prev_WP_loc, flex_next_WP_loc)) {
@@ -257,6 +309,12 @@ bool AC_WPNav_Heli::advance_l1_wp_target_along_track(float dt)
     _pos_control.set_alt_target_with_slew(temp_alt);
 
     return true;
+}
+
+// returns true if update_wpnav has been run very recently
+bool AC_WPNav_Heli::is_L1_active() const
+{
+    return (AP_HAL::millis() - _wp_last_l1_update) < 200;
 }
 
 /// using_l1_navigation - true when using L1 navigation controller

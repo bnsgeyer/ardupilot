@@ -156,6 +156,9 @@ public:
     // returns true if update_wpnav has been run very recently
     bool is_active() const;
 
+    // returns true if this leg is spline
+    bool is_spline() { return _this_leg_is_spline; }
+
     ///
     /// spline methods
     ///

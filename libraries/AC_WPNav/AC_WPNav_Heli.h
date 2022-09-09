@@ -61,6 +61,8 @@ public:
     // set stopping at waypoint
     void set_stopping_at_wp(bool stopping) { _stopping_at_waypoint = stopping; }
 
+    bool is_L1_active() const;
+
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -73,8 +75,11 @@ protected:
     Vector3f _prev_WP_pos;
     Vector3f _this_WP_pos;
     Vector3f _next_WP_pos;
+    Vector3f _turn_WP_pos;
 
-    bool is_L1nav_active;
+    bool _in_turn;
+    float _turn_accept_dist;
+
     uint8_t _l1_loiter_type; // set L1 Nav loiter type
 
 
@@ -89,4 +94,5 @@ private:
     bool        _reached_l1_destination;
     bool        _stopping_at_waypoint;
     uint32_t    _wp_last_l1_update;
+    float       _desired_speed;
 };
