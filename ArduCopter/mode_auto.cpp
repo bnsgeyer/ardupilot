@@ -976,7 +976,7 @@ void ModeAuto::wp_run()
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
 #if FRAME_CONFIG == HELI_FRAME
-    if (wp_nav->use_l1_navigation()) {
+    if (wp_nav->use_l1_navigation() && !wp_nav->is_spline()) {
         copter.failsafe_terrain_set_status(wp_nav->update_l1_wpnav());
     } else {
         // run waypoint controller
@@ -992,7 +992,7 @@ void ModeAuto::wp_run()
     pos_control->update_z_controller();
 
 #if FRAME_CONFIG == HELI_FRAME
-    if (wp_nav->use_l1_navigation()) {
+    if (wp_nav->use_l1_navigation() && !wp_nav->is_spline()) {
         target_yaw_rate += wp_nav->get_yaw_rate();
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav->get_l1_roll(), wp_nav->get_l1_pitch(), target_yaw_rate);
     } else {
@@ -1582,7 +1582,8 @@ void ModeAuto::do_spline_wp(const AP_Mission::Mission_Command& cmd)
 {
     // calculate default location used when lat, lon or alt is zero
     Location default_loc = copter.current_loc;
-    if (wp_nav->is_active() && wp_nav->reached_wp_destination()) {
+    if ((wp_nav->is_active() && wp_nav->reached_wp_destination())
+         || (wp_nav->is_L1_active() && wp_nav->reached_l1_destination())) {
         if (!wp_nav->get_wp_destination_loc(default_loc)) {
             // this should never happen
             INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
@@ -2188,7 +2189,7 @@ bool ModeAuto::verify_yaw()
 bool ModeAuto::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
 {
 #if FRAME_CONFIG == HELI_FRAME
-    if (wp_nav->use_l1_navigation()) {
+    if (wp_nav->use_l1_navigation() && !wp_nav->is_spline()) {
         // check if we have reached the waypoint
         if ( !copter.wp_nav->reached_l1_destination() ) {
             return false;
