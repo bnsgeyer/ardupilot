@@ -185,7 +185,7 @@ public:
     // Command a thrust vector in the earth frame and a heading angle and/or rate
     virtual void input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds, bool slew_yaw = true);
     virtual void input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_angle_cd, float heading_rate_cds);
-    void input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_cd) {input_thrust_vector_heading(thrust_vector, heading_cd, 0.0f);}
+    virtual void input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_cd) {input_thrust_vector_heading(thrust_vector, heading_cd, 0.0f);}
 
     // Converts thrust vector and heading angle to quaternion rotation in the earth frame
     Quaternion attitude_from_thrust_vector(Vector3f thrust_vector, float heading_angle) const;
@@ -375,6 +375,8 @@ public:
 
     // Sets the yaw rate shaping time constant
     void set_yaw_rate_tc(float input_tc) { _rate_y_tc = input_tc; }
+
+    virtual void set_accel_z_target(float accel_z) {}
 
     // User settable parameters
     static const struct AP_Param::GroupInfo var_info[];

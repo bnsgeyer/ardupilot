@@ -1,5 +1,6 @@
 #include "AC_AttitudeControl_Heli.h"
 #include <AP_HAL/AP_HAL.h>
+#include <GCS_MAVLink/GCS.h>
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl_Heli::var_info[] = {
@@ -489,9 +490,21 @@ void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_euler_rate_yaw(float 
     if (_inverted_flight) {
         euler_roll_angle_cd = wrap_180_cd(euler_roll_angle_cd + 18000);
     }
-    AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
-}
 
+/*    if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
+        if (_flags_heli.use_ff_collective) {
+            float pitch_cd = (2.0f * _throttle_in - 1.0f) * 9000.0f;
+            AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, pitch_cd, euler_yaw_rate_cds);
+            _motors.set_forward(-1.0f * euler_pitch_angle_cd / 3000.0f);
+        } else {
+            AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
+            _motors.set_forward(_motors.get_forward() - 0.2f * _dt * _euler_angle_target.y);
+        }
+    } else {
+*/
+        AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
+//    }
+}
 // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
 void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_angle_cd, bool slew_yaw)
 {
