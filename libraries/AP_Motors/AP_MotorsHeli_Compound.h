@@ -44,6 +44,13 @@ public:
         _tail_rotor(SRV_Channel::k_heli_tail_rsc, AP_MOTORS_HELI_COMPOUND_TAILRSC),
         _swashplate()
     {
+        // Set pitch low pass filter cut off frequency
+        _pitch_lpf.set_cutoff_frequency(1.0f);
+
+        dt = 1.0f / loop_rate;
+
+        _boost_in = 0.35;
+
         AP_Param::setup_object_defaults(this, var_info);
     };
 
@@ -152,4 +159,7 @@ protected:
     AP_Float        _boost_flat_pitch;          // flat pitch point for propellers
 
     bool            _acro_tail = false;
+
+    LowPassFilterFloat _pitch_lpf;
+    float           dt;
 };

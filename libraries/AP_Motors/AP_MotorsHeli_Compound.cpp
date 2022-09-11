@@ -441,7 +441,11 @@ void AP_MotorsHeli_Compound::update_motor_control(RotorControlState state)
 void AP_MotorsHeli_Compound::move_actuators(float roll_out, float pitch_out, float coll_in, float yaw_out)
 {
     float yaw_offset = 0.0f;
-    _boost_in = 0.0f;
+//    _boost_in = 0.35f;
+
+    const float boost_gain = 0.1f;
+
+    _boost_in -= boost_gain * dt * _forward_in;
 
     // initialize limits flag
     limit.throttle_lower = false;
