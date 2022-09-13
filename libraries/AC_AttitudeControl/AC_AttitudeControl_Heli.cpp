@@ -420,7 +420,6 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
     // output to motors
     _motors.set_roll(roll_out);
     _motors.set_pitch(pitch_out);
-    _motors.set_forward(_euler_angle_target.y);
 
     // Piro-Comp, or Pirouette Compensation is a pre-compensation calculation, which basically rotates the Roll and Pitch Rate I-terms as the
     // helicopter rotates in yaw.  Much of the built-up I-term is needed to tip the disk into the incoming wind.  Fast yawing can create an instability
@@ -479,9 +478,16 @@ void AC_AttitudeControl_Heli::set_throttle_out(float throttle_in, bool apply_ang
     _throttle_in = throttle_in;
     update_althold_lean_angle_max(throttle_in);
     _motors.set_throttle_filter_cutoff(filter_cutoff);
-    _motors.set_throttle(throttle_in);
+    if (_flags_heli.use_ff_collective) {
+        _motors.set_throttle(((AP_MotorsHeli&)_motors).get_fwd_flt_coll());  
+    } else {
+        _motors.set_throttle(throttle_in);
+    }
     // Clear angle_boost for logging purposes
     _angle_boost = 0.0f;
+
+        
+
 }
 
 // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
@@ -490,7 +496,15 @@ void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_euler_rate_yaw(float 
     if (_inverted_flight) {
         euler_roll_angle_cd = wrap_180_cd(euler_roll_angle_cd + 18000);
     }
-    AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
+
+    if (_flags_heli.use_ff_collective) {
+        float pitch_cd = (2.0f * _throttle_in - 1.0f) * 3000.0f;
+        AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, pitch_cd, euler_yaw_rate_cds);
+        _motors.set_forward(-1.0f * euler_pitch_angle_cd / 3000.0f);
+    } else {
+        AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
+        _motors.set_forward(_motors.get_forward() - 0.2f * _dt * _euler_angle_target.y);
+    }
 }
 
 // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing

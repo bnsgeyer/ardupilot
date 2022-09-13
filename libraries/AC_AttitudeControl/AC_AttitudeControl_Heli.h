@@ -50,6 +50,7 @@ public:
             _flags_heli.flybar_passthrough = false;
             _flags_heli.tail_passthrough = false;
             _flags_heli.do_piro_comp = false;
+            _flags_heli.use_ff_collective = false;
         }
 
     // pid accessors
@@ -106,6 +107,9 @@ public:
         _inverted_flight = inverted;
     }
     
+    // Set output throttle
+    void use_ff_collective(bool ff_collective) { _flags_heli.use_ff_collective = ff_collective; };
+
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -120,6 +124,7 @@ private:
         uint8_t flybar_passthrough  :   1;  // 1 if we should pass through pilots roll & pitch input directly to swash-plate
         uint8_t tail_passthrough    :   1;  // 1 if we should pass through pilots yaw input to tail
         uint8_t do_piro_comp        :   1;  // 1 if we should do pirouette compensation on roll/pitch
+        uint8_t use_ff_collective   :   1;  // 1 if we should set the forward flight collective
     } _flags_heli;
 
     //
