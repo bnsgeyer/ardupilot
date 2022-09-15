@@ -478,8 +478,12 @@ void AC_AttitudeControl_Heli::set_throttle_out(float throttle_in, bool apply_ang
     _throttle_in = throttle_in;
     update_althold_lean_angle_max(throttle_in);
     _motors.set_throttle_filter_cutoff(filter_cutoff);
-    if (_flags_heli.use_ff_collective) {
-        _motors.set_throttle(((AP_MotorsHeli&)_motors).get_fwd_flt_coll());  
+    if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
+        if (_flags_heli.use_ff_collective) {
+            _motors.set_throttle(((AP_MotorsHeli&)_motors).get_fwd_flt_coll());  
+        } else {
+            _motors.set_throttle(throttle_in);
+        }
     } else {
         _motors.set_throttle(throttle_in);
     }
@@ -497,13 +501,17 @@ void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_euler_rate_yaw(float 
         euler_roll_angle_cd = wrap_180_cd(euler_roll_angle_cd + 18000);
     }
 
-    if (_flags_heli.use_ff_collective) {
-        float pitch_cd = (2.0f * _throttle_in - 1.0f) * 3000.0f;
-        AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, pitch_cd, euler_yaw_rate_cds);
-        _motors.set_forward(-1.0f * euler_pitch_angle_cd / 3000.0f);
+    if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
+        if (_flags_heli.use_ff_collective) {
+            float pitch_cd = (2.0f * _throttle_in - 1.0f) * 3000.0f;
+            AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, pitch_cd, euler_yaw_rate_cds);
+            _motors.set_forward(-1.0f * euler_pitch_angle_cd / 3000.0f);
+        } else {
+            AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
+            _motors.set_forward(_motors.get_forward() - 0.2f * _dt * _euler_angle_target.y);
+        }
     } else {
         AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
-        _motors.set_forward(_motors.get_forward() - 0.2f * _dt * _euler_angle_target.y);
     }
 }
 
@@ -514,4 +522,19 @@ void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_yaw(float euler_roll_
         euler_roll_angle_cd = wrap_180_cd(euler_roll_angle_cd + 18000);
     }
     AC_AttitudeControl::input_euler_angle_roll_pitch_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_angle_cd, slew_yaw);
+}
+
+// Command a thrust vector and heading rate
+void AC_AttitudeControl_Heli::input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds, bool slew_yaw)
+{
+
+
+    AC_AttitudeControl::input_thrust_vector_rate_heading(thrust_vector, heading_rate_cds, slew_yaw);
+}
+
+// Command a thrust vector, heading and heading rate
+void AC_AttitudeControl_Heli::input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_angle_cd, float heading_rate_cds)
+{
+
+    AC_AttitudeControl::input_thrust_vector_heading(thrust_vector, heading_angle_cd, heading_rate_cds);
 }
