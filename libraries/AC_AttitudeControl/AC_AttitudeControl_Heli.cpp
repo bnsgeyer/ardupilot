@@ -503,7 +503,7 @@ void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_euler_rate_yaw(float 
 
     if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
         if (_flags_heli.use_ff_collective) {
-            float pitch_cd = (2.0f * _throttle_in - 1.0f) * 3000.0f;
+            float pitch_cd = (2.0f * _throttle_in - 1.0f) * 9000.0f;
             AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, pitch_cd, euler_yaw_rate_cds);
             _motors.set_forward(-1.0f * euler_pitch_angle_cd / 3000.0f);
         } else {
@@ -528,13 +528,56 @@ void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_yaw(float euler_roll_
 void AC_AttitudeControl_Heli::input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds, bool slew_yaw)
 {
 
+    if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
 
-    AC_AttitudeControl::input_thrust_vector_rate_heading(thrust_vector, heading_rate_cds, slew_yaw);
+        float pitch_cd = 0.0f;
+        // rotate accelerations into body forward-right frame
+        const float accel_forward = thrust_vector.x * _ahrs.cos_yaw() + thrust_vector.y * _ahrs.sin_yaw();
+        const float accel_right = -thrust_vector.x * _ahrs.sin_yaw() + thrust_vector.y * _ahrs.cos_yaw();
+
+        // update angle targets that will be passed to stabilize controller
+        float pitch_target = accel_to_angle(-accel_forward * 0.01) * 100;
+        float cos_pitch_target = cosf(pitch_target * M_PI / 18000.0f);
+        float roll_target = accel_to_angle((accel_right * cos_pitch_target)*0.01) * 100;
+
+        const float accel_x_target = constrain_float(accel_forward / AC_ATTITUDE_HELI_COMPOUND_ACCEL_X_MAX, -1.0f, 1.0f);
+        _motors.set_forward(accel_x_target);
+        if (_flags_heli.use_ff_collective) {
+            pitch_cd = (2.0f * _throttle_in - 1.0f) * 9000.0f;
+        }
+        AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(roll_target, pitch_cd, heading_rate_cds);
+
+    } else {
+        AC_AttitudeControl::input_thrust_vector_rate_heading(thrust_vector, heading_rate_cds, slew_yaw);
+    }
+
 }
 
 // Command a thrust vector, heading and heading rate
 void AC_AttitudeControl_Heli::input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_angle_cd, float heading_rate_cds)
 {
 
-    AC_AttitudeControl::input_thrust_vector_heading(thrust_vector, heading_angle_cd, heading_rate_cds);
+    if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
+        float pitch_cd = 0.0f;
+
+        float heading_angle = radians(heading_angle_cd * 0.01f);
+        // rotate accelerations into body forward-right frame
+        const float accel_forward = thrust_vector.x * cosf(heading_angle) + thrust_vector.y * sinf(heading_angle);
+        const float accel_right = -thrust_vector.x * cosf(heading_angle) + thrust_vector.y * sinf(heading_angle);
+
+        // update angle targets that will be passed to stabilize controller
+        float pitch_target = accel_to_angle(-accel_forward * 0.01) * 100;
+        float cos_pitch_target = cosf(pitch_target * M_PI / 18000.0f);
+        float roll_target = accel_to_angle((accel_right * cos_pitch_target)*0.01) * 100;
+
+        const float accel_x_target = constrain_float(accel_forward / AC_ATTITUDE_HELI_COMPOUND_ACCEL_X_MAX, -1.0f, 1.0f);
+        _motors.set_forward(accel_x_target);
+        if (_flags_heli.use_ff_collective) {
+            pitch_cd = (2.0f * _throttle_in - 1.0f) * 9000.0f;
+        }
+        AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(roll_target, pitch_cd, heading_rate_cds);
+    } else {
+        AC_AttitudeControl::input_thrust_vector_heading(thrust_vector, heading_angle_cd, heading_rate_cds);
+    }
+
 }
