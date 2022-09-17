@@ -470,7 +470,17 @@ void Copter::allocate_motors(void)
     }
     AP_Param::load_object_from_eeprom(attitude_control, ac_var_info);
         
-    pos_control = new AC_PosControl(*ahrs_view, inertial_nav, *motors, *attitude_control, scheduler.get_loop_period_s());
+#if FRAME_CONFIG != HELI_FRAME
+    if ((AP_Motors::motor_frame_class)g2.frame_class.get() == AP_Motors::MOTOR_FRAME_6DOF_SCRIPTING) {
+#if AP_SCRIPTING_ENABLED
+        pos_control = new AC_PosControl_Multi_6DoF(*ahrs_view, inertial_nav, *motors, *attitude_control, scheduler.get_loop_period_s());
+#endif // AP_SCRIPTING_ENABLED
+    } else {
+        pos_control = new AC_PosControl_Multi(*ahrs_view, inertial_nav, *motors, *attitude_control, scheduler.get_loop_period_s());
+    }
+#else
+    pos_control = new AC_PosControl_Heli(*ahrs_view, inertial_nav, *motors, *attitude_control, scheduler.get_loop_period_s());
+#endif
     if (pos_control == nullptr) {
         AP_BoardConfig::allocation_error("PosControl");
     }
