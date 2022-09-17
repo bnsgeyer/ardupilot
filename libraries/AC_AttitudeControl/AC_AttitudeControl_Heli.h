@@ -119,6 +119,8 @@ public:
     // Set output throttle
     void use_ff_collective(bool ff_collective) { _flags_heli.use_ff_collective = ff_collective; };
 
+    void set_accel_z_target(float accel_z) override { _accel_z_target = accel_z; }
+
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -173,5 +175,7 @@ private:
     AC_HELI_PID     _pid_rate_roll;
     AC_HELI_PID     _pid_rate_pitch;
     AC_HELI_PID     _pid_rate_yaw;
+
+    float _accel_z_target;
     
 };

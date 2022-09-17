@@ -1038,6 +1038,7 @@ Vector3f AC_PosControl::lean_angles_to_accel(const Vector3f& att_target_euler) c
 Vector3f AC_PosControl::get_thrust_vector() const
 {
     Vector3f accel_target = get_accel_target_cmss();
+    _attitude_control.set_accel_z_target(accel_target.z);
     accel_target.z = -GRAVITY_MSS * 100.0f;
     return accel_target;
 }

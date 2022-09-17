@@ -16,7 +16,6 @@ public:
             AP_Param::setup_object_defaults(this, var_info);
         }
 
-
 protected:
 
 };

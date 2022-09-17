@@ -543,7 +543,7 @@ void AC_AttitudeControl_Heli::input_thrust_vector_rate_heading(const Vector3f& t
         const float accel_x_target = constrain_float(accel_forward / AC_ATTITUDE_HELI_COMPOUND_ACCEL_X_MAX, -1.0f, 1.0f);
         _motors.set_forward(accel_x_target);
         if (_flags_heli.use_ff_collective) {
-            pitch_cd = (2.0f * _throttle_in - 1.0f) * 9000.0f;
+            pitch_cd = constrain_float(_accel_z_target / 500.0f, -1.0f, 1.0f) * 3000.0f;
         }
         AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(roll_target, pitch_cd, heading_rate_cds);
 
@@ -573,7 +573,7 @@ void AC_AttitudeControl_Heli::input_thrust_vector_heading(const Vector3f& thrust
         const float accel_x_target = constrain_float(accel_forward / AC_ATTITUDE_HELI_COMPOUND_ACCEL_X_MAX, -1.0f, 1.0f);
         _motors.set_forward(accel_x_target);
         if (_flags_heli.use_ff_collective) {
-            pitch_cd = (2.0f * _throttle_in - 1.0f) * 9000.0f;
+            pitch_cd = constrain_float(_accel_z_target / 500.0f, -1.0f, 1.0f) * 3000.0f;
         }
         AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(roll_target, pitch_cd, heading_rate_cds);
     } else {

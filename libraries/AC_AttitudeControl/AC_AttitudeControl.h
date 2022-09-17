@@ -376,6 +376,8 @@ public:
     // Sets the yaw rate shaping time constant
     void set_yaw_rate_tc(float input_tc) { _rate_y_tc = input_tc; }
 
+    virtual void set_accel_z_target(float accel_z) {}
+
     // User settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
