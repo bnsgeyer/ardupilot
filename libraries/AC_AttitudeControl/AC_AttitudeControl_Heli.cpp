@@ -1,5 +1,6 @@
 #include "AC_AttitudeControl_Heli.h"
 #include <AP_HAL/AP_HAL.h>
+#include <GCS_MAVLink/GCS.h>
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl_Heli::var_info[] = {
@@ -480,9 +481,12 @@ void AC_AttitudeControl_Heli::set_throttle_out(float throttle_in, bool apply_ang
     _motors.set_throttle_filter_cutoff(filter_cutoff);
     if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
         if (_flags_heli.use_ff_collective) {
-            _motors.set_throttle(((AP_MotorsHeli&)_motors).get_fwd_flt_coll());  
+            // smoothly set collective to forward flight collective
+            float collective_in = fwd_flt_coll_lpf.apply(((AP_MotorsHeli&)_motors).get_fwd_flt_coll(), _dt);
+            _motors.set_throttle(collective_in);  
         } else {
             _motors.set_throttle(throttle_in);
+            fwd_flt_coll_lpf.reset(throttle_in);
         }
     } else {
         _motors.set_throttle(throttle_in);
@@ -528,9 +532,16 @@ void AC_AttitudeControl_Heli::input_euler_angle_roll_pitch_yaw(float euler_roll_
 void AC_AttitudeControl_Heli::input_thrust_vector_rate_heading(const Vector3f& thrust_vector, float heading_rate_cds, bool slew_yaw)
 {
 
+    bool print_gcs = false;
+    float pitch_cd = 0.0f;
+
+    if (current_ff_flt_coll != _flags_heli.use_ff_collective) {
+        current_ff_flt_coll = _flags_heli.use_ff_collective;
+        print_gcs = true;
+    }
+
     if (strcmp(((AP_MotorsHeli&)_motors)._get_frame(), "HELI_COMPOUND") == 0) {
 
-        float pitch_cd = 0.0f;
         // rotate accelerations into body forward-right frame
         const float accel_forward = thrust_vector.x * _ahrs.cos_yaw() + thrust_vector.y * _ahrs.sin_yaw();
         const float accel_right = -thrust_vector.x * _ahrs.sin_yaw() + thrust_vector.y * _ahrs.cos_yaw();
@@ -544,13 +555,20 @@ void AC_AttitudeControl_Heli::input_thrust_vector_rate_heading(const Vector3f& t
         _motors.set_forward(accel_x_target);
         if (_flags_heli.use_ff_collective) {
             pitch_cd = constrain_float(_accel_z_target / 500.0f, -1.0f, 1.0f) * 3000.0f;
+            pitch_cd_lpf.reset(pitch_cd);
+        } else {
+            // smoothly set pitch_cd to zero
+            pitch_cd = pitch_cd_lpf.apply(0.0f, _dt);
         }
         AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw(roll_target, pitch_cd, heading_rate_cds);
 
     } else {
         AC_AttitudeControl::input_thrust_vector_rate_heading(thrust_vector, heading_rate_cds, slew_yaw);
     }
-
+    if (print_gcs) {
+        gcs().send_text(MAV_SEVERITY_NOTICE,"use ff coll; %s pitch_cd: %f", (_flags_heli.use_ff_collective)?"true ":"false ", pitch_cd);
+        print_gcs = false;
+    }
 }
 
 // Command a thrust vector, heading and heading rate

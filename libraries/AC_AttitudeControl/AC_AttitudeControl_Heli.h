@@ -52,6 +52,9 @@ public:
             _flags_heli.tail_passthrough = false;
             _flags_heli.do_piro_comp = false;
             _flags_heli.use_ff_collective = false;
+
+            pitch_cd_lpf.set_cutoff_frequency(0.5f);
+            fwd_flt_coll_lpf.set_cutoff_frequency(0.5f);
         }
 
     // pid accessors
@@ -177,5 +180,8 @@ private:
     AC_HELI_PID     _pid_rate_yaw;
 
     float _accel_z_target;
-    
+    bool current_ff_flt_coll;
+    LowPassFilterFloat pitch_cd_lpf;
+    LowPassFilterFloat fwd_flt_coll_lpf;
+
 };
