@@ -103,7 +103,11 @@ void Copter::update_heli_control_dynamics(void)
     if (position_ok()) {
         // get horizontal speed
         const float speed = inertial_nav.get_speed_xy_cms();
-        attitude_control->use_ff_collective(speed >= motors->get_transition_speed() * 100.0f);
+        if (speed > motors->get_transition_speed() * 100.0f) {
+            attitude_control->use_ff_collective(true);
+        } else if (speed < (motors->get_transition_speed() - 1.0f) * 100.0f) {
+            attitude_control->use_ff_collective(false);
+        }
     }else{
         // with no GPS, don't allow setting forward flight collective true
         attitude_control->use_ff_collective(false);
