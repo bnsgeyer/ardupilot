@@ -128,7 +128,7 @@ void Helicopter::update(const struct sitl_input &input)
         float Lv = -0.006;
         float Xu = -0.125;
         float Yv = -0.375;
-        float Zw = -0.375;
+        float Zw = -0.5;
 
         float tail_rotor = (_servos_delayed[3]-1000) / 1000.0f;
 
@@ -271,7 +271,7 @@ void Helicopter::update(const struct sitl_input &input)
         float Lv = -0.006;
         float Xu = -0.125;
         float Yv = -0.375;
-        float Zw = -0.375;
+        float Zw = -0.5;
 
         // determine RPM
         rpm[0] = update_rpm(motor_interlock, dt);
