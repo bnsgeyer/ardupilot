@@ -28,7 +28,7 @@
 #define AC_ATTITUDE_HELI_RATE_Y_FF_FILTER          20.0f
 #define AC_ATTITUDE_HELI_HOVER_ROLL_TRIM_DEFAULT    300
 #define AC_ATTITUDE_HELI_ACRO_OVERSHOOT_ANGLE_RAD   ToRad(30.0f)
-#define AC_ATTITUDE_HELI_COMPOUND_ACCEL_X_MAX       5.0f
+//#define AC_ATTITUDE_HELI_COMPOUND_ACCEL_X_MAX       5.0f
 
 class AC_AttitudeControl_Heli : public AC_AttitudeControl {
 public:
@@ -53,8 +53,8 @@ public:
             _flags_heli.do_piro_comp = false;
             _flags_heli.use_ff_collective = false;
 
-            pitch_cd_lpf.set_cutoff_frequency(0.5f);
-            fwd_flt_coll_lpf.set_cutoff_frequency(0.5f);
+//            pitch_cd_lpf.set_cutoff_frequency(0.5f);
+//            fwd_flt_coll_lpf.set_cutoff_frequency(0.5f);
         }
 
     // pid accessors
@@ -105,7 +105,7 @@ public:
 
     // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
     void input_euler_angle_roll_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_angle_cd, bool slew_yaw) override;
-    
+/*
     // Command a thrust vector, heading and heading rate
     void input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_angle_cd, float heading_rate_cds) override;
 
@@ -114,16 +114,17 @@ public:
 
     void input_thrust_vector_heading(const Vector3f& thrust_vector, float heading_cd) override {input_thrust_vector_heading(thrust_vector, heading_cd, 0.0f);}
 
-    // enable/disable inverted flight
-    void set_inverted_flight(bool inverted) override {
-        _inverted_flight = inverted;
-    }
-    
     // Set output throttle
     void use_ff_collective(bool ff_collective) { _flags_heli.use_ff_collective = ff_collective; };
 
     void set_accel_z_target(float accel_z) override { _accel_z_target = accel_z; }
 
+*/
+    // enable/disable inverted flight
+    void set_inverted_flight(bool inverted) override {
+        _inverted_flight = inverted;
+    }
+    
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -179,9 +180,9 @@ private:
     AC_HELI_PID     _pid_rate_pitch;
     AC_HELI_PID     _pid_rate_yaw;
 
-    float _accel_z_target;
+/*    float _accel_z_target;
     bool current_ff_flt_coll;
     LowPassFilterFloat pitch_cd_lpf;
     LowPassFilterFloat fwd_flt_coll_lpf;
-
+*/
 };
