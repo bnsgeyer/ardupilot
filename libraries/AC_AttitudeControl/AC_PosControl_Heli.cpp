@@ -24,14 +24,6 @@ const AP_Param::GroupInfo AC_PosControl_Heli::var_info[] = {
 void AC_PosControl_Heli::set_throttle_out(float throttle_in, bool apply_angle_boost, float filter_cutoff)
 {
 
-    if (strcmp(_motors_heli._get_frame(), "HELI_COMPOUND") == 0) {
-        if (use_ff_collective) {
-            // smoothly set collective to forward flight collective
-            throttle_in = _motors_heli.get_fwd_flt_coll();
-            filter_cutoff = 0.5f;
-        }
-    }
-
     _throttle_in = throttle_in;
     update_althold_lean_angle_max(throttle_in);
     _motors.set_throttle_filter_cutoff(filter_cutoff);
@@ -79,44 +71,6 @@ void AC_PosControl_Heli::update_z_controller()
 {
     AC_PosControl::update_z_controller();
 
-    // Acceleration Controller
-
-    // Calculate vertical acceleration
-    const float z_accel_meas = get_z_accel_cmss();
-
-    // ensure imax is always large enough to overpower hover throttle
-    if (_motors.get_throttle_hover() * 1000.0f > _pid_accel_z.imax()) {
-        _pid_accel_z.imax(_motors.get_throttle_hover() * 1000.0f);
-    }
-    float thr_out;
-    if (_vibe_comp_enabled) {
-        thr_out = get_throttle_with_vibration_override();
-    } else {
-        thr_out = _pid_accel_z.update_all(_accel_target.z, z_accel_meas, (_motors.limit.throttle_lower || _motors.limit.throttle_upper)) * 0.001f;
-        thr_out += _pid_accel_z.get_ff() * 0.001f;
-    }
-    thr_out += _motors.get_throttle_hover();
-
-    // Actuator commands
-
-    // send throttle to attitude controller with angle boost
-    set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ);
-
-    // Check for vertical controller health
-
-    // _speed_down_cms is checked to be non-zero when set
-    float error_ratio = _pid_vel_z.get_error() / _vel_max_down_cms;
-    _vel_z_control_ratio += _dt * 0.1f * (0.5 - error_ratio);
-    _vel_z_control_ratio = constrain_float(_vel_z_control_ratio, 0.0f, 2.0f);
-
-    // set vertical component of the limit vector
-    if (_motors.limit.throttle_upper) {
-        _limit_vector.z = 1.0f;
-    } else if (_motors.limit.throttle_lower) {
-        _limit_vector.z = -1.0f;
-    } else {
-        _limit_vector.z = 0.0f;
-    }
 }
 
 // get throttle using vibration-resistant calculation (uses feed forward with manually calculated gain)
@@ -246,6 +200,55 @@ void AC_PosControl_Heli::input_ned_accel_rate_heading(const Vector3f& thrust_vec
         gcs().send_text(MAV_SEVERITY_NOTICE,"use ff coll; %s pitch_cd: %f", (use_ff_collective)?"true ":"false ", pitch_cd);
         print_gcs = false;
     }
+    // Acceleration Controller
+
+    // Calculate vertical acceleration
+    const float z_accel_meas = get_z_accel_cmss();
+
+    // ensure imax is always large enough to overpower hover throttle
+    if (_motors.get_throttle_hover() * 1000.0f > _pid_accel_z.imax()) {
+        _pid_accel_z.imax(_motors.get_throttle_hover() * 1000.0f);
+    }
+    float thr_out;
+    if (_vibe_comp_enabled) {
+        thr_out = get_throttle_with_vibration_override();
+    } else {
+        thr_out = _pid_accel_z.update_all(_accel_target.z, z_accel_meas, (_motors.limit.throttle_lower || _motors.limit.throttle_upper)) * 0.001f;
+        thr_out += _pid_accel_z.get_ff() * 0.001f;
+    }
+    thr_out += _motors.get_throttle_hover();
+
+    float filter_cutoff = POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ;
+
+    if (strcmp(_motors_heli._get_frame(), "HELI_COMPOUND") == 0) {
+        if (use_ff_collective) {
+            // smoothly set collective to forward flight collective
+            thr_out = _motors_heli.get_fwd_flt_coll();
+            filter_cutoff = 0.5f;
+        }
+    }
+
+    // Actuator commands
+
+    // send throttle to attitude controller with angle boost
+    set_throttle_out(thr_out, true, filter_cutoff);
+
+    // Check for vertical controller health
+
+    // _speed_down_cms is checked to be non-zero when set
+    float error_ratio = _pid_vel_z.get_error() / _vel_max_down_cms;
+    _vel_z_control_ratio += _dt * 0.1f * (0.5 - error_ratio);
+    _vel_z_control_ratio = constrain_float(_vel_z_control_ratio, 0.0f, 2.0f);
+
+    // set vertical component of the limit vector
+    if (_motors.limit.throttle_upper) {
+        _limit_vector.z = 1.0f;
+    } else if (_motors.limit.throttle_lower) {
+        _limit_vector.z = -1.0f;
+    } else {
+        _limit_vector.z = 0.0f;
+    }
+
 }
 
 void AC_PosControl_Heli::controller_run()
