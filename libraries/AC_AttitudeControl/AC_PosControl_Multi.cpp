@@ -127,6 +127,11 @@ void AC_PosControl_Multi::update_z_controller()
 {
     AC_PosControl::update_z_controller();
 
+}
+
+void AC_PosControl_Multi::input_d_accel(const float target_z)
+{
+
     // Acceleration Controller
 
     // Calculate vertical acceleration
@@ -140,15 +145,17 @@ void AC_PosControl_Multi::update_z_controller()
     if (_vibe_comp_enabled) {
         thr_out = get_throttle_with_vibration_override();
     } else {
-        thr_out = _pid_accel_z.update_all(_accel_target.z, z_accel_meas, (_motors.limit.throttle_lower || _motors.limit.throttle_upper)) * 0.001f;
+        thr_out = _pid_accel_z.update_all(target_z, z_accel_meas, (_motors.limit.throttle_lower || _motors.limit.throttle_upper)) * 0.001f;
         thr_out += _pid_accel_z.get_ff() * 0.001f;
     }
     thr_out += _motors.get_throttle_hover();
 
+    float filter_cutoff = POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ;
+
     // Actuator commands
 
     // send throttle to attitude controller with angle boost
-    set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ);
+    set_throttle_out(thr_out, true, filter_cutoff);
 
     // Check for vertical controller health
 
@@ -319,7 +326,7 @@ void AC_PosControl_Multi::parameter_sanity_check()
 }
 
 // Command a thrust vector and heading rate
-void AC_PosControl_Multi::input_ned_accel_rate_heading(const Vector3f& thrust_vector, Orientation heading)
+void AC_PosControl_Multi::input_ned_accel_rate_heading(const Vector3f& thrust_vector, Orientation heading, const float target_z)
 {
     switch (heading.orientation_mode) {
     case OrientationMode::Rate_Only:
@@ -330,6 +337,46 @@ void AC_PosControl_Multi::input_ned_accel_rate_heading(const Vector3f& thrust_ve
         break;
     default:
         _attitude_control.input_thrust_vector_rate_heading(thrust_vector, 0.0);
+    }
+    // Acceleration Controller
+
+    // Calculate vertical acceleration
+    const float z_accel_meas = get_z_accel_cmss();
+
+    // ensure imax is always large enough to overpower hover throttle
+    if (_motors.get_throttle_hover() * 1000.0f > _pid_accel_z.imax()) {
+        _pid_accel_z.imax(_motors.get_throttle_hover() * 1000.0f);
+    }
+    float thr_out;
+    if (_vibe_comp_enabled) {
+        thr_out = get_throttle_with_vibration_override();
+    } else {
+        thr_out = _pid_accel_z.update_all(target_z, z_accel_meas, (_motors.limit.throttle_lower || _motors.limit.throttle_upper)) * 0.001f;
+        thr_out += _pid_accel_z.get_ff() * 0.001f;
+    }
+    thr_out += _motors.get_throttle_hover();
+
+    float filter_cutoff = POSCONTROL_THROTTLE_CUTOFF_FREQ_HZ;
+
+    // Actuator commands
+
+    // send throttle to attitude controller with angle boost
+    set_throttle_out(thr_out, true, filter_cutoff);
+
+    // Check for vertical controller health
+
+    // _speed_down_cms is checked to be non-zero when set
+    float error_ratio = _pid_vel_z.get_error() / _vel_max_down_cms;
+    _vel_z_control_ratio += _dt * 0.1f * (0.5 - error_ratio);
+    _vel_z_control_ratio = constrain_float(_vel_z_control_ratio, 0.0f, 2.0f);
+
+    // set vertical component of the limit vector
+    if (_motors.limit.throttle_upper) {
+        _limit_vector.z = 1.0f;
+    } else if (_motors.limit.throttle_lower) {
+        _limit_vector.z = -1.0f;
+    } else {
+        _limit_vector.z = 0.0f;
     }
 }
 

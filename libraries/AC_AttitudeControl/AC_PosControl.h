@@ -447,7 +447,10 @@ public:
         float yaw_rate_cds;
         OrientationMode orientation_mode;
     };
-    virtual void input_ned_accel_rate_heading(const Vector3f& thrust_vector, Orientation heading) {}
+
+    virtual void input_ned_accel_rate_heading(const Vector3f& thrust_vector, Orientation heading, const float target_z) {}
+
+    virtual void input_d_accel(const float target_z) {}
 
 protected:
 

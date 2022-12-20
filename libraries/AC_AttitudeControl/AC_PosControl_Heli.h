@@ -63,7 +63,9 @@ public:
     ///     aircraft when in standby.
     void standby_xyz_reset();
 
-    void input_ned_accel_rate_heading(const Vector3f& thrust_vector, Orientation heading) override;
+    void input_ned_accel_rate_heading(const Vector3f& thrust_vector, Orientation heading, const float target_z) override;
+
+    void input_d_accel(const float target_z) override;
 
     // run lowest level body-frame rate controller and send outputs to the motors
     void controller_run() override;

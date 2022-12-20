@@ -936,7 +936,6 @@ void AC_PosControl::update_z_controller()
     _accel_target.z += _accel_desired.z;
 }
 
-
 ///
 /// Accessors
 ///
