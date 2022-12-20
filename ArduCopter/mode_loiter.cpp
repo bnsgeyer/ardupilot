@@ -189,7 +189,7 @@ void ModeLoiter::run()
         AC_PosControl_Multi::Orientation heading;
         heading.orientation_mode = AC_PosControl::OrientationMode::Rate_Only;
         heading.yaw_rate_cds = target_yaw_rate;
-        pos_control->input_ned_accel_rate_heading(loiter_nav->get_thrust_vector(), heading);
+        pos_control->input_ned_accel_rate_heading(loiter_nav->get_thrust_vector(), heading, pos_control->get_accel_target_cmss().z);
 
         // get avoidance adjusted climb rate
         target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
