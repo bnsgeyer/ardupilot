@@ -195,7 +195,7 @@ void ModeGuided::wp_control_run()
     pos_control->update_z_controller();
 
     // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading());
+    pos_control->input_ned_accel_rate_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading(), pos_control->get_accel_target_cmss().z);
 }
 
 // initialise position controller
@@ -703,7 +703,7 @@ void ModeGuided::pos_control_run()
     pos_control->update_z_controller();
 
     // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading());
+    pos_control->input_ned_accel_rate_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading(), pos_control->get_accel_target_cmss().z);
 }
 
 // velaccel_control_run - runs the guided velocity controller
@@ -748,7 +748,7 @@ void ModeGuided::accel_control_run()
     pos_control->update_z_controller();
 
     // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading());
+    pos_control->input_ned_accel_rate_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading(), pos_control->get_accel_target_cmss().z);
 }
 
 // velaccel_control_run - runs the guided velocity and acceleration controller
@@ -804,7 +804,7 @@ void ModeGuided::velaccel_control_run()
     pos_control->update_z_controller();
 
     // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading());
+    pos_control->input_ned_accel_rate_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading(), pos_control->get_accel_target_cmss().z);
 }
 
 // pause_control_run - runs the guided mode pause controller
@@ -896,7 +896,7 @@ void ModeGuided::posvelaccel_control_run()
     pos_control->update_z_controller();
 
     // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading());
+    pos_control->input_ned_accel_rate_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading(), pos_control->get_accel_target_cmss().z);
 }
 
 // angle_control_run - runs the guided angle controller
@@ -962,7 +962,7 @@ void ModeGuided::angle_control_run()
 
     // call position controller
     if (guided_angle_state.use_thrust) {
-        attitude_control->set_throttle_out(guided_angle_state.thrust, true, copter.g.throttle_filt);
+        pos_control->set_throttle_out(guided_angle_state.thrust, true, copter.g.throttle_filt);
     } else {
         pos_control->set_pos_target_z_from_climb_rate_cm(climb_rate_cms);
         pos_control->update_z_controller();

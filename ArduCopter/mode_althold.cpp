@@ -33,7 +33,7 @@ void ModeAltHold::run()
 
     // get pilot desired lean angles
     float target_roll, target_pitch;
-    get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max_cd());
+    get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, pos_control->get_althold_lean_angle_max_cd());
 
     // get pilot's desired yaw rate
     float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
@@ -98,6 +98,10 @@ void ModeAltHold::run()
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 
-    // run the vertical position controller and set output throttle
+    // run the vertical position controller
     pos_control->update_z_controller();
+
+    // run the vertical acceleration controller and set throttle
+    pos_control->input_d_accel(pos_control->get_accel_target_cmss().z);
+
 }
