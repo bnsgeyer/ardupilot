@@ -74,6 +74,12 @@ void ModeStabilize_Heli::run()
         break;
     }
 
+    if (copter.channel_forward_throttle == nullptr) {
+        motors->set_forward(0.0f);
+    } else {
+        motors->set_forward(copter.channel_forward_throttle->norm_input());
+    }
+
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 

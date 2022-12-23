@@ -24,12 +24,19 @@ void Copter::init_rc_in()
     channel_pitch    = rc().channel(rcmap.pitch()-1);
     channel_throttle = rc().channel(rcmap.throttle()-1);
     channel_yaw      = rc().channel(rcmap.yaw()-1);
+    channel_forward_throttle = rc().find_channel_for_option(RC_Channel::AUX_FUNC::FWD_THR);
 
     // set rc channel ranges
     channel_roll->set_angle(ROLL_PITCH_YAW_INPUT_MAX);
     channel_pitch->set_angle(ROLL_PITCH_YAW_INPUT_MAX);
     channel_yaw->set_angle(ROLL_PITCH_YAW_INPUT_MAX);
     channel_throttle->set_range(1000);
+
+    // set forward throttle channel if configured
+    if (channel_forward_throttle != nullptr) {
+        channel_forward_throttle->set_angle(ROLL_PITCH_YAW_INPUT_MAX);
+        channel_forward_throttle->set_default_dead_zone(10);
+    }
 
     // set default dead zones
     default_dead_zones();
