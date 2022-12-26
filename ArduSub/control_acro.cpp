@@ -41,7 +41,7 @@ void Sub::acro_run()
     attitude_control.input_rate_bf_roll_pitch_yaw(target_roll, target_pitch, target_yaw);
 
     // output pilot's throttle without angle boost
-    pos_control.pos_control(channel_throttle->norm_input(), false, g.throttle_filt);
+    pos_control.set_throttle_out(channel_throttle->norm_input(), false, g.throttle_filt);
 
     //control_in is range 0-1000
     //radio_in is raw pwm value
