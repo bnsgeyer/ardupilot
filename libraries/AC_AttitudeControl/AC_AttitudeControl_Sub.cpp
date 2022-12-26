@@ -267,3 +267,8 @@ void AC_AttitudeControl_Sub::rate_controller_run()
 
     control_monitor_update();
 }
+
+// sanity check parameters.  should be called once before takeoff
+void AC_AttitudeControl_Sub::parameter_sanity_check()
+{
+}
