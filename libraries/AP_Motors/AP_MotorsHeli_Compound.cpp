@@ -167,7 +167,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_Compound::var_info[] = {
     // @Units: m/s
     // @Increment: 1
     // @User: Standard
-    AP_GROUPINFO("COLL_FWD_FLT", 22, AP_MotorsHeli_Compound, _coll_fwd_flt_deg, 0.0f),
+    AP_GROUPINFO("COLL_FWD_FLT", 22, AP_MotorsHeli_Compound, _coll_fwd_flt_deg, 4.0f),
 
     AP_GROUPEND
 };
