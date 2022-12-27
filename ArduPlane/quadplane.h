@@ -13,7 +13,7 @@
 #include <AC_AttitudeControl/AC_AttitudeControl_Multi.h> // Attitude control library
 #include <AC_AttitudeControl/AC_CommandModel.h>
 #include <AP_InertialNav/AP_InertialNav.h>
-#include <AC_AttitudeControl/AC_PosControl.h>
+#include <AC_AttitudeControl/AC_PosControl_Multi.h>
 #include <AC_AttitudeControl/AC_WeatherVane.h>
 #include <AC_WPNav/AC_WPNav.h>
 #include <AC_WPNav/AC_Loiter.h>
@@ -188,7 +188,7 @@ private:
     const struct AP_Param::GroupInfo *motors_var_info;
 
     AC_AttitudeControl_Multi *attitude_control;
-    AC_PosControl *pos_control;
+    AC_PosControl_Multi *pos_control;
     AC_WPNav *wp_nav;
     AC_Loiter *loiter_nav;
     
@@ -490,6 +490,11 @@ private:
         float target_accel;
         uint32_t last_pos_reset_ms;
         bool overshoot;
+//        bool is_throttle_mix_min;
+//        void set_throttle_mix_min;
+//        void set_throttle_mix_man;
+//        void set_throttle_mix_max;
+//        void set_throttle_mix_value;
     private:
         uint32_t last_state_change_ms;
         enum position_control_state state;

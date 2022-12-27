@@ -40,8 +40,8 @@ const AP_Param::GroupInfo QuadPlane::var_info[] = {
     // 12 ~ 16 were used by position, velocity and acceleration PIDs
 
     // @Group: P
-    // @Path: ../libraries/AC_AttitudeControl/AC_PosControl.cpp
-    AP_SUBGROUPPTR(pos_control, "P", 17, QuadPlane, AC_PosControl),
+    // @Path: ../libraries/AC_AttitudeControl/AC_PosControl_Multi.cpp
+    AP_SUBGROUPPTR(pos_control, "P", 17, QuadPlane, AC_PosControl_Multi),
 
     // @Param: VELZ_MAX
     // @DisplayName: Pilot maximum vertical speed up
@@ -722,7 +722,7 @@ bool QuadPlane::setup(void)
     }
 
     AP_Param::load_object_from_eeprom(attitude_control, attitude_control->var_info);
-    pos_control = new AC_PosControl(*ahrs_view, inertial_nav, *motors, *attitude_control, loop_delta_t);
+    pos_control = new AC_PosControl_Multi(*ahrs_view, inertial_nav, *motors, *attitude_control, loop_delta_t);
     if (!pos_control) {
         AP_BoardConfig::allocation_error("pos_control");
     }
@@ -1128,7 +1128,7 @@ bool QuadPlane::should_relax(void)
 {
     const uint32_t tnow = millis();
 
-    bool motor_at_lower_limit = motors->limit.throttle_lower && attitude_control->is_throttle_mix_min();
+    bool motor_at_lower_limit = motors->limit.throttle_lower && pos_control->is_throttle_mix_min();
     if (motors->get_throttle() < 0.01f) {
         motor_at_lower_limit = true;
     }
@@ -1624,7 +1624,7 @@ void SLT_Transition::update()
         plane.rollController.reset_I();
 
         // give full authority to attitude control
-        quadplane.attitude_control->set_throttle_mix_max(1.0f);
+        quadplane.pos_control->set_throttle_mix_max(1.0f);
         break;
     }
         
@@ -1647,7 +1647,7 @@ void SLT_Transition::update()
         // set zero throttle mix, to give full authority to
         // throttle. This ensures that the fixed wing controllers get
         // a chance to learn the right integrators during the transition
-        quadplane.attitude_control->set_throttle_mix_value(0.5*transition_scale);
+        quadplane.pos_control->set_throttle_mix_value(0.5*transition_scale);
 
         if (throttle_scaled < 0.01) {
             // ensure we don't drop all the way to zero or the motors
@@ -3373,7 +3373,7 @@ void QuadPlane::Log_Write_QControl_Tuning()
         LOG_PACKET_HEADER_INIT(LOG_QTUN_MSG),
         time_us             : AP_HAL::micros64(),
         throttle_in         : pos_control->get_throttle_in(),
-        angle_boost         : attitude_control->angle_boost(),
+        angle_boost         : pos_control->angle_boost(),
         throttle_out        : motors->get_throttle(),
         throttle_hover      : motors->get_throttle_hover(),
         desired_alt         : des_alt_m,
@@ -3381,7 +3381,7 @@ void QuadPlane::Log_Write_QControl_Tuning()
         baro_alt            : int32_t(plane.barometer.get_altitude() * 100),
         target_climb_rate   : target_climb_rate_cms,
         climb_rate          : int16_t(inertial_nav.get_velocity_z_up_cms()),
-        throttle_mix        : attitude_control->get_throttle_mix(),
+        throttle_mix        : pos_control->get_throttle_mix(),
         speed_scaler        : tailsitter.log_spd_scaler,
         transition_state    : transition->get_log_transition_state(),
         assist              : assisted_flight,
@@ -3775,16 +3775,16 @@ void QuadPlane::update_throttle_mix(void)
 
     // if disarmed or landed prioritise throttle
     if (!motors->armed()) {
-        attitude_control->set_throttle_mix_min();
+        pos_control->set_throttle_mix_min();
         return;
     }
 
     if (plane.control_mode->is_vtol_man_throttle()) {
         // manual throttle
         if (!is_positive(plane.get_throttle_input()) && !air_mode_active()) {
-            attitude_control->set_throttle_mix_min();
+            pos_control->set_throttle_mix_min();
         } else {
-            attitude_control->set_throttle_mix_man();
+            pos_control->set_throttle_mix_man();
         }
     } else {
         // autopilot controlled throttle
@@ -3814,9 +3814,9 @@ void QuadPlane::update_throttle_mix(void)
         }
 
         if (use_mix_max) {
-            attitude_control->set_throttle_mix_max(1.0);
+            pos_control->set_throttle_mix_max(1.0);
         } else {
-            attitude_control->set_throttle_mix_min();
+            pos_control->set_throttle_mix_min();
         }
     }
 }

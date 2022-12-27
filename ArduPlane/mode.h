@@ -8,7 +8,7 @@
 #include <AP_Vehicle/ModeReason.h>
 #include "quadplane.h"
 
-class AC_PosControl;
+class AC_PosControl_Multi;
 class AC_AttitudeControl_Multi;
 class AC_Loiter;
 class Mode
@@ -130,7 +130,7 @@ protected:
 
 #if HAL_QUADPLANE_ENABLED
     // References for convenience, used by QModes
-    AC_PosControl*& pos_control;
+    AC_PosControl_Multi*& pos_control;
     AC_AttitudeControl_Multi*& attitude_control;
     AC_Loiter*& loiter_nav;
     QuadPlane& quadplane;
