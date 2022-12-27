@@ -490,11 +490,6 @@ private:
         float target_accel;
         uint32_t last_pos_reset_ms;
         bool overshoot;
-//        bool is_throttle_mix_min;
-//        void set_throttle_mix_min;
-//        void set_throttle_mix_man;
-//        void set_throttle_mix_max;
-//        void set_throttle_mix_value;
     private:
         uint32_t last_state_change_ms;
         enum position_control_state state;
