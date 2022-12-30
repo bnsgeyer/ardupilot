@@ -39,9 +39,7 @@ const AP_Param::GroupInfo QuadPlane::var_info[] = {
 
     // 12 ~ 16 were used by position, velocity and acceleration PIDs
 
-    // @Group: P
-    // @Path: ../libraries/AC_AttitudeControl/AC_PosControl.cpp,../libraries/AC_AttitudeControl/AC_PosControl_Multi.cpp
-    AP_SUBGROUPPTR(pos_control, "P", 17, QuadPlane, AC_PosControl_Multi),
+    // 17 was used by AC_PosControl library.  It was moved to parameters.cpp
 
     // @Param: VELZ_MAX
     // @DisplayName: Pilot maximum vertical speed up

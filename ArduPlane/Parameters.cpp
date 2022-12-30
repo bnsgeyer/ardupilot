@@ -809,6 +809,12 @@ const AP_Param::Info Plane::var_info[] = {
     { AP_PARAM_GROUP, "Q_A_", Parameters::k_param_q_attitude_control,
       (const void *)&plane.quadplane.attitude_control,
       {group_info : AC_AttitudeControl_Multi::var_info}, AP_PARAM_FLAG_POINTER },
+
+    // @Group: Q_P_
+    // @Path: ../libraries/AC_AttitudeControl/AC_PosControl.cpp,../libraries/AC_AttitudeControl/AC_PosControl_Multi.cpp
+    { AP_PARAM_GROUP, "Q_P_", Parameters::k_param_q_pos_control,
+      (const void *)&plane.quadplane.pos_control,
+      {group_info : AC_PosControl_Multi::var_info}, AP_PARAM_FLAG_POINTER },
 #endif
 
     // @Group: RLL
