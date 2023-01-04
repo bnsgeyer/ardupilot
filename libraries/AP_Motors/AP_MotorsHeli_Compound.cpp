@@ -253,7 +253,7 @@ bool AP_MotorsHeli_Compound::init_outputs()
     SRV_Channels::set_angle(SRV_Channel::k_motor5, YAW_SERVO_MAX_ANGLE);
 
     // initialize propeller pitch
-    _forward_in = _forward_flat_pitch;
+    _forward_in = 2.0f * _forward_flat_pitch - 1.0f;
 
     set_initialised_ok(_frame_class == MOTOR_FRAME_HELI_COMPOUND);
 
@@ -566,7 +566,7 @@ void AP_MotorsHeli_Compound::move_yaw(float yaw_out)
         limit.yaw = true;
     }
 
-    forward_out = (2.0f - _forward_flat_pitch) * constrain_float(_forward_in, 0.0f, 1.0f);
+    forward_out = (2.0f - _forward_flat_pitch) * 0.5f * (constrain_float(_forward_in, -1.0f, 1.0f) + 1.0f);
 
     _servo4_out = forward_out - 1.0f + _forward_flat_pitch + _yaw_offset + yaw_out;
     _servo5_out = forward_out - 1.0f + _forward_flat_pitch - _yaw_offset - yaw_out;
