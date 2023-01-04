@@ -74,14 +74,16 @@ void ModeStabilize_Heli::run()
         break;
     }
 
-    if (copter.channel_forward_throttle == nullptr) {
-        motors->set_forward(0.0f);
-    } else {
-        motors->set_forward(copter.channel_forward_throttle->norm_input());
-    }
-
     // call attitude controller
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
+    // attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
+
+    // output fwd_accel_cmss if aux option in use
+    // lat_accel_cmss set to zero until aux option lateral thrust is implemented
+    float fwd_accel_cmss = 0.0f;
+    if (copter.channel_forward_throttle != nullptr) {
+       fwd_accel_cmss = copter.channel_forward_throttle->norm_input();
+    }
+    pos_control->input_euler_angle_roll_pitch_bf_accel_rate_heading(target_roll, target_pitch, target_yaw_rate, fwd_accel_cmss, 0.0f);
 
     // output pilot's throttle - note that TradHeli does not used angle-boost
     pos_control->set_throttle_out(pilot_throttle_scaled, false, g.throttle_filt);
