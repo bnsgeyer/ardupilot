@@ -1223,3 +1223,12 @@ bool AC_PosControl::has_good_timing(void) const
     // real boards are assumed to have good timing
     return true;
 }
+
+void AC_PosControl::input_euler_angle_roll_pitch_bf_accel_rate_heading(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float fwd_accel_cmss, float lat_accel_cmss)
+{
+
+    _attitude_control.input_euler_angle_roll_pitch_euler_rate_yaw(euler_roll_angle_cd, euler_pitch_angle_cd, euler_yaw_rate_cds);
+
+    _motors.set_forward(fwd_accel_cmss);
+
+}

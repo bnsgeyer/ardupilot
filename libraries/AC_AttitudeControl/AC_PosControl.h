@@ -452,6 +452,9 @@ public:
 
     virtual void input_d_accel(const float target_z) {}
 
+    void input_euler_angle_roll_pitch_bf_accel_rate_heading(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds, float fwd_accel_cmss, float lat_accel_cmss);
+
+
 protected:
 
     // calculate_yaw_and_rate_yaw - calculate the vehicle yaw and rate of yaw.
