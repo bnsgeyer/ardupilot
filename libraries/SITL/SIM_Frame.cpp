@@ -621,26 +621,9 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 
         const float m2ftd = 1.0f/0.3046f;
 	const float m2ftn = 0.3046f;
-//        const float lin_conv = 5.6f/7.3f;
-/*        const float rot_xx_conv = 87.5f/157.3f;
-        const float rot_yy_conv = 91.0f/148.7f;
-        const float rot_zz_conv = 12.9f/18.5f;
-        float Mu = 1.912f * m2ftd + rot_yy_conv;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; value has been converted from x8+ to x8m
-        float Lv = -1.644f * m2ftd + rot_xx_conv;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; value has been converted from x8+ to x8m
-        float Xu = -0.6112f * lin_conv;  // value has been converted from x8+ to x8m
-        float Yv = -0.4277f * lin_conv;  // value has been converted from x8+ to x8m
-        float Nr = -0.5392f + rot_zz_conv;  // value has been converted from x8+ to x8m
-        float Nped = 18.51f + rot_zz_conv;  // value has been converted from x8+ to x8m
-        float Zcol = -82.28f * m2ftn * lin_conv;  //value has been converted from ft/s/s to m/s/s
-	float Xlon = -17.97f * m2ftn * lin_conv;  //value has been converted from ft/s/s to m/s/s; value has been converted from x8+ to x8m
-	float Mlon = 148.7f + rot_yy_conv;  // value has been converted from x8+ to x8m
-	float Lag = 23.50f;
-	float Lead = 1.32f;
-	float Ylat = 18.49f * m2ftn * lin_conv;  //value has been converted from ft/s/s to m/s/s; value has been converted from x8+ to x8m
-	float Llat = 157.3f + rot_xx_conv;  // value has been converted from x8+ to x8m
 
-*/
-        float Mu = 1.63f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s;
+// first model identified from test data
+/*        float Mu = 1.63f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s;
         float Lv = -1.758f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; 
         float Xu = -0.474f;
         float Yv = -0.474f;
@@ -653,7 +636,41 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 	float Lead = 1.218f;
 	float Ylat = 8.8f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
 	float Llat = 108.63f;
+	uint16_t _time_delay = 12;
+*/
 
+// Updated model using additional sweeps 
+/*        float Mu = 1.87f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s;
+        float Lv = -1.856f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; 
+        float Xu = -0.17f;
+        float Yv = -0.3f;
+        float Nr = -0.746f;
+        float Nped = 12.97f;
+        float Zcol = -75.0f * m2ftn;  //value has been converted from ft/s/s to m/s/s
+	float Xlon = -8.56f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
+	float Mlon = 109.76f;
+	float Lag = 26.0f;
+	float Lead = 1.255f;
+	float Ylat = 8.56f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
+	float Llat = 109.0f;
+	uint16_t _time_delay = 0;
+*/
+
+// Updated model using additional sweeps and setting lag to 18
+        float Mu = 2.11f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s;
+        float Lv = -2.12f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; 
+        float Xu = -0.4f;
+        float Yv = -0.5f;
+        float Nr = -0.698f;
+        float Nped = 12.56f;
+        float Zcol = -75.0f * m2ftn;  //value has been converted from ft/s/s to m/s/s
+	float Xlon = -20.85f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
+	float Mlon = 123.9f;
+	float Lag = 18.0f;
+	float Lead = 1.542f;
+	float Ylat = 20.85f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
+	float Llat = 124.3f;
+	uint16_t _time_delay = 0;
 
         static uint64_t last_calc_us;
         static uint16_t printed = 2000;
@@ -664,8 +681,6 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
             dt = (now_us - last_calc_us)*1.0e-6;
         }
         last_calc_us = now_us;
-
-	uint16_t _time_delay = 12;
 
 	if (_time_delay == 0 || is_zero(dt)) {
 	    for (uint8_t i = 0; i < 3; i++) {
