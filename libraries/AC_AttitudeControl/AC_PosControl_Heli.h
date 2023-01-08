@@ -4,7 +4,7 @@
 #include <AP_Motors/AP_MotorsHeli.h>
 
 #define AC_ATTITUDE_HELI_ANGLE_LIMIT_THROTTLE_MAX   0.95f    // Heli's use 95% of max collective before limiting frame angle
-#define AC_POSCON_HELI_COMPOUND_ACCEL_X_MAX       5.0f
+#define AC_POSCON_HELI_COMPOUND_ACCEL_X_MAX       500.0f
 
 class AC_PosControl_Heli : public AC_PosControl {
 public:
