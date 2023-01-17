@@ -294,6 +294,7 @@ void ModeAutorotate::run()
                 _flags.touch_down_initial = 0;
                 _touchdown_time_ms = millis();
 				g2.arot.set_col_cutoff_freq(g2.arot.get_col_cushion_freq());
+				g2.arot.set_ground_clearance(copter.rangefinder.ground_clearance_cm_orient(ROTATION_PITCH_270));
             }
             g2.arot.set_dt(G_Dt);
             g2.arot.touchdown_controller();
@@ -313,10 +314,7 @@ void ModeAutorotate::run()
         {
         if (_flags.bail_out_initial == 1) {
                 // Functions and settings to be done once are done here.
-
-                #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-                    gcs().send_text(MAV_SEVERITY_INFO, "Bailing Out of Autorotation");
-                #endif
+                gcs().send_text(MAV_SEVERITY_INFO, "Bailing Out of Autorotation");            
 
                 // Set bail out timer remaining equal to the paramter value, bailout time 
                 // cannot be less than the motor spool-up time: BAILOUT_MOTOR_RAMP_TIME.
