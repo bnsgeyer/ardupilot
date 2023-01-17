@@ -1780,10 +1780,12 @@ public:
 
     bool init(bool ignore_checks) override;
     void run() override;
+    void set_roll_angle(const Quaternion &q, const Vector3f &ang_vel, float climb_rate_cms_or_thrust, bool use_thrust);
 
     bool is_autopilot() const override { return true; }
     bool requires_GPS() const override { return false; }
     bool has_manual_throttle() const override { return false; }
+    bool in_guided_mode() const override { return true; }
     bool allows_arming(AP_Arming::Method method) const override { return false; };
 
     static const struct AP_Param::GroupInfo  var_info[];
@@ -1806,6 +1808,14 @@ private:
     uint32_t _bail_time_start_ms;   // Time at start of bail out
     float _target_climb_rate_adjust;// Target vertical acceleration used during bail out phase
     float _target_pitch_adjust;     // Target pitch rate used during bail out phase
+    float guided_roll;
+    float guided_pitch;
+    float guided_yaw;
+    uint32_t _touchdown_time_ms;
+	bool hover_autorotation;
+	bool initial_energy_check;
+	float last_tti;
+	float time_to_impact;
 
     enum class Autorotation_Phase {
         ENTRY,

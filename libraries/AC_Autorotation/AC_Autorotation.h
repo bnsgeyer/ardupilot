@@ -18,10 +18,11 @@ class AC_Autorotation
 public:
 
     //Constructor
-    AC_Autorotation();
+    AC_Autorotation(AP_InertialNav& inav);
 
     //--------Functions--------
     void init_hs_controller(void);  // Initialise head speed controller
+	void guided_input_safety_check();
     void init_fwd_spd_controller(void);  // Initialise forward speed controller
     bool update_hs_glide_controller(float dt);  // Update head speed controller
     float get_rpm(void) const { return _current_rpm; }  // Function just returns the rpm as last read in this library
@@ -31,6 +32,7 @@ public:
     int16_t get_hs_set_point(void) { return _param_head_speed_set_point; }
     float get_col_entry_freq(void) { return _param_col_entry_cutoff_freq; }
     float get_col_glide_freq(void) { return _param_col_glide_cutoff_freq; }
+	float get_col_cushion_freq(void) { return _param_col_cushion_cutoff_freq; }
     float get_bail_time(void) { return _param_bail_time; }
     float get_last_collective() const { return _collective_out; }
     bool is_enable(void) { return _param_enable; }
@@ -41,9 +43,26 @@ public:
     int32_t get_pitch(void) const { return _pitch_target; }  // Get pitch target
     float calc_speed_forward(void);  // Calculates the forward speed in the horizontal plane
     void set_dt(float delta_sec);
+	void flare_controller();
+	void touchdown_controller();
+	void set_ground_distance(float radalt) { _radar_alt = radalt; }
+	void get_entry_speed();
+	float get_ground_distance() const { return _radar_alt; }
+	float get_time_to_ground() const { return _time_to_ground; }
+	void time_to_ground();
+	void set_collective_minimum_drag(float col_mid )const;
+	void get_collective_minimum_drag(float col_mid )  { _col_mid = col_mid; }
+    void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
+    void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
+	void set_ground_clearance(float ground_clearance) { _ground_clearance = ground_clearance; }
 
     // User Settable Parameters
     static const struct AP_Param::GroupInfo var_info[];
+	AP_Int16 _param_target_speed;
+	AP_Float _param_flr_alt;
+	AP_Float _param_time_to_ground;
+	AP_Int16 _param_head_speed_set_point;	
+	AP_Int8  _param_guided;
 
 private:
 
@@ -57,7 +76,6 @@ private:
     float _target_head_speed;        // Normalised target head speed.  Normalised by head speed set point RPM.
     float _p_term_hs;                // Proportional contribution to collective setting.
     float _ff_term_hs;               // Following trim feed forward contribution to collective setting.
-
     float _vel_target;               // Forward velocity target.
     float _pitch_target;             // Pitch angle target.
     float _accel_max;                // Maximum acceleration limit.
@@ -72,6 +90,17 @@ private:
     float _vel_p;                    // Forward velocity P term.
     float _vel_ff;                   // Forward velocity Feed Forward term.
     float _accel_out;                // Acceleration value used to calculate pitch target.
+	float _entry_sink_rate;
+    float _entry_alt;
+	float  _radar_alt;
+	float  _rpm_decay;
+	float _flare_entry_speed;
+	float _desired_speed;
+	float _time_to_ground;
+	float _distance_to_ground;
+	float _desired_sink_rate;
+	float _col_mid;
+	float _ground_clearance;
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
@@ -79,10 +108,10 @@ private:
     AP_Int8  _param_enable;
     AC_P _p_hs;
     AC_P _p_fw_vel;
-    AP_Int16 _param_head_speed_set_point;
-    AP_Int16 _param_target_speed;
+	AC_P _p_coll_tch;
     AP_Float _param_col_entry_cutoff_freq;
     AP_Float _param_col_glide_cutoff_freq;
+	AP_Float _param_col_cushion_cutoff_freq;
     AP_Int16 _param_accel_max;
     AP_Float _param_bail_time;
     AP_Int8  _param_rpm_instance;
@@ -99,4 +128,7 @@ private:
 
     // low pass filter for collective trim
     LowPassFilterFloat col_trim_lpf;
+	
+	//--------References to Other Libraries--------
+    AP_InertialNav&    _inav;
 };
