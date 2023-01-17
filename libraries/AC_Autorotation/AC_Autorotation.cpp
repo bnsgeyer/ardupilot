@@ -496,14 +496,9 @@ void AC_Autorotation::flare_controller()
 
 void AC_Autorotation::touchdown_controller()
 {
-	float _current_sink_rate = _inav.get_velocity_z_up_cms();	
-	 if(_radar_alt>=10.0f){
-			 _desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, 10.0f, _entry_alt);
-	}else{
-			_desired_sink_rate = 0.0f;
-	}
-	
-    _collective_out =  (_p_coll_tch.get_p(_desired_sink_rate - _current_sink_rate))*0.01f + _ff_term_hs;
+	float _current_sink_rate = _inav.get_velocity_z_up_cms();		
+   _desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, _ground_clearance, _entry_alt);	
+    _collective_out =  constrain_value((_p_coll_tch.get_p(_desired_sink_rate - _current_sink_rate))*0.01f + _ff_term_hs, 0.0f, 1.0f);
 	col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
 	_ff_term_hs = col_trim_lpf.apply(_collective_out, _dt);
     set_collective(HS_CONTROLLER_COLLECTIVE_CUTOFF_FREQ);	 

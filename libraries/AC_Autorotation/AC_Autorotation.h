@@ -51,6 +51,7 @@ public:
 	void get_collective_minimum_drag(float col_mid )  { _col_mid = col_mid; }
     void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
     void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
+	void set_ground_clearance(float ground_clearance) { _ground_clearance = ground_clearance; }
 
     // User Settable Parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -96,7 +97,7 @@ private:
 	float _distance_to_ground;
 	float _desired_sink_rate;
 	float _col_mid;
-
+	float _ground_clearance;
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
