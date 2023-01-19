@@ -200,14 +200,21 @@ const AP_Param::GroupInfo AP_MotorsHeli_RSC::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("GOV_TORQUE", 24, AP_MotorsHeli_RSC, _governor_torque, 30),
 	
-    // @Param: BLOUT_TIME
+    // @Param: AROT_ENG_T
     // @DisplayName: Time for in-flight power re-engagement
     // @Description: amount of seconds to move throttle output from idle to throttle curve position during manual autorotations  
     // @Range: 0 10
     // @Units: %
     // @Increment: 0.5
     // @User: Standard
-    AP_GROUPINFO("BLOUT_TIME", 25, AP_MotorsHeli_RSC, _rsc_bailout_time, AP_MOTORS_HELI_RSC_BAILOUT_TIME),
+    AP_GROUPINFO("AROT_ENG_T", 25, AP_MotorsHeli_RSC, _rsc_arot_engage_time, AP_MOTORS_HELI_RSC_AROT_ENGAGE_TIME),
+	
+    // @Param: AROT_MN_EN
+    // @DisplayName: Enable Manual Autorotations
+    // @Description: Allows you to enable (1) or disable (0) the manual autorotation capability.
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Standard
+    AP_GROUPINFO("AROT_MN_EN", 26, AP_MotorsHeli_RSC, _rsc_arot_man_enable, 0),
 
     AP_GROUPEND
 };
@@ -367,10 +374,10 @@ void AP_MotorsHeli_RSC::update_rotor_ramp(float rotor_ramp_input, float dt)
         ramp_time = _ramp_time;
     }
 
-    if (_rsc_bailout_time <= 0) {
+    if (_rsc_arot_engage_time <= 0) {
         bailout_time = 1;
     } else {
-        bailout_time = _rsc_bailout_time;
+        bailout_time = _rsc_arot_engage_time;
     }
 
     // ramp output upwards towards target
