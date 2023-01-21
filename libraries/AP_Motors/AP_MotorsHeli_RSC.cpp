@@ -308,6 +308,10 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
                     _autorotating =true;				
                 }
             } else {
+                if(_autorotating){
+                    gcs().send_text(MAV_SEVERITY_CRITICAL, "Autorotation Stopped");
+                    _autorotating =false;				
+                }
                 // set rotor control speed to idle speed parameter, this happens instantly and ignores ramping
                 if (_turbine_start && _starting == true ) {
                     _idle_throttle += 0.001f;
