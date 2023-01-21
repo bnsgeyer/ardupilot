@@ -165,6 +165,7 @@ private:
     float           _governor_torque_reference;   // governor reference for load calculations
     bool            _autorotating;
     bool            _bailing_out;
+    float           _idle_throttle;
 
     // update_rotor_ramp - slews rotor output scalar between 0 and 1, outputs float scalar to _rotor_ramp_output
     void            update_rotor_ramp(float rotor_ramp_input, float dt);
