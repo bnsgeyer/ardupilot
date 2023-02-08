@@ -325,8 +325,8 @@ void AC_Autorotation::Log_Write_Autorotation(void) const
 // @Description: Helicopter AutoRotation information
 // @Field: TimeUS: Time since system startup
 // @Field: P: P-term for headspeed controller response
-// @Field: hserr: head speed error; difference between current and desired head speed
-// @Field: ColOut: Collective Out
+// @Field: hs_e: head speed error; difference between current and desired head speed
+// @Field: C_Out: Collective Out
 // @Field: FFCol: FF-term for headspeed controller response
 // @Field: SpdF: current forward speed
 // @Field: DH: desired forward speed
