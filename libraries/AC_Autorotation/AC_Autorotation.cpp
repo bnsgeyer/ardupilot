@@ -170,7 +170,7 @@ AC_Autorotation::AC_Autorotation(AP_InertialNav& inav) :
     _inav(inav),
     _p_hs(HS_CONTROLLER_HEADSPEED_P),
     _p_fw_vel(AP_FW_VEL_P),
-	_p_coll_tch(TCH_P)
+    _p_coll_tch(TCH_P)
     {
         AP_Param::setup_object_defaults(this, var_info);
     }
@@ -178,7 +178,7 @@ AC_Autorotation::AC_Autorotation(AP_InertialNav& inav) :
 void AC_Autorotation::guided_input_safety_check()
 {	
      if ((_param_guided > 1) || (_param_guided < 0)) {
-            _param_guided = 0;
+            _param_guided.set(0);
         }
 }
 
