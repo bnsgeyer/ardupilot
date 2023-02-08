@@ -218,7 +218,7 @@ void Copter::heli_update_autorotation()
                 // use altitude above home for non-functioning rangefinder
                 break;
 
-            case RangeFinder::Status::OutOfRangeLow;
+            case RangeFinder::Status::OutOfRangeLow:
                 // altitude is close to zero (gear should deploy)
                 gnd_dist = 0;
                 break;

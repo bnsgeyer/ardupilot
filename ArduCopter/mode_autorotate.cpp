@@ -104,7 +104,7 @@ void ModeAutorotate::run()
 
     // gain scheduling for yaw
     float pitch_vel2 = MIN(fabsf(pitch_vel), 2000);
-    pilot_yaw_rate = ((float)pilot_roll/1.0f) * (1.0f - (pitch_vel2 / 5000.0f)) * g2.acro_y_rate / 45.0; 
+    pilot_yaw_rate = ((float)pilot_roll/1.0f) * (1.0f - (pitch_vel2 / 5000.0f)) * g2.command_model_pilot.get_rate() / 45.0; 
 
     roll_vel = constrain_float(roll_vel, -560.0f, 560.0f);
     pitch_vel = constrain_float(pitch_vel, -560.0f, 560.0f);
