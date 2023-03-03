@@ -155,21 +155,27 @@ private:
     struct servos_stored {
         uint16_t servo1;
         uint16_t servo2;
-        uint16_t servo3;
 
     };
-    uint16_t _servos_delayed[3];
+    uint16_t _servos_delayed[2];
     ObjectBuffer<servos_stored> *servos_stored_buffer;
     void push_to_buffer(const uint16_t servos_input[16]);
-    void pull_from_buffer(uint16_t servos_delayed[3]);
+    void pull_from_buffer(uint16_t servos_delayed[2]);
 
-    // PED
-    struct servo_stored_ped {
+    struct servo_stored {
         uint16_t servo;
     };
+    // PED
     uint16_t _servo_delayed_ped;
-    ObjectBuffer<servo_stored_ped> *servo_stored_ped_buffer;
+    ObjectBuffer<servo_stored> *servo_stored_ped_buffer;
     void push_to_buffer_ped(const uint16_t servos_input[16]);
     void pull_from_buffer_ped(uint16_t &servo_delayed);
+
+    // COL
+    uint16_t _servo_delayed_col;
+    ObjectBuffer<servo_stored> *servo_stored_col_buffer;
+    void push_to_buffer_col(const uint16_t servos_input[16]);
+    void pull_from_buffer_col(uint16_t &servo_delayed);
+
 };
 }

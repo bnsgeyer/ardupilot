@@ -623,20 +623,23 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 	const float m2ftn = 0.3046f;
 
 // Updated model using sweeps in aerodrome
-        float Mu = 1.414f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s;
-        float Lv = -1.353f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s; 
-        float Xu = -0.212f;
-        float Yv = -0.197f;
-        float Nr = -0.588f;
-        float Nped = 12.651f;
-        float Zcol = -75.0f * m2ftn;  //value has been converted from ft/s/s to m/s/s
-	float Xlon = -12.269f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
-	float Mlon = 112.316f;
-	float Lag = 25.58f;
-	float Lead = 1.341f;
-	float Ylat = 13.338f * m2ftn;  //value has been converted from ft/s/s to m/s/s;
-	float Llat = 143.42f;
-	uint16_t _time_delay = 0;
+        float Mu = 1.421f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s
+        float Lv = -1.36f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s
+        float Xu = -0.2179f;
+        float Yv = -0.201f;
+        float Nr = -0.5513f;
+        float Nped = 12.07f;
+        float Zcol = -71.64f * m2ftn;  //value has been converted from ft/s/s to m/s/s
+        float Zw = -0.4061 * m2ftd; //value has been converted from rad/s/s/ft/s to rad/s/s/m/s
+	float Xlon = -12.74f * m2ftn;  //value has been converted from ft/s/s to m/s/s
+	float Mlon = 112.93f;
+	float Lag = 24.94f;
+	float Lead = 1.54f;
+	float Ylat = 13.79f * m2ftn;  //value has been converted from ft/s/s to m/s/s
+	float Llat = 144.32f;
+	uint16_t _time_delay_rp = 0;
+	uint16_t _time_delay_ped = 14;
+	uint16_t _time_delay_col = 26;
 
         static uint64_t last_calc_us;
         static uint16_t printed = 2000;
@@ -648,17 +651,17 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
         }
         last_calc_us = now_us;
 
-	if (_time_delay == 0 || is_zero(dt)) {
-	    for (uint8_t i = 0; i < 3; i++) {
+	if (_time_delay_rp == 0 || is_zero(dt)) {
+	    for (uint8_t i = 0; i < 2; i++) {
 		_servos_delayed[i] = input.servos[i];
             }
 	} else if (servos_stored_buffer == nullptr) {
-            uint16_t buffer_size = constrain_int16(_time_delay, 1, 100) * 0.001f / dt;
+            uint16_t buffer_size = constrain_int16(_time_delay_rp, 1, 100) * 0.001f / dt;
             servos_stored_buffer = new ObjectBuffer<servos_stored>(buffer_size);
             while (servos_stored_buffer->space() != 0) {
                 push_to_buffer(input.servos);
             }
-            for (uint8_t i = 0; i < 3; i++) {
+            for (uint8_t i = 0; i < 2; i++) {
                 _servos_delayed[i] = input.servos[i];
             }
 	} else {
@@ -666,13 +669,25 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
             push_to_buffer(input.servos);
 	}
 
-	uint16_t _time_delay_ped = 29;
+	if (_time_delay_col == 0 || is_zero(dt)) {
+	    _servo_delayed_col = input.servos[2];
+	} else if (servo_stored_col_buffer == nullptr) {
+            uint16_t buffer_size = constrain_int16(_time_delay_col, 1, 100) * 0.001f / dt;
+            servo_stored_col_buffer = new ObjectBuffer<servo_stored>(buffer_size);
+            while (servo_stored_col_buffer->space() != 0) {
+                push_to_buffer_col(input.servos);
+            }
+            _servo_delayed_col = input.servos[2];
+	} else {
+            pull_from_buffer_col(_servo_delayed_col);
+            push_to_buffer_col(input.servos);
+	}
 
 	if (_time_delay_ped == 0 || is_zero(dt)) {
 	    _servo_delayed_ped = input.servos[3];
 	} else if (servo_stored_ped_buffer == nullptr) {
             uint16_t buffer_size = constrain_int16(_time_delay_ped, 1, 100) * 0.001f / dt;
-            servo_stored_ped_buffer = new ObjectBuffer<servo_stored_ped>(buffer_size);
+            servo_stored_ped_buffer = new ObjectBuffer<servo_stored>(buffer_size);
             while (servo_stored_ped_buffer->space() != 0) {
                 push_to_buffer_ped(input.servos);
             }
@@ -689,7 +704,7 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 
 	float _roll_in = (_servos_delayed[0] / 500.0f) - 3.0f;  // roll
 	float _pitch_in = (_servos_delayed[1] / 500.0f) - 3.0f;  //pitch
-	float _throttle_in = (_servos_delayed[2] / 1000.0f) - 1.0f;  // throttle
+	float _throttle_in = (_servo_delayed_col / 1000.0f) - 1.0f;  // throttle
 	float _yaw_in  = (_servo_delayed_ped / 500.0f) - 3.0f;  // yaw
 
 	if (is_zero(_throttle_in)) {
@@ -708,7 +723,7 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 
         float lateral_y_thrust = (Yv)*(velocity_air_bf.y)+(Ylat)*(Dlatlag);
         float lateral_x_thrust = (Xu)*(velocity_air_bf.x)+(Xlon)*Dlonlag;
-	float thrust = Zcol * Dcollag - (0.1 * velocity_air_bf.z) + 0.1f * Zcol;
+	float thrust = Zcol * Dcollag + (Zw * velocity_air_bf.z) + 0.1f * Zcol;
         body_accel = Vector3f(lateral_x_thrust, lateral_y_thrust, thrust);
 
 	float Dlatlag_dot = (-Lag)*(Dlatlag)+(Lag)*(_roll_in);
@@ -741,7 +756,6 @@ void Frame::push_to_buffer(const uint16_t servos_input[16])
     servos_stored sample;
     sample.servo1 = servos_input[0];
     sample.servo2 = servos_input[1];
-    sample.servo3 = servos_input[2];
 
     servos_stored_buffer->push(sample);
 
@@ -757,14 +771,35 @@ void Frame::pull_from_buffer(uint16_t servos_delayed[3])
     }
     servos_delayed[0] = sample.servo1;
     servos_delayed[1] = sample.servo2;
-    servos_delayed[2] = sample.servo3;
+
+}
+
+// push servo input to buffer COL
+void Frame::push_to_buffer_col(const uint16_t servos_input[16])
+{
+    servo_stored sample;
+    sample.servo = servos_input[2];
+
+    servo_stored_col_buffer->push(sample);
+
+}
+
+// pull servo delay from buffer COL
+void Frame::pull_from_buffer_col(uint16_t &servo_delayed)
+{
+    servo_stored sample;
+    if (!servo_stored_col_buffer->pop(sample)) {
+        // no sample
+        return;
+    }
+    servo_delayed = sample.servo;
 
 }
 
 // push servo input to buffer PED
 void Frame::push_to_buffer_ped(const uint16_t servos_input[16])
 {
-    servo_stored_ped sample;
+    servo_stored sample;
     sample.servo = servos_input[3];
 
     servo_stored_ped_buffer->push(sample);
@@ -772,14 +807,13 @@ void Frame::push_to_buffer_ped(const uint16_t servos_input[16])
 }
 
 // pull servo delay from buffer PED
-void Frame::pull_from_buffer_ped(uint16_t &servos_delayed)
+void Frame::pull_from_buffer_ped(uint16_t &servo_delayed)
 {
-    servo_stored_ped sample;
+    servo_stored sample;
     if (!servo_stored_ped_buffer->pop(sample)) {
         // no sample
         return;
     }
-    servos_delayed = sample.servo;
-
-
+    servo_delayed = sample.servo;
 }
+
