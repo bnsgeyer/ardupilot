@@ -2,6 +2,9 @@
 # encoding: utf-8
 
 def build(bld):
+
+    bld.env.DEFINES.append("AP_MOTORS_DENSITY_COMP=0")
+
     bld.ap_example(
         use='ap',
     )
