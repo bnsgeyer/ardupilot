@@ -1,5 +1,9 @@
 ArduPilot Copter Release Notes:
 ------------------------------------------------------------------
+Copter 4.2.3 USNTPS V1-rc3 15-Mar-2023
+Changes from 4.2.3
+1) Modify logging rates for position controller and EKF messages
+------------------------------------------------------------------
 Copter 4.2.3 30-Aug-2022
 Changes from 4.2.3-rc3
 1) OpenDroneId bug fix to consume open-drone-id-system-update message
