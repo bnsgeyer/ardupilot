@@ -22,8 +22,6 @@
 
 #define FLIP_THR_INC        0.20f   // throttle increase during FlipState::Start stage (under 45deg lean angle)
 #define FLIP_THR_DEC        0.24f   // throttle decrease during FlipState::Roll stage (between 45deg ~ -90deg roll)
-#define FLIP_ROTATION_RATE  40000   // rotation rate request in centi-degrees / sec (i.e. 400 deg/sec)
-#define FLIP_TIMEOUT_MS     2500    // timeout after 2.5sec.  Vehicle will switch back to original flight mode
 #define FLIP_RECOVERY_ANGLE 500     // consider successful recovery when roll is back within 5 degrees of original
 
 #define FLIP_ROLL_RIGHT      1      // used to set flip_dir
@@ -91,8 +89,12 @@ bool ModeFlip::init(bool ignore_checks)
 // should be called at 100hz or more
 void ModeFlip::run()
 {
+    // determine flip rotation rate
+    float flip_rate_cdps =g2.flip_rate_dps.get() * 100.0;
+    float flip_time_out_ms = 1000.0f * (36000.0f / MAX(flip_rate_cdps, 6000.0f) + 1.0);
+
     // if pilot inputs roll > 40deg or timeout occurs abandon flip
-    if (!motors->armed() || (abs(channel_roll->get_control_in()) >= 4000) || (abs(channel_pitch->get_control_in()) >= 4000) || ((millis() - start_time_ms) > FLIP_TIMEOUT_MS)) {
+    if (!motors->armed() || (abs(channel_roll->get_control_in()) >= 4000) || (abs(channel_pitch->get_control_in()) >= 4000) || ((millis() - start_time_ms) > flip_time_out_ms)) {
         _state = FlipState::Abandon;
     }
 
@@ -117,7 +119,7 @@ void ModeFlip::run()
 
     case FlipState::Start:
         // under 45 degrees request 400deg/sec roll or pitch
-        attitude_control->input_rate_bf_roll_pitch_yaw(FLIP_ROTATION_RATE * roll_dir, FLIP_ROTATION_RATE * pitch_dir, 0.0);
+        attitude_control->input_rate_bf_roll_pitch_yaw(flip_rate_cdps * roll_dir, flip_rate_cdps * pitch_dir, 0.0);
 
         // increase throttle
         throttle_out += FLIP_THR_INC;
@@ -136,7 +138,7 @@ void ModeFlip::run()
 
     case FlipState::Roll:
         // between 45deg ~ -90deg request 400deg/sec roll
-        attitude_control->input_rate_bf_roll_pitch_yaw(FLIP_ROTATION_RATE * roll_dir, 0.0, 0.0);
+        attitude_control->input_rate_bf_roll_pitch_yaw(flip_rate_cdps * roll_dir, 0.0, 0.0);
         // decrease throttle
         throttle_out = MAX(throttle_out - FLIP_THR_DEC, 0.0f);
 
@@ -148,7 +150,7 @@ void ModeFlip::run()
 
     case FlipState::Pitch_A:
         // between 45deg ~ -90deg request 400deg/sec pitch
-        attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, FLIP_ROTATION_RATE * pitch_dir, 0.0);
+        attitude_control->input_rate_bf_roll_pitch_yaw(0.0f, flip_rate_cdps * pitch_dir, 0.0);
         // decrease throttle
         throttle_out = MAX(throttle_out - FLIP_THR_DEC, 0.0f);
 
@@ -160,7 +162,7 @@ void ModeFlip::run()
 
     case FlipState::Pitch_B:
         // between 45deg ~ -90deg request 400deg/sec pitch
-        attitude_control->input_rate_bf_roll_pitch_yaw(0.0, FLIP_ROTATION_RATE * pitch_dir, 0.0);
+        attitude_control->input_rate_bf_roll_pitch_yaw(0.0, flip_rate_cdps * pitch_dir, 0.0);
         // decrease throttle
         throttle_out = MAX(throttle_out - FLIP_THR_DEC, 0.0f);
 

@@ -1160,6 +1160,17 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("TKOFF_RPM_MIN", 58, ParametersG2, takeoff_rpm_min, 0),
 #endif
 
+#if MODE_FLIP_ENABLED == ENABLED
+    // @Param: FLIP_RATE
+    // @DisplayName: Rotational Rate for Flip Mode
+    // @Description: Rotational Rate for Flip Mode in Deg/s.  Be sure to set a rotational rate that the aircraft can acheive.
+    // @Units: deg/s
+    // @Range: 60 1000
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("FLIP_RATE", 59, ParametersG2, flip_rate_dps, 400),
+#endif
+
     // ID 62 is reserved for the SHOW_... parameters from the Skybrush fork at
     // https://github.com/skybrush-io/ardupilot
 

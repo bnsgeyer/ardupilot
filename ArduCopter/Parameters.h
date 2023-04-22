@@ -673,6 +673,10 @@ public:
 #if HAL_WITH_ESC_TELEM && FRAME_CONFIG != HELI_FRAME
     AP_Int16 takeoff_rpm_min;
 #endif
+
+#if MODE_FLIP_ENABLED == ENABLED
+    AP_Int16 flip_rate_dps;
+#endif
 };
 
 extern const AP_Param::Info        var_info[];
