@@ -145,7 +145,7 @@ private:
 
     // internal variables
     float _hover_roll_trim_scalar = 0;              // scalar used to suppress Hover Roll Trim
-
+    float _forward_in;                              // forward thruster
 
     // This represents an euler axis-angle rotation vector from the vehicles
     // estimated attitude to the reference (setpoint) attitude used in the attitude

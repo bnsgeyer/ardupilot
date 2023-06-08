@@ -1,5 +1,6 @@
 #include "AC_AttitudeControl_Heli.h"
 #include <AP_HAL/AP_HAL.h>
+#include <GCS_MAVLink/GCS.h>
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl_Heli::var_info[] = {
@@ -415,6 +416,27 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
         _flags_heli.limit_pitch = true;
     } else {
         _flags_heli.limit_pitch = false;
+    }
+
+    if (_forward_in <= 0.0f && !_flags_heli.leaky_i) {
+        _forward_in += 0.0002f * radians(_ahrs.pitch_sensor * 0.01f);
+    } else {
+        // reduce to zero
+        if (_forward_in < 0.01) {
+            _forward_in = 0.0f;
+        } else {
+            _forward_in *= 0.999f;
+        }
+    }
+    _forward_in = constrain_float(_forward_in, -1.0f, 1.0f);
+    _motors.set_forward(_forward_in);
+
+    static uint16_t prnt_cnt;
+    if (prnt_cnt == 0) {
+        gcs().send_text(MAV_SEVERITY_INFO, "forward_in=%f ", (double)(_forward_in));
+        prnt_cnt = 2000;
+    } else {
+        prnt_cnt -= 1;
     }
 
     // output to motors
