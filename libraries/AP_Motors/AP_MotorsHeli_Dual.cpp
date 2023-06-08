@@ -440,10 +440,15 @@ float AP_MotorsHeli_Dual::get_swashplate (int8_t swash_num, int8_t swash_axis, f
             }
         } else if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH) {
         // pitch tilt
+            if (_forward_in > 0.3) {
+                _forward_in = 0.3;
+            } else if (_forward_in < -0.3) {
+                _forward_in = -0.3;
+            }
             if (swash_num == 1) {
-                swash_tilt = 0.0f;
+                swash_tilt = _forward_in;
             } else if (swash_num == 2) {
-                swash_tilt = 0.0f;
+                swash_tilt = _forward_in;
             }
         } else if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_COLL) {
         // collective
