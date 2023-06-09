@@ -110,6 +110,7 @@ protected:
     AP_Float        _yaw_scaler;                    // scaling factor applied to the yaw mixing
     AP_Float        _dcp_trim;                      // used to easily trim dcp axis
     AP_Float        _yaw_rev_expo;                  // yaw reverser smoothing exponent, for intermeshing mode only.
+    AP_Float        _cyclic_trim_limit;             // limit of longitudinal cyclic pitch trim on tandem heli
 
     // internal variables
     float _collective2_zero_thrst_pct;

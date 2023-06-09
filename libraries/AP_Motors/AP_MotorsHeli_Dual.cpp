@@ -205,6 +205,14 @@ const AP_Param::GroupInfo AP_MotorsHeli_Dual::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("YAW_REV_EXPO", 23, AP_MotorsHeli_Dual, _yaw_rev_expo, -1),
 
+    // @Param: CYC_TRIM_LIM
+    // @DisplayName: Cyclic Trim Limit
+    // @Description: For tandem mode only. Limit for longitudinal cyclic when used to trim for maintaining pitch attitude.  Limit applied in both cyclic directions.
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("CYC_TRIM_LIM", 24, AP_MotorsHeli_Dual, _cyclic_trim_limit, 0.0),
+
     AP_GROUPEND
 };
 
@@ -440,10 +448,15 @@ float AP_MotorsHeli_Dual::get_swashplate (int8_t swash_num, int8_t swash_axis, f
             }
         } else if (swash_axis == AP_MOTORS_HELI_DUAL_SWASH_AXIS_PITCH) {
         // pitch tilt
-            if (_forward_in > 0.3) {
-                _forward_in = 0.3;
-            } else if (_forward_in < -0.3) {
-                _forward_in = -0.3;
+            if (_forward_in >= _cyclic_trim_limit) {
+                _forward_in = _cyclic_trim_limit;
+                _heliflags.cyclic_trim_limit = true;
+            } else if (_forward_in <= -_cyclic_trim_limit) {
+                _forward_in = -_cyclic_trim_limit;
+                _heliflags.cyclic_trim_limit = true;
+            } else {
+                // clear limit flags
+                _heliflags.cyclic_trim_limit = false;
             }
             if (swash_num == 1) {
                 swash_tilt = _forward_in;
@@ -459,6 +472,14 @@ float AP_MotorsHeli_Dual::get_swashplate (int8_t swash_num, int8_t swash_axis, f
             }
         }
     }
+        static uint16_t prnt_cnt;
+    if (prnt_cnt == 0) {
+        gcs().send_text(MAV_SEVERITY_INFO, "motor -forward_in=%f limit %s", (double)(_forward_in), _heliflags.cyclic_trim_limit ? "true":"false");
+        prnt_cnt = 2000;
+    } else {
+        prnt_cnt -= 1;
+    }
+
     return swash_tilt;
 }
 

@@ -156,6 +156,9 @@ public:
     // use leaking integrator management scheme
     bool using_leaky_integrator() const { return heli_option(HeliOption::USE_LEAKY_I); }
 
+    // get_cyclic_trim_limt - accessor for when cyclic trim limit is reached
+    bool get_cyclic_trim_limit() const { return _heliflags.cyclic_trim_limit; }
+
     // Run arming checks
     bool arming_checks(size_t buflen, char *buffer) const override;
 
@@ -256,6 +259,7 @@ protected:
         uint8_t below_land_min_coll     : 1;    // true if collective is below H_COL_LAND_MIN
         uint8_t rotor_spooldown_complete : 1;    // true if the rotors have spooled down completely
         uint8_t start_engine            : 1;    // true if turbine start RC option is initiated
+        uint8_t cyclic_trim_limit       : 1;    // returns true if cyclic trim limit is reached
     } _heliflags;
 
     // parameters
