@@ -419,7 +419,9 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
     }
 
     if (_forward_in <= 0.0f && !_flags_heli.leaky_i) {
-        _forward_in += 0.0002f * radians(_ahrs.pitch_sensor * 0.01f);
+        if (!((AP_MotorsHeli&)_motors).get_cyclic_trim_limit() || _ahrs.pitch_sensor > 0) {
+            _forward_in += 0.0002f * radians(_ahrs.pitch_sensor * 0.01f);
+        }
     } else {
         // reduce to zero
         if (_forward_in < 0.01) {
@@ -433,7 +435,7 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
 
     static uint16_t prnt_cnt;
     if (prnt_cnt == 0) {
-        gcs().send_text(MAV_SEVERITY_INFO, "forward_in=%f ", (double)(_forward_in));
+        gcs().send_text(MAV_SEVERITY_INFO, "forward_in=%f limit %s", (double)(_forward_in), ((AP_MotorsHeli&)_motors).get_cyclic_trim_limit() ? "true":"false");
         prnt_cnt = 2000;
     } else {
         prnt_cnt -= 1;
