@@ -67,6 +67,7 @@ void Copter::check_dynamic_flight(void)
             }
         }
     }
+    attitude_control->set_dynamic_flight(heli_flags.dynamic_flight);
 }
 
 // update_heli_control_dynamics - pushes several important factors up into AP_MotorsHeli.
