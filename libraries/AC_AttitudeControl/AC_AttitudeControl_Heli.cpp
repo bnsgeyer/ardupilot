@@ -418,9 +418,11 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
         _flags_heli.limit_pitch = false;
     }
 
-    if (_forward_in <= 0.0f && !_flags_heli.leaky_i) {
-        if (!((AP_MotorsHeli&)_motors).get_cyclic_trim_limit() || _ahrs.pitch_sensor > 0) {
-            _forward_in += 0.0002f * radians(_ahrs.pitch_sensor * 0.01f);
+    // determine error between desired trim pitch attitude and current pitch attitude
+    float pitch_error = _ahrs.pitch_sensor * 0.01f - ((AP_MotorsHeli&)_motors).get_ff_trim_att();
+    if (_forward_in <= 0.0f && _flags_heli.dynamic_flight) {
+        if (!((AP_MotorsHeli&)_motors).get_cyclic_trim_limit() || pitch_error > 0) {
+            _forward_in += 0.0002f * radians(pitch_error);
         }
     } else {
         // reduce to zero

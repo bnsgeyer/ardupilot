@@ -94,6 +94,9 @@ public:
     // Set output throttle
     void set_throttle_out(float throttle_in, bool apply_angle_boost, float filt_cutoff) override;
 
+    // set_dynamic_flight - allows main code to set when the aircraft is in forward flight
+    void set_dynamic_flight(bool in_dynamic_flight) { _flags_heli.dynamic_flight = in_dynamic_flight; }
+
     // Command an euler roll and pitch angle and an euler yaw rate with angular velocity feedforward and smoothing
     void input_euler_angle_roll_pitch_euler_rate_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds) override;
 
@@ -119,6 +122,7 @@ private:
         uint8_t flybar_passthrough  :   1;  // 1 if we should pass through pilots roll & pitch input directly to swash-plate
         uint8_t tail_passthrough    :   1;  // 1 if we should pass through pilots yaw input to tail
         uint8_t do_piro_comp        :   1;  // 1 if we should do pirouette compensation on roll/pitch
+        uint8_t dynamic_flight      :   1;  // returns true if aircraft is in dynamic flight
     } _flags_heli;
 
     //
