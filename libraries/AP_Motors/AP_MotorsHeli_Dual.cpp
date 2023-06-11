@@ -213,6 +213,15 @@ const AP_Param::GroupInfo AP_MotorsHeli_Dual::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("CYC_TRIM_LIM", 24, AP_MotorsHeli_Dual, _cyclic_trim_limit, 0.0),
 
+    // @Param: FF_TRIM_ATT
+    // @DisplayName: Forward Flight Trim Attitude
+    // @Description: For tandem mode only. Trim pitch attitude for forward flight
+    // @Range: -5 5
+    // @Units: deg
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("FF_TRIM_ATT", 25, AP_MotorsHeli_Dual, _fwdflt_trim_att, 0.0),
+
     AP_GROUPEND
 };
 

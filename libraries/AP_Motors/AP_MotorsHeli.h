@@ -159,6 +159,9 @@ public:
     // get_cyclic_trim_limt - accessor for when cyclic trim limit is reached
     bool get_cyclic_trim_limit() const { return _heliflags.cyclic_trim_limit; }
 
+	//return trim pitch attitude
+    virtual float get_ff_trim_att() const { return 0.0f; }
+
     // Run arming checks
     bool arming_checks(size_t buflen, char *buffer) const override;
 

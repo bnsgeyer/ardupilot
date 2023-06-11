@@ -67,6 +67,9 @@ public:
     // servo_test - move servos through full range of movement
     void servo_test() override;
 
+	//return trim pitch attitude
+    float get_ff_trim_att() const override { return _fwdflt_trim_att; }
+
     // parameter_check - returns true if helicopter specific parameters are sensible, used for pre-arm check
     bool parameter_check(bool display_msg) const override;
 
@@ -111,7 +114,7 @@ protected:
     AP_Float        _dcp_trim;                      // used to easily trim dcp axis
     AP_Float        _yaw_rev_expo;                  // yaw reverser smoothing exponent, for intermeshing mode only.
     AP_Float        _cyclic_trim_limit;             // limit of longitudinal cyclic pitch trim on tandem heli
-
+    AP_Float        _fwdflt_trim_att;               // forward flight trim pitch attitude
     // internal variables
     float _collective2_zero_thrst_pct;
 };
