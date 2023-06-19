@@ -133,7 +133,10 @@ public:
     // accessor to get the land min collective flag signifying that current collective is lower than collective required for landing
     bool get_below_land_min_coll() const { return _heliflags.below_land_min_coll; }
 
-    // support passing init_targets_on_arming flag to greater code
+     // accessor to get the zero thrust collective
+    float get_coll_zero_thrust_pct() const { return _collective_zero_thrust_pct; }
+
+   // support passing init_targets_on_arming flag to greater code
     bool init_targets_on_arming() const override { return _heliflags.init_targets_on_arming; }
 
     // set_in_autorotation - allows main code to set when aircraft is in autorotation.
