@@ -477,8 +477,31 @@ void AC_AttitudeControl_Heli::set_throttle_out(float throttle_in, bool apply_ang
 {
     _throttle_in = throttle_in;
     update_althold_lean_angle_max(throttle_in);
+
+    if (_transition_count > 0) {
+        _transition_count -= 1;
+    } else {
+        _transition_count = 0;
+    }
+    float throttle_out = 0.0f;
+    if (_transition_count > 0) {
+        if ((_ahrs.roll_sensor >= -3000 && _ahrs.roll_sensor <= 3000) || _ahrs.roll_sensor >= 15000 || _ahrs.roll_sensor <= -15000) {
+            throttle_out = (throttle_in - ((AP_MotorsHeli&)_motors).get_coll_zero_thrust_pct()) / cosf(radians(_ahrs.roll_sensor * 0.01f)) + ((AP_MotorsHeli&)_motors).get_coll_zero_thrust_pct();
+        } else if ((_ahrs.roll_sensor > 3000 && _ahrs.roll_sensor < 15000) || (_ahrs.roll_sensor > -15000 && _ahrs.roll_sensor < -3000)) {
+//            float scale_factor = (_ahrs.roll_sensor - 3000) / 6000;
+            float scale_factor = cosf(radians(_ahrs.roll_sensor * 0.01f)) / cosf(radians(30.0f));
+            throttle_out = scale_factor * (throttle_in - ((AP_MotorsHeli&)_motors).get_coll_zero_thrust_pct())/ cosf(radians(30.0f)) + ((AP_MotorsHeli&)_motors).get_coll_zero_thrust_pct();
+//        } else if (_ahrs.roll_sensor >= 9000 && _ahrs.roll_sensor < 15000) {
+//            float scale_factor = (_ahrs.roll_sensor - 9000) / 6000;
+//            throttle_out = scale_factor * (((AP_MotorsHeli&)_motors).get_coll_zero_thrust_pct() - throttle_in)/ cosf(radians(30.0f)) + ((AP_MotorsHeli&)_motors).get_coll_zero_thrust_pct();
+        }
+    } else if (_inverted_flight) {
+        throttle_out = 1.0f - throttle_in;
+    } else {
+        throttle_out = throttle_in;
+    }
     _motors.set_throttle_filter_cutoff(filter_cutoff);
-    _motors.set_throttle(throttle_in);
+    _motors.set_throttle(throttle_out);
     // Clear angle_boost for logging purposes
     _angle_boost = 0.0f;
 }

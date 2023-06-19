@@ -28,6 +28,7 @@
 #define AC_ATTITUDE_HELI_RATE_Y_FF_FILTER          20.0f
 #define AC_ATTITUDE_HELI_HOVER_ROLL_TRIM_DEFAULT    300
 #define AC_ATTITUDE_HELI_ACRO_OVERSHOOT_ANGLE_RAD   ToRad(30.0f)
+#define AC_ATTITUDE_HELI_INVERTED_TRANSITION_TIME    3.0f
 
 class AC_AttitudeControl_Heli : public AC_AttitudeControl {
 public:
@@ -49,6 +50,7 @@ public:
             _flags_heli.flybar_passthrough = false;
             _flags_heli.tail_passthrough = false;
             _flags_heli.do_piro_comp = false;
+            _transition_count = 0;
         }
 
     // pid accessors
@@ -102,6 +104,9 @@ public:
     
     // enable/disable inverted flight
     void set_inverted_flight(bool inverted) override {
+        if (_inverted_flight != inverted) {
+            _transition_count = 1200;
+        }
         _inverted_flight = inverted;
     }
     
@@ -145,7 +150,7 @@ private:
 
     // internal variables
     float _hover_roll_trim_scalar = 0;              // scalar used to suppress Hover Roll Trim
-
+    uint16_t _transition_count;
 
     // This represents an euler axis-angle rotation vector from the vehicles
     // estimated attitude to the reference (setpoint) attitude used in the attitude
