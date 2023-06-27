@@ -106,6 +106,9 @@ void ModeLoiter::run()
 
         // get pilot desired climb rate
         target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+/*        if (copter.heli_flags.inverted_flight) {
+            target_climb_rate = -target_climb_rate;
+        } */
         target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
     } else {
         // clear out pilot desired acceleration in case radio failsafe event occurs and we do not switch to RTL for some reason

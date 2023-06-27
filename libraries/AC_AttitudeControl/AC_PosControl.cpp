@@ -5,6 +5,7 @@
 #include <AP_Motors/AP_Motors.h>    // motors library
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -823,20 +824,20 @@ void AC_PosControl::input_vel_accel_z(float &vel, float accel, bool limit_output
 void AC_PosControl::set_pos_target_z_from_climb_rate_cm(float vel)
 {
     // remove terrain offsets for flat earth assumption
-    _pos_target.z -= _pos_offset_z;
+/*    _pos_target.z -= _pos_offset_z;
     _vel_desired.z -= _vel_offset_z;
     _accel_desired.z -= _accel_offset_z;
-
+*/
     float vel_temp = vel;
     input_vel_accel_z(vel_temp, 0.0);
 
-    // update the vertical position, velocity and acceleration offsets
+/*    // update the vertical position, velocity and acceleration offsets
     update_pos_offset_z(_pos_offset_target_z);
 
     // add terrain offsets
     _pos_target.z += _pos_offset_z;
     _vel_desired.z += _vel_offset_z;
-    _accel_desired.z += _accel_offset_z;
+    _accel_desired.z += _accel_offset_z; */
 }
 
 /// land_at_climb_rate_cm - adjusts target up or down using a commanded climb rate in cm/s
@@ -940,7 +941,10 @@ void AC_PosControl::update_z_controller()
 
     // Velocity Controller
 
-    const float curr_vel_z = _inav.get_velocity_z_up_cms();
+    float curr_vel_z = _inav.get_velocity_z_up_cms();
+        if (_ahrs.roll_sensor > 9000 && _ahrs.roll_sensor < -9000) {
+            curr_vel_z = -curr_vel_z;
+        }
     _accel_target.z = _pid_vel_z.update_all(_vel_target.z, curr_vel_z, _dt, _motors.limit.throttle_lower, _motors.limit.throttle_upper);
     _accel_target.z *= AP::ahrs().getControlScaleZ();
 
@@ -951,6 +955,14 @@ void AC_PosControl::update_z_controller()
 
     // Calculate vertical acceleration
     const float z_accel_meas = get_z_accel_cmss();
+
+    static float prntcnt = 2000;
+    if (prntcnt < 1) {
+        gcs().send_text(MAV_SEVERITY_INFO, "z_accel = %f", z_accel_meas);
+        prntcnt = 2000;
+    } else {
+        prntcnt -= 1;
+    }
 
     // ensure imax is always large enough to overpower hover throttle
     if (_motors.get_throttle_hover() * 1000.0f > _pid_accel_z.imax()) {

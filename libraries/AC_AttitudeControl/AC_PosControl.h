@@ -393,7 +393,13 @@ public:
     void standby_xyz_reset();
 
     // get earth-frame Z-axis acceleration with gravity removed in cm/s/s with +ve being up
-    float get_z_accel_cmss() const { return -(_ahrs.get_accel_ef().z + GRAVITY_MSS) * 100.0f; }
+    float get_z_accel_cmss() const {
+        if (_ahrs.roll_sensor < 9000 && _ahrs.roll_sensor > -9000) {
+            return -(_ahrs.get_accel_ef().z + GRAVITY_MSS) * 100.0f;
+        } else {
+            return (_ahrs.get_accel_ef().z + GRAVITY_MSS) * 100.0f;
+        }
+    }
 
     static const struct AP_Param::GroupInfo var_info[];
 
