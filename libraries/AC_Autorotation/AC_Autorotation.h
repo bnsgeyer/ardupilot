@@ -52,6 +52,9 @@ public:
     void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
     void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
 	void set_ground_clearance(float ground_clearance) { _ground_clearance = ground_clearance; }
+    void init_est_radar_alt();
+    void update_est_radar_alt();
+    float get_est_alt() const {return _est_alt;}
 
     // User Settable Parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -60,6 +63,7 @@ public:
 	AP_Float _param_time_to_ground;
 	AP_Int16 _param_head_speed_set_point;	
 	AP_Int8  _param_guided;
+    bool  _using_rfnd;
 
 private:
 
@@ -89,15 +93,19 @@ private:
     float _accel_out;                // Acceleration value used to calculate pitch target.
 	float _entry_sink_rate;
     float _entry_alt;
-	float  _radar_alt;
-	float  _rpm_decay;
-	float _flare_entry_speed;
-	float _desired_speed;
-	float _time_to_ground;
-	float _distance_to_ground;
-	float _desired_sink_rate;
-	float _col_mid;
-	float _ground_clearance;
+    float _radar_alt;
+    float _rpm_decay;
+    float _flare_entry_speed;
+    float _desired_speed;
+    float _time_to_ground;
+    float _distance_to_ground;
+    float _desired_sink_rate;
+    float _col_mid;
+    float _ground_clearance;
+    float _est_alt;
+    float _descent_rate_filtered;
+    float _radar_alt_prev;
+    float _radar_alt_calc;
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
@@ -126,6 +134,9 @@ private:
     // low pass filter for collective trim
     LowPassFilterFloat col_trim_lpf;
 	
+    // low pass filter for descent rate
+    LowPassFilterFloat descent_rate_lpf;
+
 	//--------References to Other Libraries--------
     AP_InertialNav&    _inav;
 };

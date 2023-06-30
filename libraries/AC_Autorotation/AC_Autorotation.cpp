@@ -457,8 +457,7 @@ void AC_Autorotation::flare_controller()
     _speed_forward = calc_speed_forward(); //(cm/s)
     _delta_speed_fwd = _speed_forward - _speed_forward_last; //(cm/s)
     _speed_forward_last = _speed_forward; //(cm/s)
-    float current_alt = _radar_alt;
-    _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, current_alt, -(_inav.get_velocity_z_up_cms()*_param_time_to_ground), _param_flr_alt);
+    _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, _est_alt, -(_inav.get_velocity_z_up_cms()*_param_time_to_ground), _param_flr_alt);
 
 	// get p
 	_vel_p = _p_fw_vel.get_p(_desired_speed - _speed_forward);
@@ -497,7 +496,7 @@ void AC_Autorotation::flare_controller()
 void AC_Autorotation::touchdown_controller()
 {
 	float _current_sink_rate = _inav.get_velocity_z_up_cms();		
-   _desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, _ground_clearance, _entry_alt);	
+   _desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _est_alt, _ground_clearance, _entry_alt);
     _collective_out =  constrain_value((_p_coll_tch.get_p(_desired_sink_rate - _current_sink_rate))*0.01f + _ff_term_hs, 0.0f, 1.0f);
 	col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
 	_ff_term_hs = col_trim_lpf.apply(_collective_out, _dt);
@@ -519,4 +518,45 @@ void AC_Autorotation::time_to_ground()
 		}	
 }	
 
+void AC_Autorotation::init_est_radar_alt()
+{
+    // set descent rate filter cutoff frequency
+    descent_rate_lpf.set_cutoff_frequency(10.0f);
+
+    // Reset feed descent rate filter
+    descent_rate_lpf.reset(_inav.get_velocity_z_up_cms());
+
+    _radar_alt_calc = _radar_alt;
+    _radar_alt_prev = _radar_alt;
+    _est_alt = _radar_alt;
+
+}
+
+void AC_Autorotation::update_est_radar_alt()
+{
+	if(_using_rfnd) {
+        // continue calculating radar altitude based on the most recent update and descent rate
+        if (is_equal(_radar_alt, _radar_alt_prev)) {
+            _radar_alt_calc += (_inav.get_velocity_z_up_cms() * _dt);
+        } else {
+            _radar_alt_calc = _radar_alt;
+            _radar_alt_prev = _radar_alt;
+        }
+        // determine the error between a calculated radar altitude based on each update at 20 hz and the estimated update
+        float alt_error = _radar_alt_calc - _est_alt;
+        // drive the estimated altitude to the actual altitude with a proportional altitude error feedback
+        float descent_rate_corr = _inav.get_velocity_z_up_cms() + alt_error * 2.0f;
+        // update descent rate filter
+        _descent_rate_filtered = descent_rate_lpf.apply(descent_rate_corr);
+        _est_alt += (_descent_rate_filtered * _dt);
+	} else {
+		_est_alt = _radar_alt;
+        // Reset feed descent rate filter
+        descent_rate_lpf.reset(_inav.get_velocity_z_up_cms());
+        // reset variables until using rangefinder
+        _radar_alt_calc = _radar_alt;
+        _radar_alt_prev = _radar_alt;
+        _est_alt = _radar_alt;
+    }
+}
 
