@@ -160,11 +160,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(auto_disarm_check,     10,     50,  27),
     SCHED_TASK(auto_trim,             10,     75,  30),
 #if RANGEFINDER_ENABLED == ENABLED
-#if MODE_AUTOROTATE_ENABLED == ENABLED
-    SCHED_TASK(read_rangefinder,      100,    100,  33),
-#else
     SCHED_TASK(read_rangefinder,      20,    100,  33),
-#endif
 #endif
 #if HAL_PROXIMITY_ENABLED
     SCHED_TASK_CLASS(AP_Proximity,         &copter.g2.proximity,        update,         200,  50,  36),

@@ -41,6 +41,7 @@ bool ModeAutorotate::init(bool ignore_checks)
     // This must be done before RPM value is fetched
     g2.arot.init_hs_controller();
     g2.arot.init_fwd_spd_controller();
+    g2.arot.init_est_radar_alt();
 
     // Retrieve rpm and start rpm sensor health checks
     _initial_rpm = g2.arot.get_rpm(true);
@@ -122,6 +123,14 @@ void ModeAutorotate::run()
 
     // Current time
     uint32_t now = millis(); //milliseconds
+    float alt = g2.arot.get_ground_distance();
+    // have autorotation library update estimated radar altitude
+    g2.arot.update_est_radar_alt();
+    if(alt < 4800){
+        g2.arot._using_rfnd = true;
+    }else{
+        g2.arot._using_rfnd = false;
+    }
 
     // Initialise internal variables
     float curr_vel_z = inertial_nav.get_velocity_z_up_cms();   // Current vertical descent
@@ -159,7 +168,7 @@ void ModeAutorotate::run()
                  // Flight phase can be progressed to steady state glide
                  phase_switch = Autorotation_Phase::SS_GLIDE;
                  }
-          }else if( time_to_impact > g2.arot._param_time_to_ground && g2.arot.get_ground_distance() < g2.arot._param_flr_alt){
+          }else if( time_to_impact > g2.arot._param_time_to_ground && g2.arot.get_est_alt() < g2.arot._param_flr_alt){
 		phase_switch = Autorotation_Phase::FLARE;
 	    }else if( time_to_impact <= g2.arot._param_time_to_ground ){
 			phase_switch = Autorotation_Phase::TOUCH_DOWN;
