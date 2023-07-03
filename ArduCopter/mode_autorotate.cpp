@@ -87,13 +87,9 @@ void ModeAutorotate::run()
     }
 
     float pilot_roll, pilot_pitch, pilot_yaw_rate;
-    if (g2.arot._param_guided == 1){
-        pilot_roll = guided_roll;				
-    } else {
-        // Operator is in control of roll and yaw.  Controls act as if in stabilise flight mode.  Pitch 
-        // is controlled by speed-height controller.	
-        get_pilot_desired_lean_angles(pilot_roll, pilot_pitch, copter.aparm.angle_max, copter.aparm.angle_max);						
-    }
+    // Operator is in control of roll and yaw.  Controls act as if in stabilise flight mode.  Pitch 
+    // is controlled by speed-height controller.	
+    get_pilot_desired_lean_angles(pilot_roll, pilot_pitch, copter.aparm.angle_max, copter.aparm.angle_max);						
 		
     float target_roll;
 
@@ -409,14 +405,6 @@ void ModeAutorotate::warning_message(uint8_t message_n)
             break;
         }
     }
-}
-
-void ModeAutorotate::set_roll_angle(const Quaternion &q, const Vector3f &ang_vel, float climb_rate_cms_or_thrust, bool use_thrust)
-{
-    q.to_euler(guided_roll, guided_pitch, guided_yaw);
-    guided_roll = ToDeg(guided_roll) * 100.0f;
-    guided_pitch = ToDeg(guided_pitch) * 100.0f;
-    guided_yaw = ToDeg(guided_yaw) * 100.0f;
 }
 
 #endif
