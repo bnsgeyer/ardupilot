@@ -19,7 +19,6 @@ public:
 
     //--------Functions--------
     void init_hs_controller(void);  // Initialise head speed controller
-	void guided_input_safety_check();
     void init_fwd_spd_controller(void);  // Initialise forward speed controller
     bool update_hs_glide_controller(float dt);  // Update head speed controller
     float get_rpm(void) const { return _current_rpm; }  // Function just returns the rpm as last read in this library
@@ -62,7 +61,6 @@ public:
 	AP_Float _param_flr_alt;
 	AP_Float _param_time_to_ground;
 	AP_Int16 _param_head_speed_set_point;	
-	AP_Int8  _param_guided;
     bool  _using_rfnd;
 
 private:

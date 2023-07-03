@@ -22,8 +22,6 @@
 #define AP_FW_VEL_FF                      0.15f
 #define AP_FLARE_ALT                      800
 #define AP_T_TO_G                            0.55f
-#define GUIDED                                   0
-
 
 const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
 
@@ -145,14 +143,6 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @User: Advanced
     AP_SUBGROUPINFO(_p_coll_tch, "TCH_", 14, AC_Autorotation, AC_P),
 	
-    // @Param: GUIDED
-    // @DisplayName: guided control enable
-    // @Description: whether if control inputs come from radio control or attitude targets
-    // @Range: 0 1
-    // @Increment: 1
-    // @User: Advanced
-    AP_GROUPINFO("GUIDED", 15, AC_Autorotation, _param_guided, GUIDED),
-	
     // @Param: COL_FILT_C
     // @DisplayName: Touchdown Phase Collective Filter
     // @Description: Cut-off frequency for collective low pass filter.  For the touchdown phase.  Acts as a following trim.  
@@ -160,7 +150,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.2 0.8
     // @Increment: 0.01
     // @User: Advanced
-    AP_GROUPINFO("COL_FILT_C", 16, AC_Autorotation, _param_col_cushion_cutoff_freq, HS_CONTROLLER_CUSHION_COL_FILTER),
+    AP_GROUPINFO("COL_FILT_C", 15, AC_Autorotation, _param_col_cushion_cutoff_freq, HS_CONTROLLER_CUSHION_COL_FILTER),
 
     AP_GROUPEND
 };
@@ -175,13 +165,6 @@ AC_Autorotation::AC_Autorotation(AP_InertialNav& inav) :
         AP_Param::setup_object_defaults(this, var_info);
     }
 	
-void AC_Autorotation::guided_input_safety_check()
-{	
-     if ((_param_guided > 1) || (_param_guided < 0)) {
-            _param_guided.set(0);
-        }
-}
-
 // Initialisation of head speed controller
 void AC_Autorotation::init_hs_controller()
 {
