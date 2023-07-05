@@ -87,38 +87,6 @@ void ModeAutorotate::run()
         set_mode(copter.prev_control_mode, ModeReason::AUTOROTATION_BAILOUT);
     }
 
-    float pilot_roll, pilot_pitch, pilot_yaw_rate;
-    // Operator is in control of roll and yaw.  Controls act as if in stabilise flight mode.  Pitch 
-    // is controlled by speed-height controller.	
-    get_pilot_desired_lean_angles(pilot_roll, pilot_pitch, copter.aparm.angle_max, copter.aparm.angle_max);						
-		
-    float target_roll;
-
-    // Grab inertial velocity
-    const Vector3f& vel = inertial_nav.get_velocity_neu_cms();
-
-    // rotate roll, pitch input from north facing to vehicle's perspective
-    float roll_vel =  vel.y * ahrs.cos_yaw() - vel.x * ahrs.sin_yaw(); // body roll vel
-    float pitch_vel = vel.y * ahrs.sin_yaw() + vel.x * ahrs.cos_yaw(); // body pitch vel
-
-    // gain scheduling for yaw
-    float pitch_vel2 = MIN(fabsf(pitch_vel), 2000);
-    pilot_yaw_rate = ((float)pilot_roll/1.0f) * (1.0f - (pitch_vel2 / 5000.0f)) * g2.command_model_pilot.get_rate() / 45.0; 
-
-    roll_vel = constrain_float(roll_vel, -560.0f, 560.0f);
-    pitch_vel = constrain_float(pitch_vel, -560.0f, 560.0f);
-
-    // convert user input into desired roll velocity
-    float roll_vel_error = roll_vel - (pilot_roll / 0.8f);
-
-    // roll velocity is feed into roll acceleration to minimize slip
-    target_roll = roll_vel_error * -0.8f;
-    target_roll = constrain_float(target_roll, -4500.0f, 4500.0f);
-			
-    // Pitch target is calculated in autorotation phase switch above
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, _pitch_target, pilot_yaw_rate);
-       
-
     // Current time
     uint32_t now = millis(); //milliseconds
     float alt = g2.arot.get_ground_distance();
@@ -384,6 +352,37 @@ void ModeAutorotate::run()
         break;
         }
     }
+
+    float pilot_roll, pilot_pitch, pilot_yaw_rate;
+    // Operator is in control of roll and yaw.  Controls act as if in stabilise flight mode.  Pitch 
+    // is controlled by speed-height controller.	
+    get_pilot_desired_lean_angles(pilot_roll, pilot_pitch, copter.aparm.angle_max, copter.aparm.angle_max);						
+		
+    float target_roll;
+
+    // Grab inertial velocity
+    const Vector3f& vel = inertial_nav.get_velocity_neu_cms();
+
+    // rotate roll, pitch input from north facing to vehicle's perspective
+    float roll_vel =  vel.y * ahrs.cos_yaw() - vel.x * ahrs.sin_yaw(); // body roll vel
+    float pitch_vel = vel.y * ahrs.sin_yaw() + vel.x * ahrs.cos_yaw(); // body pitch vel
+
+    // gain scheduling for yaw
+    float pitch_vel2 = MIN(fabsf(pitch_vel), 2000);
+    pilot_yaw_rate = ((float)pilot_roll/1.0f) * (1.0f - (pitch_vel2 / 5000.0f)) * g2.command_model_pilot.get_rate() / 45.0; 
+
+    roll_vel = constrain_float(roll_vel, -560.0f, 560.0f);
+    pitch_vel = constrain_float(pitch_vel, -560.0f, 560.0f);
+
+    // convert user input into desired roll velocity
+    float roll_vel_error = roll_vel - (pilot_roll / 0.8f);
+
+    // roll velocity is feed into roll acceleration to minimize slip
+    target_roll = roll_vel_error * -0.8f;
+    target_roll = constrain_float(target_roll, -4500.0f, 4500.0f);
+			
+    // Pitch target is calculated in autorotation phase switch above
+    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, _pitch_target, pilot_yaw_rate);
 
     // Output warning messaged if rpm signal is bad
     if (_flags.bad_rpm) {
