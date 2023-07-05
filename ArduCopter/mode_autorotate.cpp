@@ -39,6 +39,7 @@ bool ModeAutorotate::init(bool ignore_checks)
 
     // Initialise controllers
     // This must be done before RPM value is fetched
+    g2.arot.set_collective_minimum_drag(motors->get_coll_mid());
     g2.arot.init_hs_controller();
     g2.arot.init_fwd_spd_controller();
     g2.arot.init_est_radar_alt();
@@ -206,7 +207,6 @@ void ModeAutorotate::run()
             } else {
                 _target_head_speed = HEAD_SPEED_TARGET_RATIO;
             }
-			  g2.arot.get_collective_minimum_drag(motors->get_coll_mid());
                // Set target head speed in head speed controller
                g2.arot.set_target_head_speed(_target_head_speed);
                // Run airspeed/attitude controller
@@ -218,7 +218,8 @@ void ModeAutorotate::run()
               _flags.bad_rpm = g2.arot.update_hs_glide_controller(G_Dt); //run head speed/ collective controller
                 }else{
             	_pitch_target = 0.0f;
-            	g2.arot.set_collective_minimum_drag(motors->get_coll_mid());
+                g2.arot.set_dt(G_Dt);
+                g2.arot.update_hover_autorotation_controller(G_Dt); //run head speed/ collective controller
 				g2.arot.set_entry_sink_rate(inertial_nav.get_velocity_z_up_cms());
 				g2.arot.set_entry_alt(g2.arot.get_ground_distance());
             }
