@@ -46,14 +46,14 @@ public:
 	float get_ground_distance() const { return _radar_alt; }
 	float get_time_to_ground() const { return _time_to_ground; }
 	void time_to_ground();
-	void set_collective_minimum_drag(float col_mid )const;
-	void get_collective_minimum_drag(float col_mid )  { _col_mid = col_mid; }
+	void set_collective_minimum_drag(float col_mid )  { _col_mid = col_mid; }
     void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
     void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
 	void set_ground_clearance(float ground_clearance) { _ground_clearance = ground_clearance; }
     void init_est_radar_alt();
     void update_est_radar_alt();
     float get_est_alt() const {return _est_alt;}
+    void update_hover_autorotation_controller(float dt);
 
     // User Settable Parameters
     static const struct AP_Param::GroupInfo var_info[];

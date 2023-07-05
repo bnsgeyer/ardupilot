@@ -186,7 +186,7 @@ void AC_Autorotation::init_hs_controller()
 	
 }
 
-
+// Rotor Speed controller for entry, glide and flare phases of autorotation
 bool AC_Autorotation::update_hs_glide_controller(float dt)
 {
     // Reset rpm health flag
@@ -228,6 +228,21 @@ bool AC_Autorotation::update_hs_glide_controller(float dt)
     return _flags.bad_rpm_warning;
 }
 
+void AC_Autorotation::update_hover_autorotation_controller(float dt)
+{
+
+    // Set collective trim low pass filter cut off frequency
+    col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
+
+    // use zero thrust collective to minimize rotor speed loss
+    _ff_term_hs = col_trim_lpf.apply(_col_mid, dt);
+
+    // Calculate collective position to be set
+    _collective_out = constrain_value(_ff_term_hs, 0.0f, 1.0f) ;
+
+    // Send collective to setting to motors output library
+    set_collective(_col_cutoff_freq);
+}
 
 // Function to set collective and collective filter in motor library
 void AC_Autorotation::set_collective(float collective_filter_cutoff) const
@@ -238,16 +253,6 @@ void AC_Autorotation::set_collective(float collective_filter_cutoff) const
         motors->set_throttle(_collective_out);
     }
 }
-
-void AC_Autorotation::set_collective_minimum_drag(float col_mid) const
-{
-    AP_Motors *motors = AP::motors();
-    if (motors) {
-        motors->set_throttle_filter_cutoff(_col_cutoff_freq);
-        motors->set_throttle(col_mid);
-    }
-}
-
 
 //function that gets rpm and does rpm signal checking to ensure signal is reliable
 //before using it in the controller
