@@ -92,11 +92,9 @@ private:
 	float _entry_sink_rate;
     float _entry_alt;
     float _radar_alt;
-    float _rpm_decay;
     float _flare_entry_speed;
     float _desired_speed;
     float _time_to_ground;
-    float _distance_to_ground;
     float _desired_sink_rate;
     float _col_mid;
     float _ground_clearance;
