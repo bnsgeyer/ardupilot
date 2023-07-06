@@ -305,7 +305,6 @@ float AC_Autorotation::get_rpm(bool update_counter)
     return current_rpm;
 }
 
-
 void AC_Autorotation::Log_Write_Autorotation(void) const
 {
 // @LoggerMessage: AROT
@@ -322,8 +321,8 @@ void AC_Autorotation::Log_Write_Autorotation(void) const
 // @Field: ff: ff-term of velocity response
 // @Field: AccO: forward acceleration output
 // @Field: AccT: forward acceleration target
-// @Field: PitT: pitch target
-// @Field: DV: desired sink rate during touchdown phase
+// @Field: Rfnd: rangefinder altitude
+// @Field: Hest: estimated altitude
 
     //Write to data flash log
     AP::logger().WriteStreaming("AROT",
@@ -343,7 +342,6 @@ void AC_Autorotation::Log_Write_Autorotation(void) const
                         (double)(_radar_alt*0.01f),
 						(double)(_est_alt*0.01f)) ;
 }
-
 
 // Initialise forward speed controller
 void AC_Autorotation::init_fwd_spd_controller(void)
