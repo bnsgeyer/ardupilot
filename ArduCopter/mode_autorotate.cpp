@@ -89,6 +89,11 @@ void ModeAutorotate::run()
 
     // Current time
     uint32_t now = millis(); //milliseconds
+
+    // set dt in library
+    float const last_loop_time_s = AP::scheduler().get_last_loop_time_s();
+    g2.arot.set_dt(last_loop_time_s);
+
     float alt = g2.arot.get_ground_distance();
     // have autorotation library update estimated radar altitude
     g2.arot.update_est_radar_alt();
@@ -171,23 +176,21 @@ void ModeAutorotate::run()
             if(!hover_autorotation){ 
 			// Slowly change the target head speed until the target head speed matches the parameter defined value
            if (g2.arot.get_rpm() > HEAD_SPEED_TARGET_RATIO*1.005f  ||  g2.arot.get_rpm() < HEAD_SPEED_TARGET_RATIO*0.995f) {
-                _target_head_speed -= _hs_decay*G_Dt;
+                _target_head_speed -= _hs_decay * last_loop_time_s;
             } else {
                 _target_head_speed = HEAD_SPEED_TARGET_RATIO;
             }
                // Set target head speed in head speed controller
                g2.arot.set_target_head_speed(_target_head_speed);
                // Run airspeed/attitude controller
-               g2.arot.set_dt(G_Dt);
                g2.arot.update_forward_speed_controller();
                // Retrieve pitch target
                _pitch_target = g2.arot.get_pitch();
                // Update controllers
-              _flags.bad_rpm = g2.arot.update_hs_glide_controller(G_Dt); //run head speed/ collective controller
+              _flags.bad_rpm = g2.arot.update_hs_glide_controller(); //run head speed/ collective controller
                 }else{
             	_pitch_target = 0.0f;
-                g2.arot.set_dt(G_Dt);
-                g2.arot.update_hover_autorotation_controller(G_Dt); //run head speed/ collective controller
+                g2.arot.update_hover_autorotation_controller(); //run head speed/ collective controller
 				g2.arot.set_entry_sink_rate(inertial_nav.get_velocity_z_up_cms());
 				g2.arot.set_entry_alt(g2.arot.get_ground_distance());
             }
@@ -217,14 +220,13 @@ void ModeAutorotate::run()
             }
 
             // Run airspeed/attitude controller
-            g2.arot.set_dt(G_Dt);
             g2.arot.update_forward_speed_controller();
 
             // Retrieve pitch target 
             _pitch_target = g2.arot.get_pitch();
 
             // Update head speed/ collective controller
-            _flags.bad_rpm = g2.arot.update_hs_glide_controller(G_Dt); 
+            _flags.bad_rpm = g2.arot.update_hs_glide_controller(); 
             // Attitude controller is updated in navigation switch-case statements
 
             break;
@@ -249,10 +251,9 @@ void ModeAutorotate::run()
             }
            
             // Run flare controller
-            g2.arot.set_dt(G_Dt);
             g2.arot.flare_controller();
 			// Update head speed/ collective controller
-            _flags.bad_rpm = g2.arot.update_hs_glide_controller(G_Dt);
+            _flags.bad_rpm = g2.arot.update_hs_glide_controller();
             // Retrieve pitch target 
             _pitch_target = g2.arot.get_pitch();
 			//store entry values for touchdown phase 
@@ -271,7 +272,6 @@ void ModeAutorotate::run()
 				g2.arot.set_col_cutoff_freq(g2.arot.get_col_cushion_freq());
 				g2.arot.set_ground_clearance(copter.rangefinder.ground_clearance_cm_orient(ROTATION_PITCH_270));
             }
-            g2.arot.set_dt(G_Dt);
             g2.arot.touchdown_controller();
             _pitch_target = g2.arot.get_pitch();
 
@@ -330,8 +330,8 @@ void ModeAutorotate::run()
 
         if ((now - _bail_time_start_ms)/1000.0f >= BAILOUT_MOTOR_RAMP_TIME) {
             // Update desired vertical speed and pitch target after the bailout motor ramp timer has completed
-            _desired_v_z -= _target_climb_rate_adjust*G_Dt;
-            _pitch_target -= _target_pitch_adjust*G_Dt;
+            _desired_v_z -= _target_climb_rate_adjust * last_loop_time_s;
+            _pitch_target -= _target_pitch_adjust * last_loop_time_s;
         }
         // Set position controller
         pos_control->set_pos_target_z_from_climb_rate_cm(_desired_v_z);
