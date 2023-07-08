@@ -187,7 +187,7 @@ void AC_Autorotation::init_hs_controller()
 }
 
 // Rotor Speed controller for entry, glide and flare phases of autorotation
-bool AC_Autorotation::update_hs_glide_controller(float dt)
+bool AC_Autorotation::update_hs_glide_controller(void)
 {
     // Reset rpm health flag
     _flags.bad_rpm = false;
@@ -210,7 +210,7 @@ bool AC_Autorotation::update_hs_glide_controller(float dt)
         _p_term_hs = _p_hs.get_p(_head_speed_error);
 
         // Adjusting collective trim using feed forward (not yet been updated, so this value is the previous time steps collective position)
-        _ff_term_hs = col_trim_lpf.apply(_collective_out, dt);
+        _ff_term_hs = col_trim_lpf.apply(_collective_out, _dt);
 
         // Calculate collective position to be set
         _collective_out = constrain_value((_p_term_hs + _ff_term_hs), 0.0f, 1.0f) ;
@@ -228,14 +228,14 @@ bool AC_Autorotation::update_hs_glide_controller(float dt)
     return _flags.bad_rpm_warning;
 }
 
-void AC_Autorotation::update_hover_autorotation_controller(float dt)
+void AC_Autorotation::update_hover_autorotation_controller()
 {
 
     // Set collective trim low pass filter cut off frequency
     col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
 
     // use zero thrust collective to minimize rotor speed loss
-    _ff_term_hs = col_trim_lpf.apply(_col_mid, dt);
+    _ff_term_hs = col_trim_lpf.apply(_col_mid, _dt);
 
     // Calculate collective position to be set
     _collective_out = constrain_value(_ff_term_hs, 0.0f, 1.0f) ;

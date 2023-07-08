@@ -20,7 +20,7 @@ public:
     //--------Functions--------
     void init_hs_controller(void);  // Initialise head speed controller
     void init_fwd_spd_controller(void);  // Initialise forward speed controller
-    bool update_hs_glide_controller(float dt);  // Update head speed controller
+    bool update_hs_glide_controller(void);  // Update head speed controller
     float get_rpm(void) const { return _current_rpm; }  // Function just returns the rpm as last read in this library
     float get_rpm(bool update_counter);  // Function fetches fresh rpm update and continues sensor health monitoring
     void set_target_head_speed(float ths) { _target_head_speed = ths; }  // Sets the normalised target head speed
@@ -53,7 +53,7 @@ public:
     void init_est_radar_alt();
     void update_est_radar_alt();
     float get_est_alt() const {return _est_alt;}
-    void update_hover_autorotation_controller(float dt);
+    void update_hover_autorotation_controller();
 
     // User Settable Parameters
     static const struct AP_Param::GroupInfo var_info[];
