@@ -16,7 +16,7 @@
 #define AUTOROTATE_ENTRY_TIME          2.0f    // (s) number of seconds that the entry phase operates for
 #define BAILOUT_MOTOR_RAMP_TIME        1.0f    // (s) time set on bailout ramp up timer for motors - See AC_MotorsHeli_Single
 #define HEAD_SPEED_TARGET_RATIO        1.0f    // Normalised target main rotor head speed (unit: -)
-#define TOUCHDOWN_TIME                 5.0f
+#define TOUCHDOWN_TIME                 5.0f    // time in seconds after land complete flag until aircraft is disarmed 
 
 bool ModeAutorotate::init(bool ignore_checks)
 {
@@ -37,11 +37,15 @@ bool ModeAutorotate::init(bool ignore_checks)
         return false;
     }
 
+    // zero thrust collective is set in library.  Must be set before init_hs_controller is called.
+    g2.arot.set_collective_minimum_drag(motors->get_coll_mid());
+
     // Initialise controllers
     // This must be done before RPM value is fetched
-    g2.arot.set_collective_minimum_drag(motors->get_coll_mid());
     g2.arot.init_hs_controller();
     g2.arot.init_fwd_spd_controller();
+
+    // initialize radar altitude estimator
     g2.arot.init_est_radar_alt();
 
     // Retrieve rpm and start rpm sensor health checks
@@ -50,7 +54,7 @@ bool ModeAutorotate::init(bool ignore_checks)
     // Display message 
     gcs().send_text(MAV_SEVERITY_INFO, "Autorotation initiated");
 
-     // Set all inial flags to on
+     // Set all initial flags to one
     _flags.entry_initial = 1;
     _flags.ss_glide_initial = 1;
     _flags.flare_initial = 1;
@@ -112,7 +116,7 @@ void ModeAutorotate::run()
 	last_tti=time_to_impact;
     }else {
 	time_to_impact = last_tti;	
-	}	
+    }
 
     //----------------------------------------------------------------
     //                  State machine logic
@@ -212,7 +216,7 @@ void ModeAutorotate::run()
                 g2.arot.set_desired_fwd_speed();
 
                 // Set target head speed in head speed controller
-                _target_head_speed = HEAD_SPEED_TARGET_RATIO;  //Ensure target hs is set to glide in case hs hasent reached target for glide
+                _target_head_speed = HEAD_SPEED_TARGET_RATIO;  //Ensure target hs is set to glide in case hs hasn't reached target for glide
                 g2.arot.set_target_head_speed(_target_head_speed);
 
                 // Prevent running the initial glide functions again
