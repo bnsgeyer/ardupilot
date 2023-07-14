@@ -15,7 +15,7 @@ class AC_Autorotation
 public:
 
     //Constructor
-    AC_Autorotation(AP_InertialNav& inav);
+    AC_Autorotation(AP_InertialNav& inav, AP_AHRS& ahrs);
 
     //--------Functions--------
     void init_hs_controller(void);  // Initialise head speed controller
@@ -62,6 +62,7 @@ public:
 	AP_Float _param_time_to_ground;
 	AP_Int16 _param_head_speed_set_point;	
     bool  _using_rfnd;
+    bool _flare_complete;
 
 private:
 
@@ -102,6 +103,10 @@ private:
     float _descent_rate_filtered;
     float _radar_alt_prev;
     float _radar_alt_calc;
+    float _avg_acc_z;
+    float _acc_z_sum;
+    int16_t _cnt;
+
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
@@ -136,4 +141,5 @@ private:
 
 	//--------References to Other Libraries--------
     AP_InertialNav&    _inav;
+    AP_AHRS&           _ahrs;
 };
