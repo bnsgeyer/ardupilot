@@ -350,7 +350,7 @@ void AC_Autorotation::init_fwd_spd_controller(void)
     _accel_target = 0.0f;
     
     // Ensure parameter acceleration doesn't exceed hard-coded limit
-    _accel_max = MIN(_param_accel_max, 60.0f);
+    _accel_max = MIN(_param_accel_max, 500.0f);
 
     // Reset cmd vel and last accel to sensible values
     _cmd_vel = calc_speed_forward(); //(cm/s)
@@ -487,6 +487,8 @@ void AC_Autorotation::touchdown_controller()
 	    }else{
 	            _desired_sink_rate = 0.0f;
 	    }
+    // update forward speed for logging
+    _speed_forward = calc_speed_forward(); //(cm/s)
 
 	    _collective_out =  constrain_value((_p_coll_tch.get_p(_desired_sink_rate - _descent_rate_filtered))*0.01f + _ff_term_hs, 0.0f, 1.0f);
 	    col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
