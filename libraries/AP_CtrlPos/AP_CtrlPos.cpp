@@ -122,55 +122,13 @@ void AP_CtrlPos::init(uint32_t log_bit)
         return;
     }
 
+    // remove all other types except PX4Flow
     switch ((Type)_type) {
     case Type::NONE:
         break;
     case Type::PX4FLOW:
 #if AP_CTRLPOS_PX4FLOW_ENABLED
         backend = AP_CtrlPos_PX4Flow::detect(*this);
-#endif
-        break;
-    case Type::PIXART:
-#if AP_CTRLPOS_PIXART_ENABLED
-        backend = AP_CtrlPos_Pixart::detect("pixartflow", *this);
-        if (backend == nullptr) {
-            backend = AP_CtrlPos_Pixart::detect("pixartPC15", *this);
-        }
-#endif
-        break;
-    case Type::BEBOP:
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
-        backend = new AP_CtrlPos_Onboard(*this);
-#endif
-        break;
-    case Type::CXOF:
-#if AP_CTRLPOS_CXOF_ENABLED
-        backend = AP_CtrlPos_CXOF::detect(*this);
-#endif
-        break;
-    case Type::MAVLINK:
-#if AP_CTRLPOS_MAV_ENABLED
-        backend = AP_CtrlPos_MAV::detect(*this);
-#endif
-        break;
-    case Type::UAVCAN:
-#if AP_CTRLPOS_HEREFLOW_ENABLED
-        backend = new AP_CtrlPos_HereFlow(*this);
-#endif
-        break;
-    case Type::MSP:
-#if HAL_MSP_CTRLPOS_ENABLED
-        backend = AP_CtrlPos_MSP::detect(*this);
-#endif
-        break;
-    case Type::UPFLOW:
-#if AP_CTRLPOS_UPFLOW_ENABLED
-        backend = AP_CtrlPos_UPFLOW::detect(*this);
-#endif
-        break;
-    case Type::SITL:
-#if AP_CTRLPOS_SITL_ENABLED
-        backend = new AP_CtrlPos_SITL(*this);
 #endif
         break;
     }
@@ -220,9 +178,9 @@ void AP_CtrlPos::handle_msg(const mavlink_message_t &msg)
         backend->handle_msg(msg);
     }
 }
-
+/*
 #if HAL_MSP_CTRLPOS_ENABLED
-void AP_CtrlPos::handle_msp(const MSP::msp_ctrlpos_data_message_t &pkt)
+void AP_CtrlPos::handle_msp(const MSP::msp_opflow_data_message_t &pkt)
 {
     // exit immediately if not enabled
     if (!enabled()) {
@@ -234,7 +192,7 @@ void AP_CtrlPos::handle_msp(const MSP::msp_ctrlpos_data_message_t &pkt)
     }
 }
 #endif //HAL_MSP_OPTICALFLOW_ENABLED
-
+*/
 // start calibration
 void AP_CtrlPos::start_calibration()
 {
@@ -263,17 +221,11 @@ void AP_CtrlPos::update_state(const CtrlPos_state &state)
     _state = state;
     _last_update_ms = AP_HAL::millis();
 
-    // write to log and send to EKF if new data has arrived
-    AP::ahrs().writeOptFlowMeas(quality(),
-                                _state.flowRate,
-                                _state.bodyRate,
-                                _last_update_ms,
-                                get_pos_offset(),
-                                get_height_override());
-    Log_Write_Optflow();
+// only need to write to log file
+    Log_Write_CtrlPos();
 }
 
-void AP_CtrlPos::Log_Write_Ctrlpos()
+void AP_CtrlPos::Log_Write_CtrlPos()
 {
     AP_Logger *logger = AP_Logger::get_singleton();
     if (logger == nullptr) {
@@ -284,8 +236,9 @@ void AP_CtrlPos::Log_Write_Ctrlpos()
         return;
     }
 
-    struct log_Ctrlpos pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_CTRLPOS_MSG),
+// need to keep this as optflow because that is what is defined in AP_Logger
+    struct log_Optflow pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_OPTFLOW_MSG),
         time_us         : AP_HAL::micros64(),
         surface_quality : _state.surface_quality,
         flow_x          : _state.flowRate.x,

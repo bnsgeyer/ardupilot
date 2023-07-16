@@ -58,14 +58,6 @@ public:
     enum class Type {
         NONE = 0,
         PX4FLOW = 1,
-        PIXART = 2,
-        BEBOP = 3,
-        CXOF = 4,
-        MAVLINK = 5,
-        UAVCAN = 6,
-        MSP = 7,
-        UPFLOW = 8,
-        SITL = 10,
     };
 
     // init - initialise sensor
@@ -82,12 +74,12 @@ public:
 
     // handle optical flow mavlink messages
     void handle_msg(const mavlink_message_t &msg);
-
+/*
 #if HAL_MSP_CTRLPOS_ENABLED
     // handle optical flow msp messages
     void handle_msp(const MSP::msp_opflow_data_message_t &pkt);
 #endif
-
+*/
     // quality - returns the surface quality as a measure from 0 ~ 255
     uint8_t quality() const { return _state.surface_quality; }
 
@@ -115,8 +107,8 @@ public:
     }
 
     // start or stop calibration
-   // void start_calibration();
-    //void stop_calibration();
+    void start_calibration();
+    void stop_calibration();
 
     // parameter var info table
     static const struct AP_Param::GroupInfo var_info[];
@@ -152,7 +144,7 @@ private:
     uint32_t _log_bit = -1;     // bitmask bit which indicates if we should log.  -1 means we always log
 
     // calibrator
-    // AP_CtrlPos_Calibrator *_calibrator;
+    AP_CtrlPos_Calibrator *_calibrator;
 
 };
 

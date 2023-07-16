@@ -69,7 +69,7 @@ bool AP_CtrlPos_Calibrator::update()
         uint32_t now_ms = AP_HAL::millis();
         uint32_t timestamp_ms;
         Vector2f flow_rate, body_rate, los_pred;
-        if (AP::ahrs().getCtrlPosSample(timestamp_ms, flow_rate, body_rate, los_pred)) {
+        if (AP::ahrs().getOptFlowSample(timestamp_ms, flow_rate, body_rate, los_pred)) {
             add_sample(timestamp_ms, flow_rate, body_rate, los_pred);
 
             // while collecting samples display percentage complete
