@@ -323,8 +323,8 @@ void AC_Autorotation::Log_Write_Autorotation(void) const
 // @Field: DH: desired forward speed
 // @Field: p: p-term of velocity response
 // @Field: ff: ff-term of velocity response
-// @Field: AccO: forward acceleration output
-// @Field: AccT: forward acceleration target
+// @Field: AccZ: average z acceleration
+// @Field: DesV: Desired Sink Rate
 // @Field: Rfnd: rangefinder altitude
 // @Field: Hest: estimated altitude
 
