@@ -135,16 +135,16 @@ void ModeAutorotate::run()
      //total energy check     
     if(hover_autorotation){
 		if(_flags.entry_initial == 0  && time_to_impact <= g2.arot._param_time_to_ground){
-		phase_switch = Autorotation_Phase::TOUCH_DOWN;
+		    phase_switch = Autorotation_Phase::TOUCH_DOWN;
 	    }
 	} else {
 		if ( _flags.ss_glide_initial == 1  && _flags.flare_initial == 1 && _flags.touch_down_initial == 1 && g2.arot.get_ground_distance() > g2.arot._param_flr_alt ){
-                 if ((now - _entry_time_start_ms)/1000.0f > AUTOROTATE_ENTRY_TIME )  {
+            if ((now - _entry_time_start_ms)/1000.0f > AUTOROTATE_ENTRY_TIME )  {
                  // Flight phase can be progressed to steady state glide
                  phase_switch = Autorotation_Phase::SS_GLIDE;
-                 }
-          }else if( time_to_impact > g2.arot._param_time_to_ground && g2.arot.get_est_alt() < g2.arot._param_flr_alt){
-		phase_switch = Autorotation_Phase::FLARE;
+            }
+        }else if( _flags.ss_glide_initial == 0 && _flags.flare_initial == 1 && g2.arot.get_est_alt() < g2.arot._param_flr_alt){
+		    phase_switch = Autorotation_Phase::FLARE;
 	    }else if( time_to_impact <= g2.arot._param_time_to_ground ){
 			phase_switch = Autorotation_Phase::TOUCH_DOWN;
         }			
