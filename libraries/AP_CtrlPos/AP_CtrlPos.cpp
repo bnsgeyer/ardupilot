@@ -34,7 +34,7 @@ const AP_Param::GroupInfo AP_CtrlPos::var_info[] = {
     // @Values: 0:None, 1:PX4Flow, 2:Pixart, 3:Bebop, 4:CXOF, 5:MAVLink, 6:DroneCAN, 7:MSP, 8:UPFLOW
     // @User: Standard
     // @RebootRequired: True
-    AP_GROUPINFO_FLAGS("_TYPE", 0,  AP_CtrlPos,    _type,   (float)CTRL_POS_TYPE_DEFAULT, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("_TYPE", 1,  AP_CtrlPos,    _type,   (float)CTRL_POS_TYPE_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
     // @Param: _FXSCALER
     // @DisplayName: X axis optical flow scale factor correction
@@ -129,6 +129,7 @@ void AP_CtrlPos::init(uint32_t log_bit)
     case Type::PX4FLOW:
 #if AP_CTRLPOS_PX4FLOW_ENABLED
         backend = AP_CtrlPos_PX4Flow::detect(*this);
+        GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SEARCHING...");
 #endif
         break;
     }

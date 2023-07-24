@@ -20,6 +20,7 @@
 
 #if AP_CTRLPOS_PX4FLOW_ENABLED
 
+
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/crc.h>
 #include <AP_AHRS/AP_AHRS.h>
@@ -28,11 +29,12 @@
 #include "AP_CtrlPos.h"
 #include <stdio.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
-#define PX4FLOW_BASE_I2C_ADDR   0x42
-#define PX4FLOW_INIT_RETRIES    10      // attempt to initialise the sensor up to 10 times at startup
+#define PX4FLOW_BASE_I2C_ADDR   0x3A
+#define PX4FLOW_INIT_RETRIES    20      // attempt to initialise the sensor up to 10 times at startup
 
 
 // detect the device
@@ -40,11 +42,28 @@ AP_CtrlPos_PX4Flow *AP_CtrlPos_PX4Flow::detect(AP_CtrlPos &_frontend)
 {
     AP_CtrlPos_PX4Flow *sensor = new AP_CtrlPos_PX4Flow(_frontend);
     if (!sensor) {
+
+        static uint8_t counter = 0;
+        counter++;
+        if (counter > 50) {
+            counter = 0;
+            gcs().send_text(MAV_SEVERITY_DEBUG, "Device Found?");
+        }
+        
         return nullptr;
+        
     }
     if (!sensor->setup_sensor()) {
+        static uint8_t counter = 0;
+        counter++;
+        if (counter > 50) {
+            counter = 0;
+            gcs().send_text(MAV_SEVERITY_DEBUG, "Device Found?");
+        }
         delete sensor;
         return nullptr;
+
+        
     }
     return sensor;
 }
@@ -76,7 +95,7 @@ bool AP_CtrlPos_PX4Flow::scan_buses(void)
             struct i2c_integral_frame frame;
             success = tdev->read_registers(REG_INTEGRAL_FRAME, (uint8_t *)&frame, sizeof(frame));
             if (success) {
-                printf("Found PX4Flow on bus %u\n", bus);
+                gcs().send_text(MAV_SEVERITY_DEBUG, "Found Device");
                 dev = std::move(tdev);
                 break;
             }
@@ -84,6 +103,7 @@ bool AP_CtrlPos_PX4Flow::scan_buses(void)
         retry_attempt++;
         if (!success) {
             hal.scheduler->delay(10);
+            
         }
     }
     return success;
