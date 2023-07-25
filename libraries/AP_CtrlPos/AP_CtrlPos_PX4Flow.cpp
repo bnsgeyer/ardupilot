@@ -125,6 +125,14 @@ void AP_CtrlPos_PX4Flow::update(void)
 {
 }
 
+#define STATUS_SHIFT 30
+#define FIRST_SHIFT 4
+#define FIRST_MASK ((1 << 20) - 1)
+#define SECOND_SHIFT 8
+#define SECOND_MASK ((1 << 20) - 1)
+#define THIRD_SHIFT 12
+#define THIRD_MASK ((1 << 20) - 1)
+
 // timer to read sensor
 void AP_CtrlPos_PX4Flow::timer(void)
 {
@@ -133,9 +141,20 @@ void AP_CtrlPos_PX4Flow::timer(void)
     if (!dev->read((uint8_t *)&raw_bytes, sizeof(raw_bytes))) {
         return;
     }
-    float first_number = 2.0f;
-    float second_number = 3.0f;
-    float third_number = 4.0f;
+
+    uint32_t data = (raw_bytes[0] << 24) |
+                    (raw_bytes[1] << 16) |
+                    (raw_bytes[2] << 8)  |
+                    raw_bytes[3];
+
+    uint32_t first_raw = (data >> FIRST_SHIFT) & FIRST_MASK;
+    uint32_t second_raw = (data >>  SECOND_SHIFT) & SECOND_MASK;
+    uint32_t third_raw = (data >> THIRD_SHIFT) & THIRD_MASK;
+
+    float first_number = first_raw * 1.0f;
+    float second_number = second_raw * 1.0f;
+    float third_number = third_raw * 1.0f;
+
 
     struct AP_CtrlPos::CtrlPos_state state {};
 
@@ -143,6 +162,7 @@ void AP_CtrlPos_PX4Flow::timer(void)
     state.second_number = second_number;
     state.third_number = third_number;
 
+    WITH_SEMAPHORE(_sem);
     _update_frontend(state);
 }
 
