@@ -686,6 +686,8 @@ public:
     AC_WeatherVane weathervane;
 #endif
 
+    AP_CtrlPos ctrl_pos;
+
     // payload place parameters
     AP_Float pldp_thrust_placed_fraction;
     AP_Float pldp_range_finder_minimum_m;

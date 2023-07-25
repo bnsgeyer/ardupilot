@@ -163,6 +163,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_OpticalFlow,          &copter.optflow,             update,         200, 160,  12),
 #endif
 */
+    SCHED_TASK_CLASS(AP_CtrlPos,          &copter.ctrl_pos,             update,         200, 160,  12),
     SCHED_TASK(update_batt_compass,   10,    120, 15),
     //SCHED_TASK_CLASS(RC_Channels, (RC_Channels*)&copter.g2.rc_channels, read_aux_all,    10,  50,  18),
     
