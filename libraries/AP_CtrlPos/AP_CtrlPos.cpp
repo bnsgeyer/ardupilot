@@ -17,15 +17,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-#ifndef CTRL_POS_TYPE_DEFAULT
- #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_CHIBIOS_SKYVIPER_F412 || defined(HAL_HAVE_PIXARTFLOW_SPI)
-  #define CTRL_POS_TYPE_DEFAULT Type::PIXART
- #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
-  #define CTRL_POS_TYPE_DEFAULT Type::BEBOP
- #else
   #define CTRL_POS_TYPE_DEFAULT Type::NONE
- #endif
-#endif
 
 const AP_Param::GroupInfo AP_CtrlPos::var_info[] = {
     // @Param: _TYPE
@@ -107,11 +99,15 @@ AP_CtrlPos::AP_CtrlPos()
 void AP_CtrlPos::init(uint32_t log_bit)
 {
      _log_bit = log_bit;
-        GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Initializing...");
+    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Initializing...");
     // force type to be PX4FLOW
-    
+        backend = AP_CtrlPos_PX4Flow::detect(*this);
+/*    
     // return immediately if not enabled or backend already created
     if ((_type == Type::NONE) || (backend != nullptr)) {
+    if (_type == Type::NONE) {
+//       GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "type none");
+    }
         return;
     }
 
@@ -124,7 +120,7 @@ void AP_CtrlPos::init(uint32_t log_bit)
         GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SEARCHING...");
         break;
     }
-
+*/
     if (backend != nullptr) {
         backend->init();
     }
@@ -136,13 +132,13 @@ void AP_CtrlPos::update(void)
     static uint16_t prnt;
 
     if (!enabled()) {
-            if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Not Enabled");}
+//            if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Not Enabled");}
         return;
     }
-    if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "in update function");}
+//    if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "in update function");}
     if (backend != nullptr) {
         backend->update();
-            if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Updating backend");}
+//            if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Updating backend");}
     }
 
     // only healthy if the data is less than 0.5s old

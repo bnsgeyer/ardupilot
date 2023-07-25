@@ -90,17 +90,18 @@ bool AP_CtrlPos_PX4Flow::scan_buses(void)
             gcs().send_text(MAV_SEVERITY_DEBUG, "determined bus as %f", (double)bus);
             AP_HAL::OwnPtr<AP_HAL::Device> tdev = hal.i2c_mgr->get_device(bus, PX4FLOW_BASE_I2C_ADDR);
             if (!tdev) {
+            gcs().send_text(MAV_SEVERITY_DEBUG, "no device found");
                 continue;
             }
             WITH_SEMAPHORE(tdev->get_semaphore());
-
+/*
             struct i2c_integral_frame frame;
             success = tdev->read_registers(REG_INTEGRAL_FRAME, (uint8_t *)&frame, sizeof(frame));
             if (success) {
                 gcs().send_text(MAV_SEVERITY_DEBUG, "Found Device");
                 dev = std::move(tdev);
                 break;
-            }
+            } */
         }
         retry_attempt++;
         if (!success) {
@@ -118,7 +119,8 @@ bool AP_CtrlPos_PX4Flow::setup_sensor(void)
         return false;
     }
     // read at 10Hz HOW TO CHANGE TO 25HZ??
-    dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_CtrlPos_PX4Flow::timer, void));
+//    dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_CtrlPos_PX4Flow::timer, void));
+
     return true;
 }
 
