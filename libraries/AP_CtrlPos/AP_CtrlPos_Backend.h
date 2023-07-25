@@ -39,12 +39,6 @@ public:
 
     // handle optical flow mavlink messages
     virtual void handle_msg(const mavlink_message_t &msg) {}
-/*
-#if HAL_MSP_CTRLPOS_ENABLED
-    // handle optical flow msp messages
-    virtual void handle_msp(const MSP::msp_ctrlpos_data_message_t &pkt) {}
-#endif
-*/
 
 protected:
     // access to frontend
@@ -53,18 +47,9 @@ protected:
     // update the frontend
     void _update_frontend(const struct AP_CtrlPos::CtrlPos_state &state);
 
-    // get the flow scaling parameters
-    Vector2f _flowScaler(void) const { return Vector2f(frontend._flowScalerX, frontend._flowScalerY); }
-
-    // get the yaw angle in radians
-    float _yawAngleRad(void) const { return radians(float(frontend._yawAngle_cd) * 0.01f); }
-
-    // apply yaw angle to a vector
-    void _applyYaw(Vector2f &v);
-
     // get ADDR parameter value
     uint8_t get_address(void) const { return frontend._address; }
     
     // semaphore for access to shared frontend data
-    // HAL_Semaphore _sem;
+    HAL_Semaphore _sem;
 };

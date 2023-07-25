@@ -176,21 +176,7 @@ void AP_CtrlPos::handle_msg(const mavlink_message_t &msg)
         backend->handle_msg(msg);
     }
 }
-/*
-#if HAL_MSP_CTRLPOS_ENABLED
-void AP_CtrlPos::handle_msp(const MSP::msp_opflow_data_message_t &pkt)
-{
-    // exit immediately if not enabled
-    if (!enabled()) {
-        return;
-    }
 
-    if (backend != nullptr) {
-        backend->handle_msp(pkt);
-    }
-}
-#endif //HAL_MSP_OPTICALFLOW_ENABLED
-*/
 // start calibration
 void AP_CtrlPos::start_calibration()
 {
@@ -235,14 +221,12 @@ void AP_CtrlPos::Log_Write_CtrlPos()
     }
 
 // need to keep this as optflow because that is what is defined in AP_Logger
-    struct log_Optflow pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_OPTFLOW_MSG),
+    struct log_CtrlPos pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_CTRLPOS_MSG),
         time_us         : AP_HAL::micros64(),
-        surface_quality : _state.surface_quality,
-        flow_x          : _state.flowRate.x,
-        flow_y          : _state.flowRate.y,
-        body_x          : _state.bodyRate.x,
-        body_y          : _state.bodyRate.y
+        first_number    : _state.first_number,
+        second_number   : _state.second_number,
+        third_number    : _state.third_number,
     };
     logger->WriteBlock(&pkt, sizeof(pkt));
 }

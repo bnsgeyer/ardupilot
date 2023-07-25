@@ -96,12 +96,6 @@ bool AP_CtrlPos_PX4Flow::scan_buses(void)
             WITH_SEMAPHORE(tdev->get_semaphore());
             dev = std::move(tdev);
             success = true;
- /*           struct i2c_integral_frame frame;
-            success = tdev->read_registers(REG_INTEGRAL_FRAME, (uint8_t *)&frame, sizeof(frame));
-            if (success) {
-                gcs().send_text(MAV_SEVERITY_DEBUG, "Found Device");
-                break;
-            } */
         }
         retry_attempt++;
         if (!success) {
@@ -134,33 +128,22 @@ void AP_CtrlPos_PX4Flow::update(void)
 // timer to read sensor
 void AP_CtrlPos_PX4Flow::timer(void)
 {
-//    struct i2c_integral_frame frame;
-/*    if (!dev->read_registers(REG_INTEGRAL_FRAME, (uint8_t *)&frame, sizeof(frame))) {
-        return;
-    } */
+
     uint8_t raw_bytes[4];
     if (!dev->read((uint8_t *)&raw_bytes, sizeof(raw_bytes))) {
         return;
     }
+    float first_number = 2.0f;
+    float second_number = 3.0f;
+    float third_number = 4.0f;
 
-/*    struct AP_CtrlPos::CtrlPos_state state {};
+    struct AP_CtrlPos::CtrlPos_state state {};
 
-    if (frame.integration_timespan > 0) {
-        const Vector2f flowScaler = _flowScaler();
-        float flowScaleFactorX = 1.0f + 0.001f * flowScaler.x;
-        float flowScaleFactorY = 1.0f + 0.001f * flowScaler.y;
-        float integralToRate = 1.0e6 / frame.integration_timespan;
-        
-        state.surface_quality = frame.qual;
-        state.flowRate = Vector2f(frame.pixel_flow_x_integral * flowScaleFactorX,
-                                  frame.pixel_flow_y_integral * flowScaleFactorY) * 1.0e-4 * integralToRate;
-        state.bodyRate = Vector2f(frame.gyro_x_rate_integral, frame.gyro_y_rate_integral) * 1.0e-4 * integralToRate;
-        
-        _applyYaw(state.flowRate);
-        _applyYaw(state.bodyRate);
-    }
+    state.first_number = first_number;
+    state.second_number = second_number;
+    state.third_number = third_number;
 
-    _update_frontend(state); */
+    _update_frontend(state);
 }
 
 #endif  // AP_OPTICALFLOW_PX4FLOW_ENABLED

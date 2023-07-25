@@ -34,19 +34,4 @@ void CtrlPos_backend::_update_frontend(const struct AP_CtrlPos::CtrlPos_state &s
     frontend.update_state(state);
 }
 
-// apply yaw angle to a vector
-void CtrlPos_backend::_applyYaw(Vector2f &v)
-{
-    float yawAngleRad = _yawAngleRad();
-    if (is_zero(yawAngleRad)) {
-        return;
-    }
-    float cosYaw = cosf(yawAngleRad);
-    float sinYaw = sinf(yawAngleRad);
-    float x = v.x;
-    float y = v.y;
-    v.x = cosYaw * x - sinYaw * y;
-    v.y = sinYaw * x + cosYaw * y;
-}
-
 #endif

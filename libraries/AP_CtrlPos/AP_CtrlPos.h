@@ -75,11 +75,6 @@ public:
     // handle optical flow mavlink messages
     void handle_msg(const mavlink_message_t &msg);
 /*
-#if HAL_MSP_CTRLPOS_ENABLED
-    // handle optical flow msp messages
-    void handle_msp(const MSP::msp_opflow_data_message_t &pkt);
-#endif
-*/
     // quality - returns the surface quality as a measure from 0 ~ 255
     uint8_t quality() const { return _state.surface_quality; }
 
@@ -88,7 +83,7 @@ public:
 
     // velocity - returns the velocity in m/s
     const Vector2f& bodyRate() const { return _state.bodyRate; }
-
+*/
     // last_update() - returns system time of last sensor update
     uint32_t last_update() const { return _last_update_ms; }
 
@@ -96,9 +91,9 @@ public:
     float get_height_override() const { return 2.0f; }
 
     struct CtrlPos_state {
-        uint8_t  surface_quality;   // image quality (below TBD you can't trust the dx,dy values returned)
-        Vector2f flowRate;          // optical flow angular rate in rad/sec measured about the X and Y body axis. A RH rotation about a sensor axis produces a positive rate.
-        Vector2f bodyRate;          // body inertial angular rate in rad/sec measured about the X and Y body axis. A RH rotation about a sensor axis produces a positive rate.
+        float first_number;   // image quality (below TBD you can't trust the dx,dy values returned)
+        float second_number;          // optical flow angular rate in rad/sec measured about the X and Y body axis. A RH rotation about a sensor axis produces a positive rate.
+        float third_number;          // body inertial angular rate in rad/sec measured about the X and Y body axis. A RH rotation about a sensor axis produces a positive rate.
     };
 
     // return a 3D vector defining the position offset of the sensors focal point in metres relative to the body frame origin
