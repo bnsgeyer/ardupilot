@@ -93,7 +93,7 @@ public:
     uint32_t last_update() const { return _last_update_ms; }
 
     // get_height_override() - returns the user-specified height of sensor above ground
-    float get_height_override() const { return _height_override; }
+    float get_height_override() const { return 2.0f; }
 
     struct CtrlPos_state {
         uint8_t  surface_quality;   // image quality (below TBD you can't trust the dx,dy values returned)
@@ -130,7 +130,6 @@ private:
     AP_Int16 _yawAngle_cd;          // yaw angle of sensor X axis with respect to vehicle X axis - centi degrees
     AP_Vector3f _pos_offset;        // position offset of the flow sensor in the body frame
     AP_Int8  _address;              // address on the bus (allows selecting between 8 possible I2C addresses for px4flow)
-    AP_Float  _height_override;              // height of the sensor above the ground. Only used in rover
 
     // method called by backend to update frontend state:
     void update_state(const CtrlPos_state &state);

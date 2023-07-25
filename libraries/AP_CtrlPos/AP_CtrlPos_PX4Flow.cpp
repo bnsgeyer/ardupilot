@@ -33,7 +33,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define PX4FLOW_BASE_I2C_ADDR   0x42
+#define PX4FLOW_BASE_I2C_ADDR   0x70
 #define PX4FLOW_INIT_RETRIES    20      // attempt to initialise the sensor up to 10 times at startup
 
 
@@ -80,13 +80,15 @@ bool AP_CtrlPos_PX4Flow::scan_buses(void)
         bool all_external = (AP_BoardConfig::get_board_type() == AP_BoardConfig::PX4_BOARD_PIXHAWK2);
         uint32_t bus_mask = all_external? hal.i2c_mgr->get_bus_mask() : hal.i2c_mgr->get_bus_mask_external();
         FOREACH_I2C_MASK(bus, bus_mask) {
+            gcs().send_text(MAV_SEVERITY_DEBUG, "all external %s", all_external? "true":"false");
     #ifdef HAL_OPTFLOW_PX4FLOW_I2C_BUS
             // only one bus from HAL
             if (bus != HAL_OPTFLOW_PX4FLOW_I2C_BUS) {
                 continue;
             }
     #endif
-            AP_HAL::OwnPtr<AP_HAL::Device> tdev = hal.i2c_mgr->get_device(bus, PX4FLOW_BASE_I2C_ADDR + get_address());
+            gcs().send_text(MAV_SEVERITY_DEBUG, "determined bus as %f", (double)bus);
+            AP_HAL::OwnPtr<AP_HAL::Device> tdev = hal.i2c_mgr->get_device(bus, PX4FLOW_BASE_I2C_ADDR);
             if (!tdev) {
                 continue;
             }

@@ -34,7 +34,7 @@ const AP_Param::GroupInfo AP_CtrlPos::var_info[] = {
     // @Values: 0:None, 1:PX4Flow, 2:Pixart, 3:Bebop, 4:CXOF, 5:MAVLink, 6:DroneCAN, 7:MSP, 8:UPFLOW
     // @User: Standard
     // @RebootRequired: True
-    AP_GROUPINFO_FLAGS("_TYPE", 1,  AP_CtrlPos,    _type,   (float)CTRL_POS_TYPE_DEFAULT, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("_TYPE", 0,  AP_CtrlPos,    _type,   (float)CTRL_POS_TYPE_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
     // @Param: _FXSCALER
     // @DisplayName: X axis optical flow scale factor correction
@@ -93,15 +93,6 @@ const AP_Param::GroupInfo AP_CtrlPos::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("_ADDR", 5,  AP_CtrlPos, _address,   0),
 
-    // @Param: _HGT_OVR
-    // @DisplayName: Height override of sensor above ground
-    // @Description: This is used in rover vehicles, where the sensor is a fixed height above the ground
-    // @Units: m
-    // @Range: 0 2
-    // @Increment: 0.01
-    // @User: Advanced
-    AP_GROUPINFO_FRAME("_HGT_OVR", 6,  AP_CtrlPos, _height_override,   0.0f, AP_PARAM_FRAME_ROVER),
-
     AP_GROUPEND
 };
 
@@ -116,7 +107,9 @@ AP_CtrlPos::AP_CtrlPos()
 void AP_CtrlPos::init(uint32_t log_bit)
 {
      _log_bit = log_bit;
-
+        GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Initializing...");
+    // force type to be PX4FLOW
+    
     // return immediately if not enabled or backend already created
     if ((_type == Type::NONE) || (backend != nullptr)) {
         return;
@@ -127,10 +120,8 @@ void AP_CtrlPos::init(uint32_t log_bit)
     case Type::NONE:
         break;
     case Type::PX4FLOW:
-#if AP_CTRLPOS_PX4FLOW_ENABLED
         backend = AP_CtrlPos_PX4Flow::detect(*this);
         GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SEARCHING...");
-#endif
         break;
     }
 
@@ -142,11 +133,16 @@ void AP_CtrlPos::init(uint32_t log_bit)
 void AP_CtrlPos::update(void)
 {
     // exit immediately if not enabled
+    static uint16_t prnt;
+
     if (!enabled()) {
+            if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Not Enabled");}
         return;
     }
+    if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "in update function");}
     if (backend != nullptr) {
         backend->update();
+            if (prnt == 0) {GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Updating backend");}
     }
 
     // only healthy if the data is less than 0.5s old
@@ -165,6 +161,11 @@ void AP_CtrlPos::update(void)
             _flowScalerY.notify();
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "FlowCal: FLOW_FXSCALER=%d, FLOW_FYSCALER=%d", (int)_flowScalerX, (int)_flowScalerY);
         }
+    }
+    if (prnt < 1) {
+        prnt = 2000;
+    } else {
+        prnt--;
     }
 }
 
