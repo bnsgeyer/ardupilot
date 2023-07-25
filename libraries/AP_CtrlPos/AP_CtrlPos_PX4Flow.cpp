@@ -33,7 +33,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define PX4FLOW_BASE_I2C_ADDR   0x70
+#define PX4FLOW_BASE_I2C_ADDR   0x28
 #define PX4FLOW_INIT_RETRIES    20      // attempt to initialise the sensor up to 10 times at startup
 
 
@@ -94,12 +94,12 @@ bool AP_CtrlPos_PX4Flow::scan_buses(void)
                 continue;
             }
             WITH_SEMAPHORE(tdev->get_semaphore());
-/*
-            struct i2c_integral_frame frame;
+            dev = std::move(tdev);
+            success = true;
+ /*           struct i2c_integral_frame frame;
             success = tdev->read_registers(REG_INTEGRAL_FRAME, (uint8_t *)&frame, sizeof(frame));
             if (success) {
                 gcs().send_text(MAV_SEVERITY_DEBUG, "Found Device");
-                dev = std::move(tdev);
                 break;
             } */
         }
@@ -119,7 +119,8 @@ bool AP_CtrlPos_PX4Flow::setup_sensor(void)
         return false;
     }
     // read at 10Hz HOW TO CHANGE TO 25HZ??
-//    dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_CtrlPos_PX4Flow::timer, void));
+    dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_CtrlPos_PX4Flow::timer, void));
+    gcs().send_text(MAV_SEVERITY_ALERT, "device found");
 
     return true;
 }
@@ -133,11 +134,16 @@ void AP_CtrlPos_PX4Flow::update(void)
 // timer to read sensor
 void AP_CtrlPos_PX4Flow::timer(void)
 {
-    struct i2c_integral_frame frame;
-    if (!dev->read_registers(REG_INTEGRAL_FRAME, (uint8_t *)&frame, sizeof(frame))) {
+//    struct i2c_integral_frame frame;
+/*    if (!dev->read_registers(REG_INTEGRAL_FRAME, (uint8_t *)&frame, sizeof(frame))) {
+        return;
+    } */
+    uint8_t raw_bytes[4];
+    if (!dev->read((uint8_t *)&raw_bytes, sizeof(raw_bytes))) {
         return;
     }
-    struct AP_CtrlPos::CtrlPos_state state {};
+
+/*    struct AP_CtrlPos::CtrlPos_state state {};
 
     if (frame.integration_timespan > 0) {
         const Vector2f flowScaler = _flowScaler();
@@ -154,7 +160,7 @@ void AP_CtrlPos_PX4Flow::timer(void)
         _applyYaw(state.bodyRate);
     }
 
-    _update_frontend(state);
+    _update_frontend(state); */
 }
 
 #endif  // AP_OPTICALFLOW_PX4FLOW_ENABLED
