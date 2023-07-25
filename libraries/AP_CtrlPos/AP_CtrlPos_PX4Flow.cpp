@@ -88,7 +88,7 @@ bool AP_CtrlPos_PX4Flow::scan_buses(void)
             }
     #endif
             gcs().send_text(MAV_SEVERITY_DEBUG, "determined bus as %f", (double)bus);
-            AP_HAL::OwnPtr<AP_HAL::Device> tdev = hal.i2c_mgr->get_device(bus, PX4FLOW_BASE_I2C_ADDR);
+            AP_HAL::OwnPtr<AP_HAL::Device> tdev = hal.i2c_mgr->get_device(2, PX4FLOW_BASE_I2C_ADDR);
             if (!tdev) {
             gcs().send_text(MAV_SEVERITY_DEBUG, "no device found");
                 continue;
@@ -141,7 +141,13 @@ void AP_CtrlPos_PX4Flow::timer(void)
     if (!dev->read((uint8_t *)&raw_bytes, sizeof(raw_bytes))) {
         return;
     }
-
+    static uint16_t prnt;
+    if (prnt < 1) {
+        prnt = 20;
+    GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "in Timer");
+    } else {
+        prnt--;
+    }
     uint32_t data = (raw_bytes[0] << 24) |
                     (raw_bytes[1] << 16) |
                     (raw_bytes[2] << 8)  |
