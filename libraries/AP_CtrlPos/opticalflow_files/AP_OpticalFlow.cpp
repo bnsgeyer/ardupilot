@@ -117,13 +117,6 @@ void AP_OpticalFlow::init(uint32_t log_bit)
 {
      _log_bit = log_bit;
 
-    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Initializing...");
-    if (_type == Type::NONE) {
-       GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "type none");
-    }
-    if (_type == Type::PX4FLOW) {
-       GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "type PX4FLOW");
-    }
     // return immediately if not enabled or backend already created
     if ((_type == Type::NONE) || (backend != nullptr)) {
         return;

@@ -1,4 +1,5 @@
 #include "SIM_Airspeed_DLVR.h"
+#include <GCS_MAVLink/GCS.h>
 
 #include "SITL.h"
 
@@ -7,6 +8,14 @@ int SITL::Airspeed_DLVR::rdwr(I2C::i2c_rdwr_ioctl_data *&data)
     struct I2C::i2c_msg &msg = data->msgs[0];
     if (msg.flags == I2C_M_RD) {
         // driver is attempting to receive reading...
+        static uint16_t prnt;
+        if (prnt < 1) {
+            prnt = 20;
+            GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "driver attempting to receive reading");
+        } else {
+            prnt--;
+        }
+
         if (msg.len != 4) {
             AP_HAL::panic("Unexpected message length (%u)", msg.len);
         }

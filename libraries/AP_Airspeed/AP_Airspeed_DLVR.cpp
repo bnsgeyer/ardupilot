@@ -75,12 +75,13 @@ void AP_Airspeed_DLVR::setup()
 // probe and initialise the sensor
 bool AP_Airspeed_DLVR::init()
 {
-    dev = hal.i2c_mgr->get_device(get_bus(), DLVR_I2C_ADDR);
+/*    dev = hal.i2c_mgr->get_device(get_bus(), DLVR_I2C_ADDR);
     if (!dev) {
         return false;
     }
     setup();
-    return true;
+    return true; */
+    return false;
 }
 
 #define STATUS_SHIFT 30

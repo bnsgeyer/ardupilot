@@ -1154,6 +1154,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 #endif
 
     // ID 60 is reserved for the SHIP_OPS
+    // @Group: CTRP
+    // @Path: ../libraries/AP_CtrlPos/AP_CtrlPos.cpp
+    AP_SUBGROUPINFO(ctrl_pos, "CTRP", 60, ParametersG2, AP_CtrlPos),
+
 
     // extend to a new group
     AP_SUBGROUPEXTENSION("", 61, ParametersG2, var_info2),
@@ -1264,6 +1268,7 @@ ParametersG2::ParametersG2(void)
 #endif
 
     ,command_model_pilot(PILOT_Y_RATE_DEFAULT, PILOT_Y_EXPO_DEFAULT, 0.0f)
+    ,ctrl_pos()
 
 #if WEATHERVANE_ENABLED == ENABLED
     ,weathervane()
