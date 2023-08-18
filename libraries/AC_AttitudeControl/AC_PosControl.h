@@ -389,6 +389,12 @@ public:
     ///     aircraft when in standby.
     void standby_xyz_reset();
 
+    // set disturbance north
+    void set_disturb_pos_cm(Vector2f disturb_pos) {_disturb_pos = disturb_pos;}
+
+    // set disturbance north
+    void set_disturb_vel_cms(Vector2f disturb_vel) {_disturb_vel = disturb_vel;}
+
     static const struct AP_Param::GroupInfo var_info[];
 
 protected:
@@ -445,6 +451,8 @@ protected:
     float       _jerk_max_xy_cmsss;       // Jerk limit of the xy kinematic path generation in cm/s^3 used to determine how quickly the aircraft varies the acceleration target
     float       _jerk_max_z_cmsss;        // Jerk limit of the z kinematic path generation in cm/s^3 used to determine how quickly the aircraft varies the acceleration target
     float       _vel_z_control_ratio = 2.0f;    // confidence that we have control in the vertical axis
+    Vector2f    _disturb_pos;
+    Vector2f    _disturb_vel;
 
     // output from controller
     float       _roll_target;           // desired roll angle in centi-degrees calculated by position controller
