@@ -471,7 +471,6 @@ void ModeSystemId::log_data() const
 
     // Full rate logging of attitude, rate and pid loops
     copter.Log_Write_Attitude();
-    copter.Log_Write_PIDS();
 
     if ((AxisType)axis.get() == AxisType::DISTURB_POS_LAT || (AxisType)axis.get() == AxisType::DISTURB_POS_LONG 
          || (AxisType)axis.get() == AxisType::DISTURB_VEL_LAT || (AxisType)axis.get() == AxisType::DISTURB_VEL_LONG
