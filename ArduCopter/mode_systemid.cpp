@@ -289,24 +289,24 @@ void ModeSystemId::run()
                     break;
                 case AxisType::DISTURB_POS_LAT:
                     disturb_state.x = 0.0f;
-                    disturb_state.y = waveform_sample;
+                    disturb_state.y = waveform_sample * 100.0f;
                     copter.rotate_target_body_frame_to_NE(disturb_state.x, disturb_state.y);
                     pos_control->set_disturb_pos_cm(disturb_state);
                     break;
                 case AxisType::DISTURB_POS_LONG:
-                    disturb_state.x = waveform_sample;
+                    disturb_state.x = waveform_sample * 100.0f;
                     disturb_state.y = 0.0f;
                     copter.rotate_target_body_frame_to_NE(disturb_state.x, disturb_state.y);
                     pos_control->set_disturb_pos_cm(disturb_state);
                     break;
                 case AxisType::DISTURB_VEL_LAT:
                     disturb_state.x = 0.0f;
-                    disturb_state.y = waveform_sample;
+                    disturb_state.y = waveform_sample * 100.0f;
                     copter.rotate_target_body_frame_to_NE(disturb_state.x, disturb_state.y);
                     pos_control->set_disturb_vel_cms(disturb_state);
                     break;
                 case AxisType::DISTURB_VEL_LONG:
-                    disturb_state.x = waveform_sample;
+                    disturb_state.x = waveform_sample * 100.0f;
                     disturb_state.y = 0.0f;
                     copter.rotate_target_body_frame_to_NE(disturb_state.x, disturb_state.y);
                     pos_control->set_disturb_vel_cms(disturb_state);
@@ -476,6 +476,9 @@ void ModeSystemId::log_data() const
          || (AxisType)axis.get() == AxisType::DISTURB_VEL_LAT || (AxisType)axis.get() == AxisType::DISTURB_VEL_LONG
          || (AxisType)axis.get() == AxisType::INPUT_LOITER_LAT || (AxisType)axis.get() == AxisType::INPUT_LOITER_LONG) {
         pos_control->write_log();
+        copter.logger.Write_PID(LOG_PIDN_MSG, pos_control->get_vel_xy_pid().get_pid_info_x());
+        copter.logger.Write_PID(LOG_PIDE_MSG, pos_control->get_vel_xy_pid().get_pid_info_y());
+
     }
 }
 
