@@ -635,7 +635,7 @@ void AC_PosControl::update_xy_controller()
     _accel_target.xy() = accel_target;
 
     // Add feed forward into the target acceleration output
-    _accel_target.xy() += _accel_desired.xy();
+//    _accel_target.xy() += _accel_desired.xy();
 
     // Acceleration Controller
 
