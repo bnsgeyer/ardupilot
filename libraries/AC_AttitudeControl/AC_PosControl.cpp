@@ -293,6 +293,15 @@ const AP_Param::GroupInfo AC_PosControl::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("_JERK_Z", 11, AC_PosControl, _shaping_jerk_z, POSCONTROL_JERK_Z),
 
+
+    // @Param: _ACCXY_FF
+    // @DisplayName: Acceleration (horizontal) feed forward gain
+    // @Description: Acceleration (horizontal) feed forward gain.  Sets the amount of acceleration is fed to forward path.
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("_ACCXY_FF", 12, AC_PosControl, _accel_xy_ff, 1.0f),
+
     AP_GROUPEND
 };
 
@@ -643,7 +652,7 @@ void AC_PosControl::update_xy_controller()
     _accel_target.xy() = accel_target;
 
     // Add feed forward into the target acceleration output
-    _accel_target.xy() += _accel_desired.xy();
+    _accel_target.xy() += _accel_desired.xy() * constrain_float(_accel_xy_ff, 0.0f, 1.0f);
 
     // Acceleration Controller
 
