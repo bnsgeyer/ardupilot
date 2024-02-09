@@ -61,6 +61,30 @@ const AP_Param::GroupInfo ModeSystemId::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_T_FADE_OUT", 7, ModeSystemId, time_fade_out, 2),
 
+    // @Param: _T_TRANSIT
+    // @DisplayName: Transit Time for Lateral Reposition or Depart-Abort Axis types
+    // @Description: Time taken to complete the MTE
+    // @Range: 0 255
+    // @Units: s
+    // @User: Standard
+    AP_GROUPINFO("_T_TRANSIT", 8, ModeSystemId, time_transit, 5.2),
+
+    // @Param: _ACCEL_MAX
+    // @DisplayName: Maximum Acceleration used in Lateral Reposition and Depart Abort MTE calculations
+    // @Description: Maximum Acceleration used in Lateral Reposition and Depart Abort MTE calculations
+    // @Range: 0 10
+    // @Units: m/s
+    // @User: Standard
+    AP_GROUPINFO("_ACCEL_MAX", 9, ModeSystemId, accel_max, 3.5),
+
+    // @Param: _HDG_TRANSIT
+    // @DisplayName: Maximum Acceleration used in Lateral Reposition and Depart Abort MTE calculations
+    // @Description: Maximum Acceleration used in Lateral Reposition and Depart Abort MTE calculations
+    // @Range: 0 10
+    // @Units: m/s
+    // @User: Standard
+    AP_GROUPINFO("_HDG_TRANSIT", 10, ModeSystemId, hdg_transit, 0.0),
+
     AP_GROUPEND
 };
 
@@ -131,6 +155,20 @@ bool ModeSystemId::init(bool ignore_checks)
         curr_pos = inertial_nav.get_position_neu_cm();
         target_pos.x = curr_pos.x;
         target_pos.y = curr_pos.y;
+
+        mte_heading = hdg_transit;
+
+        if ((AxisType)axis.get() == AxisType::LAT_REPOSITION) {
+            mte_init_time = 10.0f;
+            mte_end_first_time = 10.0f + time_transit;
+            mte_start_second_time = 20.0f + time_transit;
+            mte_end_second_time = 20.0f + 2.0f * time_transit;
+        } else if ((AxisType)axis.get() == AxisType::DEPART_ABORT) {
+            mte_init_time = 10.0f;
+            mte_end_first_time = 10.0f + time_transit;
+            mte_start_second_time = 40.0f + time_transit;  // give extra time to turn around
+            mte_end_second_time = 40.0f + 2.0f * time_transit;
+        }
     }
 
     att_bf_feedforward = attitude_control->get_bf_feedforward();
@@ -237,6 +275,10 @@ void ModeSystemId::run()
     waveform_sample = chirp_input.update(waveform_time - SYSTEM_ID_DELAY, waveform_magnitude);
     waveform_freq_rads = chirp_input.get_frequency_rads();
     Vector2f disturb_state;
+    float mte_vel = 0.0f;
+    float mte_vel_const = 0.0f;
+    float time_calc = 0.0f;
+
     switch (systemid_state) {
         case SystemIDModeState::SYSTEMID_STATE_STOPPED:
             attitude_control->bf_feedforward(att_bf_feedforward);
@@ -340,6 +382,51 @@ void ModeSystemId::run()
                     input_vel.y = 0.0f;
                     input_vel.rotate(attitude_control->get_att_target_euler_rad().z);
                     break;
+                case AxisType::LAT_REPOSITION:
+                    if (waveform_time < mte_init_time || (waveform_time >= mte_end_first_time && waveform_time < mte_start_second_time) || waveform_time > mte_end_second_time) {
+                        mte_vel = 0.0f;
+                    } else if (waveform_time >= mte_init_time && waveform_time < mte_end_first_time) {
+                        time_calc = waveform_time - mte_init_time;
+                        if (waveform_time >= mte_init_time + 0.5f * time_transit) {
+                            time_calc = mte_init_time + 0.5f * time_transit -waveform_time;
+                            mte_vel_const = -accel_max * time_transit * sinf(M_2PI) / (2.0f * M_2PI) + accel_max * 0.5f * time_transit;
+                        }
+                        mte_vel = -accel_max * time_transit * sinf(2.0f * M_2PI * time_calc / time_transit) / (2.0f * M_2PI) + accel_max * time_calc + mte_vel_const;
+                    } else if (waveform_time >= mte_start_second_time && waveform_time <= mte_end_second_time) {
+                        time_calc = waveform_time - mte_start_second_time;
+                        if (waveform_time >= mte_start_second_time + 0.5f * time_transit) {
+                            time_calc = mte_start_second_time + 0.5f * time_transit -waveform_time;
+                            mte_vel_const = accel_max * time_transit * sinf(M_2PI) / (2.0f * M_2PI) - accel_max * 0.5f * time_transit;
+                        }
+                        mte_vel = accel_max * time_transit * sinf(2.0f * M_2PI * time_calc / time_transit) / (2.0f * M_2PI) - accel_max * time_calc + mte_vel_const;
+                    }
+                    input_vel.x = 0.0f;
+                    input_vel.y = mte_vel * 100.0f;
+                    input_vel.rotate(ToRad(mte_heading));
+                    break;
+                case AxisType::DEPART_ABORT:
+                    if (waveform_time < mte_init_time || (waveform_time >= mte_end_first_time && waveform_time < mte_start_second_time) || waveform_time > mte_end_second_time) {
+                        mte_vel = 0.0f;
+                    } else if (waveform_time >= mte_init_time && waveform_time < mte_end_first_time) {
+                        time_calc = waveform_time - mte_init_time;
+                        if (waveform_time >= mte_init_time + 0.5f * time_transit) {
+                            time_calc = mte_init_time + 0.5f * time_transit -waveform_time;
+                            mte_vel_const = -accel_max * time_transit * sinf(M_2PI) / (2.0f * M_2PI) + accel_max * 0.5f * time_transit;
+                        }
+                        mte_vel = -accel_max * time_transit * sinf(2.0f * M_2PI * time_calc / time_transit) / (2.0f * M_2PI) + accel_max * time_calc + mte_vel_const;
+                    } else if (waveform_time >= mte_start_second_time && waveform_time <= mte_end_second_time) {
+                        time_calc = waveform_time - mte_start_second_time;
+                        if (waveform_time >= mte_start_second_time + 0.5f * time_transit) {
+                            time_calc = mte_start_second_time + 0.5f * time_transit -waveform_time;
+                            mte_vel_const = -accel_max * time_transit * sinf(M_2PI) / (2.0f * M_2PI) + accel_max * 0.5f * time_transit;
+                        }
+                        mte_vel = -accel_max * time_transit * sinf(2.0f * M_2PI * time_calc / time_transit) / (2.0f * M_2PI) + accel_max * time_calc + mte_vel_const;
+                    }
+                    if (waveform_time >= mte_end_first_time + 10.0f) { mte_heading = hdg_transit + 180.0f; }
+                    input_vel.x = mte_vel * 100.0f;
+                    input_vel.y = 0.0f;
+                    input_vel.rotate(ToRad(mte_heading));
+                    break;
             }
             break;
     }
@@ -373,8 +460,13 @@ void ModeSystemId::run()
         // run pos controller
         pos_control->update_xy_controller();
 
-        // call attitude controller
-        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate, false);
+        if ((AxisType)axis.get() == AxisType::LAT_REPOSITION || (AxisType)axis.get() == AxisType::DEPART_ABORT) {
+            // call attitude controller and specify heading to hold
+            attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), mte_heading * 100.0f);
+        } else {
+            // call attitude controller
+            attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate, false);
+        }
 
         // Send the commanded climb rate to the position controller
         pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate);

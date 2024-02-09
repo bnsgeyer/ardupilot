@@ -1589,6 +1589,8 @@ private:
         DISTURB_VEL_LONG = 17,  // longitudinal body axis measured velocity is being excited
         INPUT_LOITER_LAT = 18,  // lateral body axis commanded velocity is being excited
         INPUT_LOITER_LONG = 19, // longitudinal body axis commanded velocity is being excited
+        LAT_REPOSITION = 20,    // lateral body axis commanded velocity is being excited
+        DEPART_ABORT = 21,      // longitudinal body axis commanded velocity is being excited
     };
 
     AP_Int8 axis;               // Controls which axis are being excited. Set to non-zero to display other parameters
@@ -1598,6 +1600,9 @@ private:
     AP_Float time_fade_in;      // Time to reach maximum amplitude of chirp
     AP_Float time_record;       // Time taken to complete the chirp waveform
     AP_Float time_fade_out;     // Time to reach zero amplitude after chirp finishes
+    AP_Float time_transit;      // Time to complete MTE
+    AP_Float accel_max;         // Max Accel used in MTE calculations
+    AP_Float hdg_transit;
 
     bool att_bf_feedforward;    // Setting of attitude_control->get_bf_feedforward
     float waveform_time;        // Time reference for waveform
@@ -1608,6 +1613,14 @@ private:
     Vector2f target_vel;        // target velocity for position controller modes
     Vector2f target_pos;       // target positon
     Vector2f input_vel_last;    // last cycle input velocity
+    float mte_heading;
+
+    // Lateral Reposition times
+    float mte_init_time;   // time used to stabilize hover and turn to heading
+    float mte_end_first_time;   // time used to stabilize hover and turn to heading
+    float mte_start_second_time;   // time used to stabilize hover and turn to heading
+    float mte_end_second_time;   // time used to stabilize hover and turn to heading
+
     // System ID states
     enum class SystemIDModeState {
         SYSTEMID_STATE_STOPPED,
