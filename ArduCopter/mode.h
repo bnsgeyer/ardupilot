@@ -1611,6 +1611,7 @@ protected:
 private:
 
     void log_data() const;
+    bool is_poscontrol_axis_type() const;
 
     enum class AxisType {
         NONE = 0,               // none
