@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Copter.h"
+#include <AP_Math/control.h>
 #include <AP_Math/chirp.h>
 class Parameters;
 class ParametersG2;
@@ -1605,7 +1606,8 @@ private:
     float time_const_freq;      // Time at constant frequency before chirp starts
     int8_t log_subsample;       // Subsample multiple for logging.
     Vector2f target_vel;        // target velocity for position controller modes
-    
+    Vector2f target_pos;       // target positon
+    Vector2f input_vel_last;    // last cycle input velocity
     // System ID states
     enum class SystemIDModeState {
         SYSTEMID_STATE_STOPPED,
