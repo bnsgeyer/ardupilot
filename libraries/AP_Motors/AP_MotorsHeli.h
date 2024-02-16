@@ -148,6 +148,9 @@ public:
 	//return zero lift collective position
     float get_coll_mid() const { return _collective_zero_thrust_pct; }
 
+    //return landing collective position
+    float get_coll_land_min()const { return _collective_land_min_pct;}
+
     //return collective hover
     float get_coll_hover() const { return _collective_hover; }
 
@@ -157,6 +160,9 @@ public:
 
     // Return collective hover position as an angle in deg
     float get_hover_coll_ang(void);
+
+    // Helper function to calculate the normalised collective position given a desired blade pitch angle (deg)
+    float calc_coll_from_ang(float col_ang_deg);
 
     // enum for heli optional features
     enum class HeliOption {

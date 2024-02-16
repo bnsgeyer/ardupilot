@@ -4,28 +4,17 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <GCS_MAVLink/GCS.h>
 
-//Autorotation controller defaults
-#define AROT_BAIL_OUT_TIME                            2.0f     // Default time for bail out controller to run (unit: s)
-#define ROT_SOLIDITY                                 0.05f    // Main rotor solidity
-#define ROT_DIAMETER                                 1.25f    // Main rotor diameter
-
 // Head Speed (HS) controller specific default definitions
 #define HS_CONTROLLER_COLLECTIVE_CUTOFF_FREQ          2.0f     // low-pass filter on accel error (unit: hz)
 #define HS_CONTROLLER_HEADSPEED_P                     0.7f     // Default P gain for head speed controller (unit: -)
-#define HS_CONTROLLER_ENTRY_COL_FILTER                0.7f    // Default low pass filter frequency during the entry phase (unit: Hz)
-#define HS_CONTROLLER_GLIDE_COL_FILTER                0.1f    // Default low pass filter frequency during the glide phase (unit: Hz)
-#define HS_CONTROLLER_CUSHION_COL_FILTER           0.5f
 
 // Speed Height controller specific default definitions for autorotation use
-#define FWD_SPD_CONTROLLER_GND_SPEED_TARGET           1100     // Default target ground speed for speed height controller (unit: cm/s)
-#define FWD_SPD_CONTROLLER_MAX_ACCEL                  60      // Default acceleration limit for speed height controller (unit: cm/s/s)
-#define AP_FW_VEL_P                       0.9f
-#define TCH_P                                    0.1f
-#define AP_FW_VEL_FF                      0.15f
+#define AP_FW_VEL_P                                   0.9f    // Default forward speed controller P gain
+#define TCH_P                                         0.1f    // Default touchdown phase collective controller P gain
 
 // flare controller default definitions
-#define AP_ALPHA_TPP                         20.0f
-#define AP_T_TO_G                            0.55f
+#define AP_ALPHA_TPP                                  20.0f   // (deg) Maximum angle of the Tip Path Plane
+#define MIN_TIME_ON_GROUND                            3000    // (ms) Time on ground required before collective is slewed to zero thrust
 
 const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
 
@@ -60,7 +49,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 800 2000
     // @Increment: 50
     // @User: Advanced
-    AP_GROUPINFO("TARG_SP", 4, AC_Autorotation, _param_target_speed, FWD_SPD_CONTROLLER_GND_SPEED_TARGET),
+    AP_GROUPINFO("TARG_SP", 4, AC_Autorotation, _param_target_speed, 1100),
 
     // @Param: COL_FILT_E
     // @DisplayName: Entry Phase Collective Filter
@@ -69,7 +58,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.2 0.5
     // @Increment: 0.01
     // @User: Advanced
-    AP_GROUPINFO("COL_FILT_E", 5, AC_Autorotation, _param_col_entry_cutoff_freq, HS_CONTROLLER_ENTRY_COL_FILTER),
+    AP_GROUPINFO("COL_FILT_E", 5, AC_Autorotation, _param_col_entry_cutoff_freq, 0.7),
 
     // @Param: COL_FILT_G
     // @DisplayName: Glide Phase Collective Filter
@@ -78,7 +67,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.03 0.15
     // @Increment: 0.01
     // @User: Advanced
-    AP_GROUPINFO("COL_FILT_G", 6, AC_Autorotation, _param_col_glide_cutoff_freq, HS_CONTROLLER_GLIDE_COL_FILTER),
+    AP_GROUPINFO("COL_FILT_G", 6, AC_Autorotation, _param_col_glide_cutoff_freq, 0.1),
 
     // @Param: AS_ACC_MAX
     // @DisplayName: Forward Acceleration Limit
@@ -87,7 +76,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 30 60
     // @Increment: 10
     // @User: Advanced
-    AP_GROUPINFO("AS_ACC_MAX", 7, AC_Autorotation, _param_accel_max, FWD_SPD_CONTROLLER_MAX_ACCEL),
+    AP_GROUPINFO("AS_ACC_MAX", 7, AC_Autorotation, _param_accel_max, 60),
 
     // @Param: BAIL_TIME
     // @DisplayName: Bail Out Timer
@@ -96,7 +85,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.5 4
     // @Increment: 0.1
     // @User: Advanced
-    AP_GROUPINFO("BAIL_TIME", 8, AC_Autorotation, _param_bail_time, AROT_BAIL_OUT_TIME),
+    AP_GROUPINFO("BAIL_TIME", 8, AC_Autorotation, _param_bail_time, 2.0),
 
     // @Param: HS_SENSOR
     // @DisplayName: Main Rotor RPM Sensor
@@ -121,7 +110,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0 1
     // @Increment: 0.01
     // @User: Advanced
-    AP_GROUPINFO("FW_V_FF", 11, AC_Autorotation, _param_fwd_k_ff, AP_FW_VEL_FF),
+    AP_GROUPINFO("FW_V_FF", 11, AC_Autorotation, _param_fwd_k_ff, 0.15),
 
     // @Param: TCH_P
     // @DisplayName: P gain for vertical touchdown controller
@@ -138,7 +127,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.2 0.8
     // @Increment: 0.01
     // @User: Advanced
-    AP_GROUPINFO("COL_FILT_C", 13, AC_Autorotation, _param_col_cushion_cutoff_freq, HS_CONTROLLER_CUSHION_COL_FILTER),
+    AP_GROUPINFO("COL_FILT_C", 13, AC_Autorotation, _param_col_touchdown_cutoff_freq, 0.5),
 
     // @Param: ROT_SOL
     // @DisplayName: rotor solidity
@@ -146,7 +135,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.001 0.01
     // @Increment: 0.001
     // @User: Advanced
-    AP_GROUPINFO("ROT_SOL", 14, AC_Autorotation, _param_solidity, ROT_SOLIDITY),
+    AP_GROUPINFO("ROT_SOL", 14, AC_Autorotation, _param_solidity, 0.05),
 
     // @Param: ROT_DIAM
     // @DisplayName: rotor diameter
@@ -155,7 +144,7 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.001 0.01
     // @Increment: 0.001
     // @User: Advanced
-    AP_GROUPINFO("ROT_DIAM", 15, AC_Autorotation, _param_diameter, ROT_DIAMETER),
+    AP_GROUPINFO("ROT_DIAM", 15, AC_Autorotation, _param_diameter, 1.25),
 
     // @Param: T_TCH
     // @DisplayName: time touchdown
@@ -164,7 +153,13 @@ const AP_Param::GroupInfo AC_Autorotation::var_info[] = {
     // @Range: 0.001 0.01
     // @Increment: 0.001
     // @User: Advanced
-    AP_GROUPINFO("T_TCH", 16, AC_Autorotation, _t_tch, AP_T_TO_G),
+    AP_GROUPINFO("T_TCH", 16, AC_Autorotation, _t_tch, 0.55),
+
+    // @Param: OPTIONS
+    // @DisplayName: Autorotation options
+    // @Description: Bitmask for autorotation options.
+    // @Bitmask: 0: Use stabilize-like controls (roll angle, yaw rate)
+    AP_GROUPINFO("OPTIONS", 17, AC_Autorotation, _options, 0),
 
     AP_GROUPEND
 };
@@ -182,14 +177,12 @@ AC_Autorotation::AC_Autorotation(AP_InertialNav& inav, AP_AHRS& ahrs) :
 }
 
 
-void AC_Autorotation::init(AP_MotorsHeli* motors) {
+void AC_Autorotation::init(AP_MotorsHeli* motors, float gnd_clear) {
 
     _motors_heli = motors;
     if (_motors_heli == nullptr) {
         AP_HAL::panic("AROT: _motors_heli is nullptr");
     }
-
-    _using_rfnd = false;
 
     // Reset z acceleration average variables
     _avg_acc_z = 0.0f;
@@ -200,24 +193,16 @@ void AC_Autorotation::init(AP_MotorsHeli* motors) {
     initial_flare_estimate();
 
     // Initialisation of head speed controller
-    // Set initial collective position to be the collective position on initialisation
+    // Set initial collective position to be the zero thrust collective and minimize loss in head speed
     _collective_out = _motors_heli->get_coll_mid();
 
     // Reset feed forward filter
     col_trim_lpf.reset(_collective_out);
 
-    // Reset flags
-    _flags.bad_rpm = false;
-
-    // Reset RPM health monitoring
-    _unhealthy_rpm_counter = 0;
-    _healthy_rpm_counter = 0;
-
     // Protect against divide by zero
     _param_head_speed_set_point.set(MAX(_param_head_speed_set_point, 500.0));
 
     // Initialise forward speed controller
-    // Reset I term and acceleration target
     _accel_target = 0.0;
 
     // Ensure parameter acceleration doesn't exceed hard-coded limit
@@ -227,22 +212,64 @@ void AC_Autorotation::init(AP_MotorsHeli* motors) {
     _cmd_vel = calc_speed_forward(); //(cm/s)
     _accel_out_last = _cmd_vel * _param_fwd_k_ff;
 
-    // initialize radar altitude estimator
-    init_est_rangefinder_alt();
+    // Store the ground clearance on the lidar sensor for use in touch down calculations
+    _ground_clearance = gnd_clear;
+
+    // reset on ground timer
+    _time_on_ground = 0;
+}
+
+
+void AC_Autorotation::init_entry(void)
+{
+    // Set following trim low pass cut off frequency
+    _col_cutoff_freq = _param_col_entry_cutoff_freq.get();
+
+    // Set desired forward speed target
+    _vel_target = _param_target_speed.get();
+}
+
+void AC_Autorotation::init_glide(float hs_targ)
+{
+    // Set following trim low pass cut off frequency
+    _col_cutoff_freq = _param_col_glide_cutoff_freq.get();
+
+    // Ensure desired forward speed target is set to param value
+    _vel_target = _param_target_speed.get();
+
+    // Update head speed target
+    _target_head_speed = hs_targ;
+}
+
+void AC_Autorotation::init_flare(float hs_targ)
+{
+    // Ensure following trim low pass cut off frequency
+    _col_cutoff_freq = _param_col_glide_cutoff_freq.get();
+
+    _flare_entry_speed = calc_speed_forward();
+
+    // Update head speed target
+    _target_head_speed = hs_targ;
+}
+
+void AC_Autorotation::init_touchdown(void)
+{
+    // Set following trim low pass cut off frequency
+    _col_cutoff_freq = _param_col_touchdown_cutoff_freq.get();
+
+    // store the descent speed and height at the start of the touch down
+    _entry_sink_rate = _inav.get_velocity_z_up_cms();
+    _entry_alt = _gnd_hgt;
 }
 
 
 // Rotor Speed controller for entry, glide and flare phases of autorotation
-bool AC_Autorotation::update_hs_glide_controller(void)
+void AC_Autorotation::update_hs_glide_controller(void)
 {
-    // Reset rpm health flag
-    _flags.bad_rpm = false;
-    _flags.bad_rpm_warning = false;
-
     // Get current rpm and update healthy signal counters
-    _current_rpm = get_rpm(true);
+    _current_rpm = get_rpm();
 
-    if (_unhealthy_rpm_counter <= 30) {
+    if (_current_rpm > 0.0) {
         // Normalised head speed
         float head_speed_norm = _current_rpm / _param_head_speed_set_point;
 
@@ -262,16 +289,12 @@ bool AC_Autorotation::update_hs_glide_controller(void)
         _collective_out = constrain_value((_p_term_hs + _ff_term_hs), 0.0f, 1.0f) ;
 
     } else {
-        // RPM sensor is bad set collective to minimum
-        _collective_out = 0.0f;
-
-        _flags.bad_rpm_warning = true;
+         // RPM sensor is bad, set collective to angle of -2 deg and hope for the best
+         _collective_out = _motors_heli->calc_coll_from_ang(-2.0);
     }
 
     // Send collective to setting to motors output library
     set_collective(HS_CONTROLLER_COLLECTIVE_CUTOFF_FREQ);
-
-    return _flags.bad_rpm_warning;
 }
 
 
@@ -301,9 +324,9 @@ void AC_Autorotation::set_collective(float collective_filter_cutoff) const
 
 // Function that gets rpm and does rpm signal checking to ensure signal is reliable
 // before using it in the controller
-float AC_Autorotation::get_rpm(bool update_counter)
+float AC_Autorotation::get_rpm(void)
 {
-    float current_rpm = 0.0f;
+    float current_rpm = 0.0;
 
 #if AP_RPM_ENABLED
     // Get singleton for RPM library
@@ -320,33 +343,11 @@ float AC_Autorotation::get_rpm(bool update_counter)
         uint8_t instance = _param_rpm_instance;
 
         // Check RPM sensor is returning a healthy status
-        if (!rpm->get_rpm(instance, current_rpm) || current_rpm <= -1) {
-            //unhealthy, rpm unreliable
-            _flags.bad_rpm = true;
+        if (!rpm->get_rpm(instance, current_rpm)) {
+            current_rpm = 0.0;
         }
-
-    } else {
-        _flags.bad_rpm = true;
     }
-#else
-    _flags.bad_rpm = true;
 #endif
-
-    if (_flags.bad_rpm) {
-        // Count unhealthy rpm updates and reset healthy rpm counter
-        _unhealthy_rpm_counter++;
-        _healthy_rpm_counter = 0;
-
-    } else if (!_flags.bad_rpm && _unhealthy_rpm_counter > 0) {
-        // Poor rpm reading may have cleared.  Wait 10 update cycles to clear.
-        _healthy_rpm_counter++;
-
-        if (_healthy_rpm_counter >= 10) {
-            // Poor rpm health has cleared, reset counters
-            _unhealthy_rpm_counter = 0;
-            _healthy_rpm_counter = 0;
-        }
-    }
     return current_rpm;
 }
 
@@ -376,15 +377,13 @@ void AC_Autorotation::initial_flare_estimate(void)
     float des_spd_fwd = _param_target_speed * 0.01f;
     calc_flare_alt(-_est_rod, des_spd_fwd);
 
-    // Initialize sink rate monitor and flare bools
+    // Initialize flare bools
     _flare_complete = false;
     _flare_update_check = false;
-    _avg_sink_deriv = 0.0f;
-    _avg_sink_deriv_sum = 0.0f;
-    _index_sink_rate = 0;
-    memset(_curr_sink_deriv, 0, sizeof(_curr_sink_deriv));
+
 
     gcs().send_text(MAV_SEVERITY_INFO, "Ct/sigma=%f W=%f kg flare_alt=%f C=%f", c_t/_param_solidity, _lift_hover/GRAVITY_MSS, _flare_alt_calc*0.01f, _c);
+    gcs().send_text(MAV_SEVERITY_INFO, "est_rod=%f", _est_rod);
 }
 
 
@@ -413,7 +412,6 @@ void AC_Autorotation::calc_flare_alt(float sink_rate, float fwd_speed)
 
     // Estimate altitude to begin collective pull
     _cushion_alt = (-(sink_rate * cosf(radians(AP_ALPHA_TPP))) * _t_tch) * 100.0f;
-    gcs().send_text(MAV_SEVERITY_INFO, "vs_final_est=%f ", sink_rate*cosf(radians(20)));
 
     // Total delta altitude to ground
     _flare_alt_calc = _cushion_alt + delta_h * 100.0f;
@@ -437,13 +435,12 @@ void AC_Autorotation::Log_Write_Autorotation(void) const
     // @Field: vff: ff-term of velocity response
     // @Field: az: average z acceleration
     // @Field: dvz: Desired Sink Rate
-    // @Field: rfnd: rangefinder altitude
-    // @Field: h: estimated altitude
+    // @Field: h: height above ground
 
     //Write to data flash log
     AP::logger().WriteStreaming("AROT",
-                                "TimeUS,hsp,hse,co,cff,sf,dsf,vp,vff,az,dvz,rfnd,h",
-                                "Qffffffffffff",
+                                "TimeUS,hsp,hse,co,cff,sf,dsf,vp,vff,az,dvz,h",
+                                "Qfffffffffff",
                                 AP_HAL::micros64(),
                                 _p_term_hs,
                                 _head_speed_error,
@@ -455,8 +452,7 @@ void AC_Autorotation::Log_Write_Autorotation(void) const
                                 _vel_ff,
                                 _avg_acc_z,
                                 _desired_sink_rate,
-                                (_radar_alt*0.01f),
-                                (_est_alt*0.01f));
+                                (_gnd_hgt*0.01f));
 }
 #endif  // HAL_LOGGING_ENABLED
 
@@ -524,30 +520,11 @@ void AC_Autorotation::update_forward_speed_controller(void)
     }
     _accel_out_last = _accel_out;
 
-    if (_est_alt >= _flare_alt_calc * 1.25f) {
+    if (_gnd_hgt >= _flare_alt_calc * 1.25f) {
         _pitch_target = accel_to_angle(-_accel_out * 0.01) * 100;
     } else {
         _pitch_target = 0.0f;
     }
-}
-
-
-void AC_Autorotation::calc_sink_d_avg(void)
-{
-    float vertical_speed = _inav.get_velocity_z_up_cms();
-    _sink_deriv = ((vertical_speed - _last_vertical_speed) * 0.01f) / _dt;
-    _last_vertical_speed = vertical_speed;
-
-    if (_index_sink_rate < 20) {
-        _avg_sink_deriv_sum -= _curr_sink_deriv[_index_sink_rate];
-        _curr_sink_deriv[_index_sink_rate] = _sink_deriv;
-        _avg_sink_deriv_sum += _curr_sink_deriv[_index_sink_rate];
-        _index_sink_rate = _index_sink_rate + 1;
-    } else {
-        _index_sink_rate = 0;
-    }
-    _avg_sink_deriv = _avg_sink_deriv_sum / 20.0f;
-    _avg_sink_deriv = constrain_float( _avg_sink_deriv, -10.0f, 10.0f);
 }
 
 
@@ -556,7 +533,7 @@ void AC_Autorotation::update_flare_alt(void)
     if (!_flare_update_check) {
         float delta_v_z = fabsf((_inav.get_velocity_z_up_cms()) * 0.01f + _est_rod);
 
-        if ((_speed_forward >= 0.8f * _param_target_speed) && (delta_v_z <= 1) && (fabsf(_avg_sink_deriv)<=0.005)) {
+        if ((_speed_forward >= 0.8f * _param_target_speed) && (delta_v_z <= 2) && (fabsf(_avg_acc_z+GRAVITY_MSS) <= 0.5f)) {
             float vel_z = _inav.get_velocity_z_up_cms() * 0.01f;
             float spd_fwd = _speed_forward * 0.01f;
             _c = (_lift_hover / (sq(vel_z) * 0.5f * SSL_AIR_DENSITY * _disc_area)) * 1.15f;
@@ -586,7 +563,7 @@ void AC_Autorotation::flare_controller(void)
     _speed_forward = calc_speed_forward(); // (cm/s)
     _delta_speed_fwd = _speed_forward - _speed_forward_last; // (cm/s)
     _speed_forward_last = _speed_forward; // (cm/s)
-    _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, _est_alt, _cushion_alt, _flare_alt_calc);
+    _desired_speed = linear_interpolate(0.0f, _flare_entry_speed, _gnd_hgt, _cushion_alt, _flare_alt_calc);
 
     // Get p
     _vel_p = _p_fw_vel.get_p(_desired_speed - _speed_forward);
@@ -620,7 +597,7 @@ void AC_Autorotation::flare_controller(void)
     _accel_out_last = _accel_out;
 
     // Estimate flare effectiveness
-    if (_speed_forward <= (0.6 * _flare_entry_speed) && (fabsf(_avg_sink_deriv) <= 0.005f) && (_avg_acc_z>= -1.1 * 9.80665f)) {
+    if (_speed_forward <= (0.6 * _flare_entry_speed) && (fabsf(_avg_acc_z+GRAVITY_MSS) <= 0.5f)) {
         if (!_flare_complete) {
             _flare_complete = true;
             gcs().send_text(MAV_SEVERITY_INFO, "Flare_complete");
@@ -631,7 +608,7 @@ void AC_Autorotation::flare_controller(void)
         _pitch_target = atanf(-_accel_out / (GRAVITY_MSS * 100.0f)) * (18000.0f/M_PI);
         _pitch_target = constrain_float(_pitch_target, 0.0f, AP_ALPHA_TPP * 100.0f);
     } else {
-        _pitch_target *= 0.95f;
+        _pitch_target *= 0.9995f;
     }
 }
 
@@ -639,8 +616,8 @@ void AC_Autorotation::flare_controller(void)
 void AC_Autorotation::touchdown_controller(void)
 {
     float _current_sink_rate = _inav.get_velocity_z_up_cms();
-    if (_radar_alt >= _ground_clearance) {
-        _desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _radar_alt, _ground_clearance, _entry_alt);
+    if (_gnd_hgt >= _ground_clearance) {
+        _desired_sink_rate = linear_interpolate(0.0f, _entry_sink_rate, _gnd_hgt, _ground_clearance, _entry_alt);
     } else {
         _desired_sink_rate = 0.0f;
     }
@@ -648,75 +625,46 @@ void AC_Autorotation::touchdown_controller(void)
     // Update forward speed for logging
     _speed_forward = calc_speed_forward(); // (cm/s)
 
-    _collective_out =  constrain_value((_p_coll_tch.get_p(_desired_sink_rate - _current_sink_rate))*0.01f + _ff_term_hs, 0.0f, 1.0f);
-    col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
-    _ff_term_hs = col_trim_lpf.apply(_collective_out, _dt);
+    // Check to see if we think the aircraft is on the ground
+    if(_current_sink_rate < 10.0 && _gnd_hgt <= _ground_clearance && _time_on_ground == 0){
+        _time_on_ground = AP_HAL::millis();
+    }
+
+    // Use a timer to get confidence that the aircraft is on the ground.
+    // Note: The landing detector uses the zero thust collective as an indicator for being on the ground. The touch down controller will have
+    // driven the collective high to cushion the landing so the landing detector will not trip until we drive the collective back to zero thrust and below.
+    if ((_time_on_ground > 0) && ((AP_HAL::millis() - _time_on_ground) > MIN_TIME_ON_GROUND)) {
+       // On ground, smoothly lower collective to just bellow zero thrust, to make sure we trip the landing detector
+       float desired_col = _motors_heli->get_coll_land_min() * 0.95;
+       _collective_out = _collective_out*0.9 + desired_col*0.1;
+
+    } else {
+        _collective_out =  constrain_value((_p_coll_tch.get_p(_desired_sink_rate - _current_sink_rate))*0.01f + _ff_term_hs, 0.0f, 1.0f);
+        col_trim_lpf.set_cutoff_frequency(_col_cutoff_freq);
+        _ff_term_hs = col_trim_lpf.apply(_collective_out, _dt);
+    }
+
     set_collective(HS_CONTROLLER_COLLECTIVE_CUTOFF_FREQ);
+
+    // Smoothly scale the pitch target back to zero (level)
     _pitch_target *= 0.95f;
 }
 
 
-void AC_Autorotation::get_entry_speed(void)
+// Determine if we are above the touchdown height using the descent rate and param values
+bool AC_Autorotation::should_begin_touchdown(void)
 {
-    _flare_entry_speed = calc_speed_forward();
-}
+    float vz = _inav.get_velocity_z_up_cms();
 
-
-void AC_Autorotation::time_to_ground(void)
-{
-    if (_inav.get_velocity_z_up_cms() < 0.0f ) {
-        _time_to_ground = (-_radar_alt / _inav.get_velocity_z_up_cms());
-    } else {
-        _time_to_ground = _t_tch + 1.0f;
+    // We need to be descending for the touch down controller to interpolate the target
+    // sensibly between the entry of the touch down phase zero.
+    if (vz >= 0.0) {
+        return false;
     }
-}
 
+    float time_to_ground = (-_gnd_hgt / _inav.get_velocity_z_up_cms());
 
-void AC_Autorotation::init_est_rangefinder_alt(void)
-{
-    // Set descent rate filter cutoff frequency
-    descent_rate_lpf.set_cutoff_frequency(40.0f);
-
-    // Reset feed descent rate filter
-    descent_rate_lpf.reset(_inav.get_velocity_z_up_cms());
-
-    _radar_alt_calc = _radar_alt;
-    _radar_alt_prev = _radar_alt;
-    _est_alt = _radar_alt;
-
-}
-
-
-void AC_Autorotation::update_est_rangefinder_alt(void)
-{
-    if (_using_rfnd) {
-        // Continue calculating radar altitude based on the most recent update and descent rate
-        if (is_equal(_radar_alt, _radar_alt_prev)) {
-            _radar_alt_calc += (_inav.get_velocity_z_up_cms() * _dt);
-        } else {
-            _radar_alt_calc = _radar_alt;
-            _radar_alt_prev = _radar_alt;
-        }
-
-        // Determine the error between a calculated radar altitude based on each update at 20 hz and the estimated update
-        float alt_error = _radar_alt_calc - _est_alt;
-        // Drive the estimated altitude to the actual altitude with a proportional altitude error feedback
-        float descent_rate_corr = _inav.get_velocity_z_up_cms() + alt_error * 2.0f;
-        // Update descent rate filter
-        _descent_rate_filtered = descent_rate_lpf.apply(descent_rate_corr);
-        _est_alt += (_descent_rate_filtered * _dt);
-
-    } else {
-        _est_alt = _radar_alt;
-
-        // Reset feed descent rate filter
-        descent_rate_lpf.reset(_inav.get_velocity_z_up_cms());
-
-        // Reset variables until using rangefinder
-        _radar_alt_calc = _radar_alt;
-        _radar_alt_prev = _radar_alt;
-        _est_alt = _radar_alt;
-    }
+    return time_to_ground <= _t_tch.get();
 }
 
 

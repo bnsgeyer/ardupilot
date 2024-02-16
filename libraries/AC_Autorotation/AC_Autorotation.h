@@ -19,18 +19,27 @@ public:
     AC_Autorotation(AP_InertialNav& inav, AP_AHRS& ahrs);
 
      // object initialisation
-    void init(AP_MotorsHeli* motors);
+    void init(AP_MotorsHeli* motors, float gnd_clear);
+
+    // Helper to set all necessary variables needed for the entry phase
+    void init_entry(void);
+
+    // Helper to set all necessary variables needed for the glide phase
+    void init_glide(float hs_targ);
+
+    // Helper to set all necessary variables needed for the flare phase
+    void init_flare(float hs_targ);
+
+    // Helper to set all necessary variables needed for the touchdown phase
+    void init_touchdown(void);
 
     void initial_flare_estimate(void);
 
     // Update head speed controller
-    bool update_hs_glide_controller(void);
-
-    // Function just returns the rpm as last read in this library
-    float get_rpm(void) const { return _current_rpm; }
+    void update_hs_glide_controller(void);
 
     // Function fetches fresh rpm update and continues sensor health monitoring
-    float get_rpm(bool update_counter);
+    float get_rpm(void);
 
     // Sets the normalised target head speed
     void set_target_head_speed(float ths) { _target_head_speed = ths; }
@@ -39,12 +48,6 @@ public:
     void set_col_cutoff_freq(float freq) { _col_cutoff_freq = freq; }
 
     int16_t get_hs_set_point(void) { return _param_head_speed_set_point; }
-
-    float get_col_entry_freq(void) { return _param_col_entry_cutoff_freq; }
-
-    float get_col_glide_freq(void) { return _param_col_glide_cutoff_freq; }
-
-    float get_col_cushion_freq(void) { return _param_col_cushion_cutoff_freq; }
 
     float get_bail_time(void) { return _param_bail_time; }
 
@@ -56,12 +59,6 @@ public:
 
     // Update forward speed controller
     void update_forward_speed_controller(void);
-
-    // Overloaded: Set desired speed for forward controller to parameter value
-    void set_desired_fwd_speed(void) { _vel_target = _param_target_speed; }
-
-    // Overloaded: Set desired speed to argument value
-    void set_desired_fwd_speed(float speed) { _vel_target = speed; }
 
     // Get pitch target
     int32_t get_pitch(void) const { return _pitch_target; }
@@ -78,50 +75,32 @@ public:
     // Update the touchdown controller
     void touchdown_controller(void);
 
-    void set_ground_distance(float radalt) { _radar_alt = radalt; }
+    void set_ground_distance(float gnd_dist) { _gnd_hgt = (float)gnd_dist; }
 
     void get_entry_speed(void);
-
-    float get_ground_distance(void) const { return _radar_alt; }
-
-    float get_time_to_ground(void) const { return _time_to_ground; }
-
-    void time_to_ground(void);
 
     void set_entry_sink_rate (float sink_rate) { _entry_sink_rate = sink_rate; }
 
     void set_entry_alt (float entry_alt) { _entry_alt = entry_alt; }
 
-    void set_ground_clearance(float ground_clearance) { _ground_clearance = ground_clearance; }
-
-    void init_est_rangefinder_alt(void);
-
-    void update_est_rangefinder_alt(void);
-
-    float get_est_alt(void) const { return _est_alt; }
+    bool above_flare_height(void) const { return _gnd_hgt > _flare_alt_calc; }
 
     void update_hover_autorotation_controller();
 
+    // update rolling average z-accel filter
     void update_avg_acc_z(void);
-
-    float get_flare_alt(void) const { return _flare_alt_calc; }
 
     void update_flare_alt(void);
 
     void calc_flare_alt(float sink_rate, float fwd_speed);
 
-    float get_t_touchdown(void) const { return _t_tch; }
+    // Estimate the time to impact and compare it with the touchdown time param
+    bool should_begin_touchdown(void);
 
-    float get_cushion_alt(void) const { return _cushion_alt; }
-
-    bool get_flare_status(void) { return _flare_complete; }
-
-    void calc_sink_d_avg(void);
+    bool use_stabilise_controls(void) const { return _options.get() & int32_t(OPTION::STABILISE_CONTROLS); }
 
     // User Settable Parameters
     static const struct AP_Param::GroupInfo var_info[];
-
-    bool  _using_rfnd;
 
 private:
 
@@ -130,8 +109,7 @@ private:
     float _collective_out;
     float _head_speed_error;         // Error between target head speed and current head speed.  Normalised by head speed set point RPM.
     float _col_cutoff_freq;          // Lowpass filter cutoff frequency (Hz) for collective.
-    uint8_t _unhealthy_rpm_counter;  // Counter used to track RPM sensor unhealthy signal.
-    uint8_t _healthy_rpm_counter;    // Counter used to track RPM sensor healthy signal.
+    uint16_t _unhealthy_rpm_counter;  // Counter used to track RPM sensor unhealthy signal.
     float _target_head_speed;        // Normalised target head speed.  Normalised by head speed set point RPM.
     float _p_term_hs;                // Proportional contribution to collective setting.
     float _ff_term_hs;               // Following trim feed forward contribution to collective setting.
@@ -151,34 +129,24 @@ private:
     float _accel_out;                // Acceleration value used to calculate pitch target.
     float _entry_sink_rate;          // Descent rate at beginning of touvhdown collective pull
     float _entry_alt;                // Altitude at beginning of touchdown coll pull
-    float _radar_alt;                // Altitude above ground (RF)
     float _flare_entry_speed;        // Traslational velocity at beginning of flare maneuver
     float _desired_speed;            // Desired traslational velocity during flare
-    float _time_to_ground;           // Time to ground
     float _desired_sink_rate;        // Desired vertical velocity during touchdown
     float _ground_clearance;         // Sensor offset distance
-    float _est_alt;                  // Estimated altitude above ground
-    float _descent_rate_filtered;    // Filtered vertical speed
-    float _radar_alt_prev;           // Last cycle calculated altitude
-    float _radar_alt_calc;           // Inertial calculated altitude
+    float _gnd_hgt;                  // Height above ground, passed down from copter, can be from lidar or terrain
     float _avg_acc_z;                // Averaged vertical acceleration
     float _acc_z_sum;                // Sum of vertical acceleration samples
     int16_t _index;                  // Index for vertical acceleration rolling average
-    float _curr_acc_z[10]{};         // Array for storing vertical acceleration samples
+    float _curr_acc_z[10];           // Array for storing vertical acceleration samples
     float _flare_alt_calc;           // Calculated flare altitude
     float _lift_hover;               // Main rotor thrust in hover condition
     float _c;                        // Main rotor drag coefficient
     float _cushion_alt;              // Altitude for touchdown collective pull
     float _disc_area;                // Main rotor disc area
-    float _last_vertical_speed;      // Last cycle measured vertical speed
-    float _sink_deriv;               // Derivative of sink rate
     float _est_rod;                  // Estimated rate of descent (vertical autorotation)
-    float _avg_sink_deriv;           // Averaged derivative of rate of descent
-    float _avg_sink_deriv_sum;       // Sum of averaged sink rate derivative
-    int16_t _index_sink_rate;        // Index for sink rate derivative rolling average
-    float _curr_sink_deriv[20];    // Array for storing sink rate derivatives
     bool  _flare_complete;           // Flare completed
     bool  _flare_update_check;       // Check for flare altitude updating
+    uint32_t _time_on_ground;        // Time elapsed after touch down
 
     LowPassFilterFloat _accel_target_filter; // acceleration target filter
 
@@ -189,7 +157,7 @@ private:
     AC_P _p_coll_tch;
     AP_Float _param_col_entry_cutoff_freq;
     AP_Float _param_col_glide_cutoff_freq;
-    AP_Float _param_col_cushion_cutoff_freq;
+    AP_Float _param_col_touchdown_cutoff_freq;
     AP_Int16 _param_accel_max;
     AP_Float _param_bail_time;
     AP_Int8  _param_rpm_instance;
@@ -199,13 +167,11 @@ private:
     AP_Float _param_solidity;
     AP_Float _param_diameter;
     AP_Float _t_tch;
+    AP_Int32 _options;
 
-
-    //--------Internal Flags--------
-    struct controller_flags {
-            bool bad_rpm             : 1;
-            bool bad_rpm_warning     : 1;
-    } _flags;
+    enum class OPTION {
+        STABILISE_CONTROLS=(1<<0),
+    };
 
     //--------Internal Functions--------
     // set the collective in the motors library
@@ -213,9 +179,6 @@ private:
 
     // low pass filter for collective trim
     LowPassFilterFloat col_trim_lpf;
-
-    // low pass filter for descent rate
-    LowPassFilterFloat descent_rate_lpf;
 
     //--------References to Other Libraries--------
     AP_InertialNav&    _inav;
