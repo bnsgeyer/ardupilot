@@ -421,17 +421,13 @@ bool RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const AuxSwi
 #if FRAME_CONFIG == HELI_FRAME
             switch (ch_flag) {
             case AuxSwitchPos::HIGH:
-                copter.motors->set_inverted_flight(true);
                 copter.attitude_control->set_inverted_flight(true);
-                copter.heli_flags.inverted_flight = true;
                 break;
             case AuxSwitchPos::MIDDLE:
                 // nothing
                 break;
             case AuxSwitchPos::LOW:
-                copter.motors->set_inverted_flight(false);
                 copter.attitude_control->set_inverted_flight(false);
-                copter.heli_flags.inverted_flight = false;
                 break;
             }
 #endif
