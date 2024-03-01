@@ -28,6 +28,7 @@
 #define AC_ATTITUDE_HELI_RATE_Y_FF_FILTER          20.0f
 #define AC_ATTITUDE_HELI_HOVER_ROLL_TRIM_DEFAULT    300
 #define AC_ATTITUDE_HELI_ACRO_OVERSHOOT_ANGLE_RAD   ToRad(30.0f)
+#define AC_ATTITUDE_HELI_INVERTED_TRANSITION_TIME    3.0f
 
 class AC_AttitudeControl_Heli : public AC_AttitudeControl {
 public:
@@ -83,6 +84,9 @@ public:
     
     // enable/disable inverted flight
     void set_inverted_flight(bool inverted) override {
+        if (_inverted_flight != inverted) {
+            _transition_count = AC_ATTITUDE_HELI_INVERTED_TRANSITION_TIME * 400.0f;
+        }
         _inverted_flight = inverted;
     }
 
@@ -103,6 +107,7 @@ private:
 
     // true in inverted flight mode
     bool _inverted_flight;
+    uint16_t _transition_count;
 
     // Integrate vehicle rate into _att_error_rot_vec_rad
     void integrate_bf_rate_error_to_angle_errors();
