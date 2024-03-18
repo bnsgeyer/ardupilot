@@ -1,5 +1,11 @@
 ArduPilot Copter Release Notes:
 ------------------------------------------------------------------
+Copter 4.4.4 USNTPS V2-rc1 18-Mar-2024
+Changes from 4.4.4
+1) Add support for System ID mode for Velocity bandwidth, Velocity DRB, and Position DRB
+2) Add support to turn on/off acceleration feedforward in position controller
+3) Add mission task elements to system ID mode
+------------------------------------------------------------------
 Copter 4.4.4 19-Dec-2023 / 4.4.4-beta1 05-Dec-2023
 Changes from 4.4.3
 1) Autopilot related enhancement and fixes
