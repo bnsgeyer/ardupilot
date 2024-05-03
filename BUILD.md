@@ -11,10 +11,9 @@ cd ardupilot
 You can also read more about the build system in the
 [Waf Book](https://waf.io/book/).
 
-waf should always be called from the locally cloned ardupilot root directory for the local branch you are trying to build from.
-
-**Note**
-Do not run `waf` with `sudo`!  This leads to permission and environment problems.
+Waf should always be called from the ardupilot's root directory. Differently
+from the make-based build, with Waf there's a configure step to choose the
+board to be used (default is `sitl`).bao
 
 ## Basic usage ##
 
