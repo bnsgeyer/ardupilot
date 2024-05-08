@@ -474,6 +474,17 @@ bool RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const AuxSwi
 
         case AUX_FUNC::USER_FUNC2:
             copter.userhook_auxSwitch2(ch_flag);
+            switch (ch_flag) {
+                case AuxSwitchPos::HIGH:
+                case AuxSwitchPos::MIDDLE:
+                    copter.motors->set_fail_motor_flag(true);
+                    gcs().send_text(MAV_SEVERITY_INFO, "motor failed");
+                    break;
+                default:
+                    copter.motors->set_fail_motor_flag(false);
+                    gcs().send_text(MAV_SEVERITY_INFO, "motor restored");
+                    break;
+                }
             break;
 
         case AUX_FUNC::USER_FUNC3:
