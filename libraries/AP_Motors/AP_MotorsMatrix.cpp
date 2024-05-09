@@ -16,6 +16,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_MotorsMatrix.h"
 #include <AP_Vehicle/AP_Vehicle_Type.h>
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -212,6 +213,9 @@ float AP_MotorsMatrix::boost_ratio(float boost_value, float normal_value) const
 // includes new scaling stability patch
 void AP_MotorsMatrix::output_armed_stabilizing()
 {
+
+    static uint16_t print = 2000;
+
     // apply voltage and air pressure compensation
     const float compensation_gain = thr_lin.get_compensation_gain(); // compensation for battery voltage and altitude
 
@@ -350,6 +354,10 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     }
     // Include the lost motor scaled by _thrust_boost_ratio to smoothly transition this motor in and out of the calculation
     if (_thrust_boost) {
+    if (print < 1) {
+        gcs().send_text(MAV_SEVERITY_INFO, "in thrust boost logic");
+    }
+
         // record highest roll + pitch + yaw command
         if (_thrust_rpyt_out[_motor_lost_index] > rpy_high && motor_enabled[_motor_lost_index]) {
             rpy_high = boost_ratio(rpy_high, _thrust_rpyt_out[_motor_lost_index]);
@@ -403,6 +411,17 @@ void AP_MotorsMatrix::output_armed_stabilizing()
 
     // check for failed motor
     check_for_failed_motor(throttle_thrust_best_plus_adj);
+    if (print > 0) {
+        print -= 1;
+    } else {
+        print = 2000;
+        if (_thrust_boost) {
+        gcs().send_text(MAV_SEVERITY_INFO, "thrust boost true");
+        } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "thrust boost false");
+        }
+    }
+
 }
 
 // check for failed motor
@@ -446,9 +465,10 @@ void AP_MotorsMatrix::check_for_failed_motor(float throttle_thrust_best_plus_adj
         thrust_balance = rpyt_high * number_motors / rpyt_sum;
     }
     // ensure thrust balance does not activate for multirotors with less than 6 motors
-    if (number_motors >= 6 && thrust_balance >= 1.5f && _thrust_balanced) {
+/*    if (number_motors >= 6 && thrust_balance >= 1.5f && _thrust_balanced) {
         _thrust_balanced = false;
     }
+*/
     if (thrust_balance <= 1.25f && !_thrust_balanced) {
         _thrust_balanced = true;
     }
