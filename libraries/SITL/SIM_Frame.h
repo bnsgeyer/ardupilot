@@ -202,5 +202,6 @@ private:
     void push_to_buffer_col(const uint16_t servos_input[16]);
     void pull_from_buffer_col(uint16_t &servo_delayed);
 
+    void Log_Write_SimData(float dlong, float dlat, float dthr, float dped);
 };
 }
