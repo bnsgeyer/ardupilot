@@ -668,15 +668,22 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
     servos_adj[1]= (input.servos[1] - 1000) * servo_sf + 1000;
     servos_adj[2]= (input.servos[2] - 1000) * servo_sf + 1000;
     servos_adj[3]= (input.servos[3] - 1000) * servo_sf + 1000;
+    servos_adj[4]= (input.servos[4] - 1000) * servo_sf + 1000;
+    servos_adj[5]= (input.servos[5] - 1000) * servo_sf + 1000;
 
     // this section turns the servo outputs into the motors class inputs in PWM
     // it uses the frame quad/plus
     // roll, pitch, and yaw scale is 1000-2000 with 1000 being -1 and 2000 being +1
     // throttle scale is 1000-2000 with 1000 being 0 and 2000 being +1
-    servos_raw[0] = (uint16_t)((servos_adj[1] - servos_adj[0]) * 0.5f + 1500.0f);
-    servos_raw[1] = (uint16_t)((servos_adj[2] - servos_adj[3]) * 0.5f + 1500.0f);
-    servos_raw[2] = (uint16_t)((servos_adj[0] + servos_adj[1] + servos_adj[2] + servos_adj[3]) * 0.25f);
-    servos_raw[3] = (uint16_t)((((servos_adj[0] + servos_adj[1]) * 0.5f - (servos_adj[2] + servos_adj[3]) * 0.5f) * 0.5) + 1500.0f);
+//    servos_raw[0] = (uint16_t)((servos_adj[1] - servos_adj[0]) * 0.5f + 1500.0f);
+//    servos_raw[1] = (uint16_t)((servos_adj[2] - servos_adj[3]) * 0.5f + 1500.0f);
+//    servos_raw[2] = (uint16_t)((servos_adj[0] + servos_adj[1] + servos_adj[2] + servos_adj[3]) * 0.25f);
+//    servos_raw[3] = (uint16_t)((((servos_adj[0] + servos_adj[1]) * 0.5f - (servos_adj[2] + servos_adj[3]) * 0.5f) * 0.5) + 1500.0f);
+
+    servos_raw[0] = (uint16_t)((servos_adj[1] + 0.5f * servos_adj[2] + 0.5f * servos_adj[5] - servos_adj[0] - 0.5f * servos_adj[3] - 0.5f * servos_adj[4]) * 0.333f + 1500.0f);
+    servos_raw[1] = (uint16_t)((servos_adj[2] +  servos_adj[4] - servos_adj[3] - servos_adj[5]) * 0.5 * 0.5f + 1500.0f);
+    servos_raw[2] = (uint16_t)((servos_adj[0] + servos_adj[1] + servos_adj[2] + servos_adj[3] + servos_adj[4] + servos_adj[5]) * 0.166667f);
+    servos_raw[3] = (uint16_t)((((servos_adj[1] + servos_adj[3] + servos_adj[4]) * 0.3333f - (servos_adj[0] + servos_adj[2] + servos_adj[5]) * 0.3333f) * 0.5) + 1500.0f);
 
     // this adds time delay for roll and pitch inputs
 	if (_time_delay_rp == 0 || is_zero(dt)) {
