@@ -325,6 +325,14 @@ struct PACKED log_Optflow {
     float body_y;
 };
 
+struct PACKED log_CtrlPos {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float first_number;
+    float second_number;
+    float third_number;
+};
+
 struct PACKED log_POWR {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -1319,6 +1327,8 @@ LOG_STRUCTURE_FROM_FENCE \
 LOG_STRUCTURE_FROM_VISUALODOM \
     { LOG_OPTFLOW_MSG, sizeof(log_Optflow), \
       "OF",   "QBffff",   "TimeUS,Qual,flowX,flowY,bodyX,bodyY", "s-EEnn", "F-0000" , true }, \
+    { LOG_CTRLPOS_MSG, sizeof(log_CtrlPos), \
+      "CTPO",   "Qfff",   "TimeUS,num1,num2,num3", "snnn", "F000" , true }, \
     { LOG_WHEELENCODER_MSG, sizeof(log_WheelEncoder), \
       "WENC",  "Qfbfb", "TimeUS,Dist0,Qual0,Dist1,Qual1", "sm-m-", "F0-0-" , true }, \
     { LOG_ADSB_MSG, sizeof(log_ADSB), \
@@ -1413,6 +1423,7 @@ enum LogMessages : uint8_t {
     LOG_SRTL_MSG,
     LOG_PERFORMANCE_MSG,
     LOG_OPTFLOW_MSG,
+    LOG_CTRLPOS_MSG,
     LOG_EVENT_MSG,
     LOG_WHEELENCODER_MSG,
     LOG_MAV_MSG,

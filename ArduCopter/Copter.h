@@ -71,6 +71,7 @@
 #include <AP_Proximity/AP_Proximity.h>      // ArduPilot proximity sensor library
 #include <AP_OpticalFlow/AP_OpticalFlow.h>
 #include <AP_Winch/AP_Winch_config.h>
+#include <AP_CtrlPos/AP_CtrlPos.h>
 
 // Configuration
 #include "defines.h"
@@ -317,7 +318,8 @@ private:
 #if AP_OPTICALFLOW_ENABLED
     AP_OpticalFlow optflow;
 #endif
-
+    AP_CtrlPos ctrl_pos;
+    
     // system time in milliseconds of last recorded yaw reset from ekf
     uint32_t ekfYawReset_ms;
     int8_t ekf_primary_core;

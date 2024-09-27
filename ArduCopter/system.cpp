@@ -121,7 +121,6 @@ void Copter::init_ardupilot()
     // initialise optical flow sensor
     optflow.init(MASK_LOG_OPTFLOW);
 #endif      // AP_OPTICALFLOW_ENABLED
-
 #if HAL_MOUNT_ENABLED
     // initialise camera mount
     camera_mount.init();
@@ -216,6 +215,7 @@ void Copter::init_ardupilot()
         // set mode to STABILIZE will trigger mode change notification to pilot
         set_mode(Mode::Number::STABILIZE, ModeReason::UNAVAILABLE);
     }
+    ctrl_pos.init(MASK_LOG_OPTFLOW);
 
     // flag that initialisation has completed
     ap.initialised = true;
