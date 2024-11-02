@@ -68,7 +68,7 @@ Helicopter::Helicopter(const char *frame_str) :
 
     // torque_max based on power being weight^3/2.  Assuming thrust is linear with collective, it can be 
     // determined that max torque would be 3 times hover torque.  Then dividing by 1-MPOG_torq to get total torque.
-    torque_max = ((mass * GRAVITY_MSS * sinf(radians(hover_lean)) * tr_dist - torque_mpog * sq(nominal_rpm * 2.0f * M_PI / 60.0f)) * powf(2.0f,1.5f) + torque_mpog * sq(nominal_rpm * 2.0f * M_PI / 60.0f)) / sq(nominal_rpm * 2.0f * M_PI / 60.0f);
+    torque_max = ((mass * GRAVITY_MSS * sinf(radians(fabsf(hover_lean))) * tr_dist - torque_mpog * sq(nominal_rpm * 2.0f * M_PI / 60.0f)) * powf(2.0f,1.5f) + torque_mpog * sq(nominal_rpm * 2.0f * M_PI / 60.0f)) / sq(nominal_rpm * 2.0f * M_PI / 60.0f);
 
     // calculates tail rotor thrust to overcome rotor torque using the lean angle in a hover
     torque_scale = (torque_max - torque_mpog) / powf(10.0f,1.5f);
