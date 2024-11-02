@@ -251,11 +251,11 @@ void Helicopter::update(const struct sitl_input &input)
 
         float tail_rotor = (_servos_delayed[3]-1000) / 1000.0f;
 
-        // determine RPM
-        rpm[0] = update_rpm(motor_interlock, dt);
-
         // collective adjusted for coll_min(1460) to coll_max(1740) as 0 to 1 with 1500 being zero thrust
         float coll = 3.51 * ((swash1+swash2+swash3) / 3.0f - 0.5f);
+
+        // determine RPM
+        rpm[0] = update_rpm(rpm[0], rsc, eng_torque, coll, dt);
 
         // Calculate rotor tip path plane angle
         float roll_cyclic = 1.283f * (swash1 - swash2);
