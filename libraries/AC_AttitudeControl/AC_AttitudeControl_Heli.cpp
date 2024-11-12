@@ -460,16 +460,22 @@ void AC_AttitudeControl_Heli::update_althold_lean_angle_max(float throttle_in)
 void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_rads, float rate_roll_target_rads, float rate_pitch_target_rads)
 {
 
+    // apply lead filter
+    roll_lead_filter.init( 2.0f, 1.2f, _dt);
+    pitch_lead_filter.init( 2.0f, 1.2f, _dt);
+
+    float roll_target = roll_lead_filter.apply(rate_roll_target_rads);
+    float pitch_target = pitch_lead_filter.apply(rate_pitch_target_rads);
     if (_flags_heli.leaky_i) {
         _pid_rate_roll.update_leaky_i(AC_ATTITUDE_HELI_RATE_INTEGRATOR_LEAK_RATE);
     }
-    float roll_pid = _pid_rate_roll.update_all(rate_roll_target_rads, rate_rads.x, _dt, _motors.limit.roll) + _actuator_sysid.x;
+    float roll_pid = _pid_rate_roll.update_all(roll_target, rate_rads.x, _dt, _motors.limit.roll) + _actuator_sysid.x;
 
     if (_flags_heli.leaky_i) {
         _pid_rate_pitch.update_leaky_i(AC_ATTITUDE_HELI_RATE_INTEGRATOR_LEAK_RATE);
     }
 
-    float pitch_pid = _pid_rate_pitch.update_all(rate_pitch_target_rads, rate_rads.y, _dt, _motors.limit.pitch) + _actuator_sysid.y;
+    float pitch_pid = _pid_rate_pitch.update_all(pitch_target, rate_rads.y, _dt, _motors.limit.pitch) + _actuator_sysid.y;
 
     // use pid library to calculate ff
     float roll_ff = _pid_rate_roll.get_ff();

@@ -7,6 +7,8 @@
 #include <AP_Motors/AP_MotorsHeli.h>
 #include <AC_PID/AC_HELI_PID.h>
 #include <Filter/Filter.h>
+#include <Filter/LeadLagFilter.h>
+
 
 // default rate controller PID gains
 #define AC_ATC_HELI_RATE_RP_P                       0.024f
@@ -147,6 +149,9 @@ private:
     // controller, in radians in the vehicle body frame of reference.
     Vector3f            _att_error_rot_vec_rad;
 
+    LeadLagFilterFloat roll_lead_filter;
+    LeadLagFilterFloat pitch_lead_filter;
+    
     // parameters
     AP_Int8         _piro_comp_enabled;             // Flybar present or not.  Affects attitude controller used during ACRO flight mode
     AP_Int16        _hover_roll_trim;               // Angle in centi-degrees used to counter tail rotor thrust in hover
