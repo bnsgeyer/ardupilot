@@ -120,6 +120,8 @@ private:
     const SRV_Channel::Aux_servo_function_t _aux_fn;
     const uint8_t _default_channel;
 
+    bool rotor_runup_manager(float rotor_rpm, float ctrl_output, float ramp_output);
+
     // internal variables
     RotorControlMode _control_mode = ROTOR_CONTROL_MODE_DISABLED;   // motor control mode, Passthrough or Setpoint
     float           _desired_speed;               // latest desired rotor speed from pilot
@@ -141,6 +143,7 @@ private:
     uint8_t         _governor_fault_count;        // variable for tracking governor speed sensor faults
     float           _governor_torque_reference;   // governor reference for load calculations
     float           _idle_throttle;               // current idle throttle setting
+    bool           _ramp_hold;                   // holds ramp_output value while waiting for rotor to catch up to engine
 
     RotorControlState _rsc_state;
 
@@ -166,6 +169,8 @@ private:
     AP_Float        _governor_ff;               // governor feedforward variable
     AP_Float        _governor_range;            // RPM range +/- governor rpm reference setting where governor is operational
     AP_Int16        _cooldown_time;             // cooldown time to provide a fast idle
+    AP_Float        _governor_init_ramp;
+    AP_Float        _governor_rotor_rpm_lag;
 
     // parameter accessors to allow conversions
     float       get_critical_speed() const { return _critical_speed * 0.01; }
