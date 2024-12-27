@@ -224,6 +224,24 @@ const AP_Param::GroupInfo AP_MotorsHeli_RSC::var_info[] = {
 
     // 27 was AROT_IDLE, moved to RSC autorotation sub group
 
+    // @Param: GOV_RAMP
+    // @DisplayName: Governor Inital Ramp Point
+    // @Description: percent of RPM where autothrottle runup starts
+    // @Range: 10 60
+    // @Units: %
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("GOV_RAMP", 28, AP_MotorsHeli_RSC, _governor_init_ramp, 20),
+
+    // @Param: GOV_RLAG
+    // @DisplayName: Governor rotor runup RPM lag
+    // @Description: Allowable RPM lag before engine advancement will halt and wait for rotor to catch up
+    // @Range: 50 200
+    // @Units: %
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("GOV_RLAG", 30, AP_MotorsHeli_RSC, _governor_rotor_rpm_lag, 100),
+
     AP_GROUPEND
 };
 
@@ -306,6 +324,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
         // reset fast idle timer
         _fast_idle_timer = 0.0;
 
+        _ramp_hold = false;
         break;
 
     case RotorControlState::IDLE:
@@ -347,6 +366,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
         }
 
         _control_output = _idle_throttle;
+        _ramp_hold = false;
         break;
 
     case RotorControlState::ACTIVE:
@@ -403,7 +423,9 @@ void AP_MotorsHeli_RSC::update_rotor_ramp(float rotor_ramp_input, float dt)
 
     // ramp output upwards towards target
     if (_rotor_ramp_output < rotor_ramp_input) {
-        _rotor_ramp_output += (dt / ramp_time);
+        if (!_ramp_hold) {
+            _rotor_ramp_output += (dt / ramp_time);
+        }
 
         // Do not allow output to exceed requested input
         _rotor_ramp_output = MIN(_rotor_ramp_output, rotor_ramp_input);
@@ -566,7 +588,13 @@ void AP_MotorsHeli_RSC::autothrottle_run()
 
             // torque rise limiter accelerates rotor to the reference speed
             // this limits the max torque rise the governor could call for from the main power loop
-        } else if (_rotor_rpm >= (_governor_rpm * 0.5f)) {
+        } else if (_idle_throttle + (_rotor_ramp_output * (throttlecurve - _idle_throttle)) >= _governor_init_ramp * 0.01) {
+            float est_rpm = _rotor_ramp_output * (float)_governor_rpm;
+            if (est_rpm - _rotor_rpm > _governor_rotor_rpm_lag) {
+                _ramp_hold = true;  // hold ramp_output if rotor doesn't keep up with engine
+            } else {
+                _ramp_hold = false;  // keep incrementing ramp hold value with rotor_ramp_output while rotor is advancing with engine
+            }
             float torque_limit = (get_governor_torque() * get_governor_torque());
             _governor_output = (_rotor_rpm / (float)_governor_rpm) * torque_limit;
             if (_rotor_rpm >= ((float)_governor_rpm - torque_ref_error_rpm)) {
