@@ -412,7 +412,7 @@ float Helicopter::update_rpm(float curr_rpm, float throttle, float &engine_torqu
         rpm_engine = nominal_rpm * throttle / 0.3f;
 
         // calculate engine torque.  extra 20% given to have a little extra power
-        engine_torque = 1.20f * throttle * engine_torque_max;
+        engine_torque = 1.20f * throttle * throttle * engine_torque_max;
 
         // model clutch on gas heli 
         if (throttle >= 0.15f && rpm_engine > curr_rpm) {
