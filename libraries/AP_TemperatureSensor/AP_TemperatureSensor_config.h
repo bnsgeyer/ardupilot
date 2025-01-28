@@ -5,7 +5,7 @@
 // Enabled 0 is compiled out (disabled)
 // Enabled 1 is always enabled on all vehicles
 // Enabled 2 is enabled with dummy methods for all vehicles except Sub and SITL
-
+#define AP_TEMPERATURE_SENSOR_ENABLED 1
 #ifndef AP_TEMPERATURE_SENSOR_ENABLED
 #if BOARD_FLASH_SIZE <= 1024
     #define AP_TEMPERATURE_SENSOR_ENABLED 0
