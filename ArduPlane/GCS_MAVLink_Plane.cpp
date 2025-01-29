@@ -41,6 +41,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::FLY_BY_WIRE_B:
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QSTABILIZE:
+    case Mode::Number::QSYSTEMID:
     case Mode::Number::QHOVER:
     case Mode::Number::QLOITER:
     case Mode::Number::QLAND:
@@ -1606,6 +1607,7 @@ uint8_t GCS_MAVLINK_Plane::send_available_mode(uint8_t index) const
     // Quadplane modes
     const Mode* q_modes[] {
         &plane.mode_qstabilize,
+        &plane.mode_qsystemid,
         &plane.mode_qhover,
         &plane.mode_qloiter,
         &plane.mode_qland,

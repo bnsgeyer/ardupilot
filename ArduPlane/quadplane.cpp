@@ -546,7 +546,11 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Increment: 1
     // @User: Standard
     AP_GROUPINFO("APPROACH_DIST", 39, QuadPlane, approach_distance, 0),
-    
+/*    
+    // @Group: SID
+    // @Path: mode_qsystemid.cpp
+    AP_SUBGROUPPTR(mode_qsystemid_ptr, "SID", 40, QuadPlane, ModeQSystemId),
+*/
     AP_GROUPEND
 };
 
@@ -937,15 +941,15 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
         }
 
         if (use_yaw_target) {
-            attitude_control->input_euler_angle_roll_pitch_yaw(plane.nav_roll_cd,
-                                                               plane.nav_pitch_cd,
-                                                               yaw_target_cd,
+            attitude_control->input_euler_angle_roll_pitch_yaw(plane.nav_roll_cd + sysid_roll_cd,
+                                                               plane.nav_pitch_cd + sysid_pitch_cd,
+                                                               yaw_target_cd + sysid_yaw,
                                                                true);
         } else {
             // use euler angle attitude control
-            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
-                                                                          plane.nav_pitch_cd,
-                                                                          yaw_rate_cds);
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd + sysid_roll_cd,
+                                                                          plane.nav_pitch_cd + sysid_pitch_cd,
+                                                                          yaw_rate_cds + sysid_yaw);
         }
     } else {
         // use the fixed wing desired rates
@@ -968,6 +972,33 @@ void QuadPlane::hold_stabilize(float throttle_in)
 {    
     // call attitude controller
     multicopter_attitude_rate_update(get_desired_yaw_rate_cds(false));
+
+    if ((throttle_in <= 0) && !air_mode_active()) {
+        set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
+        attitude_control->set_throttle_out(0, true, 0);
+        relax_attitude_control();
+    } else {
+        set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
+        bool should_boost = true;
+        if (tailsitter.enabled() && assisted_flight) {
+            // tailsitters in forward flight should not use angle boost
+            should_boost = false;
+        }
+        attitude_control->set_throttle_out(throttle_in, should_boost, 0);
+    }
+}
+
+// hold in stabilize with given throttle
+void QuadPlane::run_qsystemid(float throttle_in)
+{
+
+    // call attitude controller
+    multicopter_attitude_rate_update(get_desired_yaw_rate_cds(false));
+
+    // reset inputs
+    set_sysid_roll_input(0.0);
+    set_sysid_pitch_input(0.0);
+    set_sysid_yaw_input(0.0);
 
     if ((throttle_in <= 0) && !air_mode_active()) {
         set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);

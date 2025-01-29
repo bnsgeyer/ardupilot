@@ -49,6 +49,7 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, ModeReason reaso
 
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QSTABILIZE:
+    case Mode::Number::QSYSTEMID:
     case Mode::Number::QLOITER:
     case Mode::Number::QHOVER:
 #if QAUTOTUNE_ENABLED
@@ -162,6 +163,7 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype, ModeReason reason
 
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QSTABILIZE:
+    case Mode::Number::QSYSTEMID:
     case Mode::Number::QHOVER:
     case Mode::Number::QLOITER:
     case Mode::Number::QACRO:
