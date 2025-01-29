@@ -57,6 +57,7 @@ public:
     friend class ModeQLoiter;
     friend class ModeQRTL;
     friend class ModeQStabilize;
+    friend class ModeQSystemId;
     friend class ModeQAutotune;
     friend class ModeQAcro;
     friend class ModeLoiterAltQLand;
@@ -192,6 +193,11 @@ public:
     // Get pilot throttle input with deadzone, this will return 50% throttle in failsafe!
     float get_throttle_input() const;
 
+    void set_sysid_roll_input(float input) { sysid_roll_cd = input; };
+    void set_sysid_pitch_input(float input) { sysid_pitch_cd = input; };
+    void set_sysid_yaw_input(float input) { sysid_yaw = input; };
+
+
 private:
     AP_AHRS &ahrs;
 
@@ -243,6 +249,9 @@ private:
 
     // hold stabilize (for transition)
     void hold_stabilize(float throttle_in);
+
+    // hold stabilize (for transition)
+    void run_qsystemid(float throttle_in);
 
     // set climb rate in position controller
     void set_climb_rate_cms(float target_climb_rate_cms);
@@ -438,6 +447,8 @@ private:
 
     AC_WeatherVane *weathervane;
 
+//    ModeQSystemId mode_qsystemid_ptr;
+
     bool initialised;
 
     Location last_auto_target;
@@ -504,6 +515,12 @@ private:
 
     // time we last set the loiter target
     uint32_t last_loiter_ms;
+
+
+    //system id parameters
+    float sysid_pitch_cd;
+    float sysid_roll_cd;
+    float sysid_yaw;
 
     enum position_control_state {
         QPOS_NONE = 0,

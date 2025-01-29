@@ -9,6 +9,7 @@
 #include "quadplane.h"
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Mission/AP_Mission.h>
+#include <AP_Math/chirp.h>
 
 class AC_PosControl;
 class AC_AttitudeControl_Multi;
@@ -54,6 +55,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        QSYSTEMID     = 27,
     };
 
     // Constructor
@@ -605,6 +607,80 @@ private:
     void set_tailsitter_roll_pitch(const float roll_input, const float pitch_input);
     void set_limited_roll_pitch(const float roll_input, const float pitch_input);
 
+};
+
+class ModeQSystemId : public Mode {
+
+public:
+    ModeQSystemId(void);
+    Number mode_number() const override { return Number::QSYSTEMID; }
+    const char *name() const override { return "QSYSTEMID"; }
+    const char *name4() const override { return "QSYS"; }
+
+    bool is_vtol_mode() const override { return true; }
+    bool is_vtol_man_throttle() const override { return true; }
+    virtual bool is_vtol_man_mode() const override { return true; }
+    bool allows_throttle_nudging() const override { return true; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    // used as a base class for all Q modes
+    bool _enter() override;
+
+    void run() override;
+
+
+//   bool logs_attitude() const override { return true; }
+
+    void set_magnitude(float input) { waveform_magnitude.set(input); }
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+    Chirp chirp_input;
+
+private:
+
+    void log_data() const;
+    enum class AxisType {
+        NONE = 0,               // none
+        INPUT_ROLL = 1,         // angle input roll axis is being excited
+        INPUT_PITCH = 2,        // angle pitch axis is being excited
+        INPUT_YAW = 3,          // angle yaw axis is being excited
+        RECOVER_ROLL = 4,       // angle roll axis is being excited
+        RECOVER_PITCH = 5,      // angle pitch axis is being excited
+        RECOVER_YAW = 6,        // angle yaw axis is being excited
+        RATE_ROLL = 7,          // rate roll axis is being excited
+        RATE_PITCH = 8,         // rate pitch axis is being excited
+        RATE_YAW = 9,           // rate yaw axis is being excited
+        MIX_ROLL = 10,          // mixer roll axis is being excited
+        MIX_PITCH = 11,         // mixer pitch axis is being excited
+        MIX_YAW = 12,           // mixer pitch axis is being excited
+        MIX_THROTTLE = 13,      // mixer throttle axis is being excited
+    };
+
+    AP_Int8 axis;               // Controls which axis are being excited. Set to non-zero to display other parameters
+    AP_Float waveform_magnitude;// Magnitude of chirp waveform
+    AP_Float frequency_start;   // Frequency at the start of the chirp
+    AP_Float frequency_stop;    // Frequency at the end of the chirp
+    AP_Float time_fade_in;      // Time to reach maximum amplitude of chirp
+    AP_Float time_record;       // Time taken to complete the chirp waveform
+    AP_Float time_fade_out;     // Time to reach zero amplitude after chirp finishes
+
+    bool att_bf_feedforward;    // Setting of attitude_control->get_bf_feedforward
+    float waveform_time;        // Time reference for waveform
+    float waveform_sample;      // Current waveform sample
+    float waveform_freq_rads;   // Instantaneous waveform frequency
+    float time_const_freq;      // Time at constant frequency before chirp starts
+    int8_t log_subsample;       // Subsample multiple for logging.
+    Vector2f target_vel;        // target velocity for position controller modes
+    Vector2f target_pos;       // target positon
+    Vector2f input_vel_last;    // last cycle input velocity
+    // System ID states
+    enum class SystemIDModeState {
+        SYSTEMID_STATE_STOPPED,
+        SYSTEMID_STATE_TESTING
+    } systemid_state;
 };
 
 class ModeQHover : public Mode
