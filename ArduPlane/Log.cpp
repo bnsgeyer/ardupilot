@@ -545,6 +545,38 @@ const struct LogStructure Plane::log_structure[] = {
     { LOG_OFG_MSG, sizeof(log_OFG_Guided),     
       "OFG", "QffffBff",    "TimeUS,Arsp,ArspA,Alt,AltA,AltF,Hdg,HdgA", "s-------", "F-------" , true }, 
 #endif
+
+// @LoggerMessage: SIDD
+// @Description: System ID data
+// @Field: TimeUS: Time since system startup
+// @Field: Time: Time reference for waveform
+// @Field: Targ: Current waveform sample
+// @Field: F: Instantaneous waveform frequency
+// @Field: Gx: Delta angle, X-Axis
+// @Field: Gy: Delta angle, Y-Axis
+// @Field: Gz: Delta angle, Z-Axis
+// @Field: Ax: Delta velocity, X-Axis
+// @Field: Ay: Delta velocity, Y-Axis
+// @Field: Az: Delta velocity, Z-Axis
+
+    { LOG_SYSIDD_MSG, sizeof(log_SysIdD),
+      "SIDD", "Qfffffffff",  "TimeUS,Time,Targ,F,Gx,Gy,Gz,Ax,Ay,Az", "ss-zkkkooo", "F---------" , true },
+
+// @LoggerMessage: SIDS
+// @Description: System ID settings
+// @Field: TimeUS: Time since system startup
+// @Field: Ax: The axis which is being excited
+// @Field: Mag: Magnitude of the chirp waveform
+// @Field: FSt: Frequency at the start of chirp
+// @Field: FSp: Frequency at the end of chirp
+// @Field: TFin: Time to reach maximum amplitude of chirp
+// @Field: TC: Time at constant frequency before chirp starts
+// @Field: TR: Time taken to complete chirp waveform
+// @Field: TFout: Time to reach zero amplitude after chirp finishes
+
+    { LOG_SYSIDS_MSG, sizeof(log_SysIdS),
+      "SIDS", "QBfffffff",  "TimeUS,Ax,Mag,FSt,FSp,TFin,TC,TR,TFout", "s--ssssss", "F--------" , true },
+
 };
 
 void Plane::Log_Write_Vehicle_Startup_Messages()

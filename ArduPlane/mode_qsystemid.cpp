@@ -21,7 +21,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @DisplayName: System identification Chirp Magnitude
     // @Description: Magnitude of sweep in deg, deg/s and 0-1 for mixer outputs.
     // @User: Standard
-    AP_GROUPINFO("_MAGNITUDE", 2, ModeQSystemId, waveform_magnitude, 15),
+    AP_GROUPINFO("_MAGNITUDE", 2, ModeQSystemId, waveform_magnitude, 5),
 
     // @Param: _F_START_HZ
     // @DisplayName: System identification Start Frequency
@@ -29,7 +29,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @Range: 0.01 100
     // @Units: Hz
     // @User: Standard
-    AP_GROUPINFO("_F_START_HZ", 3, ModeQSystemId, frequency_start, 0.5f),
+    AP_GROUPINFO("_F_START_HZ", 3, ModeQSystemId, frequency_start, 0.25f),
 
     // @Param: _F_STOP_HZ
     // @DisplayName: System identification Stop Frequency
@@ -37,7 +37,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @Range: 0.01 100
     // @Units: Hz
     // @User: Standard
-    AP_GROUPINFO("_F_STOP_HZ", 4, ModeQSystemId, frequency_stop, 40),
+    AP_GROUPINFO("_F_STOP_HZ", 4, ModeQSystemId, frequency_stop, 10),
 
     // @Param: _T_FADE_IN
     // @DisplayName: System identification Fade in time
@@ -45,7 +45,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @Range: 0 20
     // @Units: s
     // @User: Standard
-    AP_GROUPINFO("_T_FADE_IN", 5, ModeQSystemId, time_fade_in, 15),
+    AP_GROUPINFO("_T_FADE_IN", 5, ModeQSystemId, time_fade_in, 5),
 
     // @Param: _T_REC
     // @DisplayName: System identification Total Sweep length
@@ -61,7 +61,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @Range: 0 5
     // @Units: s
     // @User: Standard
-    AP_GROUPINFO("_T_FADE_OUT", 7, ModeQSystemId, time_fade_out, 2),
+    AP_GROUPINFO("_T_FADE_OUT", 7, ModeQSystemId, time_fade_out, 1),
 
     AP_GROUPEND
 };
@@ -76,30 +76,12 @@ ModeQSystemId::ModeQSystemId(void) : Mode()
 // systemId_init - initialise systemId controller
 bool ModeQSystemId::_enter()
 {
-/*    // check if enabled
+    // check if enabled
     if (axis == 0) {
         gcs().send_text(MAV_SEVERITY_WARNING, "No axis selected, SID_AXIS = 0");
         return false;
     }
 
-    // ensure we are flying
-    if (!quadplane.motors->armed() || quadplane.land_complete) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "Aircraft must be flying");
-        return false;
-    }
-
-    // System ID is being done on the attitude control loops
-
-    // Can only switch into System ID Axes 1-13 with a flight mode that has manual throttle
-    if (!plane.flightmode->has_manual_throttle()) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "Axis requires manual throttle");
-        return false;
-    }
-
-#if HAL_LOGGING_ENABLED
-    copter.Log_Write_SysID_Setup(axis, waveform_magnitude, frequency_start, frequency_stop, time_fade_in, time_const_freq, time_record, time_fade_out);
-#endif
-*/
 
     // reset inputs
     quadplane.set_sysid_roll_input(0.0);
@@ -116,6 +98,8 @@ bool ModeQSystemId::_enter()
 
     gcs().send_text(MAV_SEVERITY_INFO, "SystemID Starting: axis=%d", (unsigned)axis);
 
+    plane.Log_Write_SysID_Setup(axis, waveform_magnitude, frequency_start, frequency_stop, time_fade_in, time_const_freq, time_record, time_fade_out);
+
     quadplane.throttle_wait = false;
 
     return true;
@@ -123,21 +107,54 @@ bool ModeQSystemId::_enter()
 
 void ModeQSystemId::update()
 {
+    // set nav_roll and nav_pitch using sticks
+    // Beware that QuadPlane::tailsitter_check_input (called from Plane::read_radio)
+    // may alter the control_in values for roll and yaw, but not the corresponding
+    // radio_in values. This means that the results for norm_input would not necessarily
+    // be correct for tailsitters, so get_control_in() must be used instead.
+    // normalize control_input to [-1,1]
+    const float roll_input = (float)plane.channel_roll->get_control_in() / plane.channel_roll->get_range();
+    const float pitch_input = (float)plane.channel_pitch->get_control_in() / plane.channel_pitch->get_range();
+
+    // then scale to target angles in centidegrees
+    if (plane.quadplane.tailsitter.active()) {
+        // tailsitters are different
+        set_tailsitter_roll_pitch(roll_input, pitch_input);
+        return;
+    }
+
+    if (!plane.quadplane.option_is_set(QuadPlane::OPTION::INGORE_FW_ANGLE_LIMITS_IN_Q_MODES)) {
+        // by default angles are also constrained by forward flight limits
+        set_limited_roll_pitch(roll_input, pitch_input);
+    } else {
+        // use angle max for both roll and pitch
+        plane.nav_roll_cd = roll_input * plane.quadplane.aparm.angle_max;
+        plane.nav_pitch_cd = pitch_input * plane.quadplane.aparm.angle_max;
+    }
 
 }
 // systemId_exit - clean up systemId controller before exiting
-/*void ModeSystemId::exit()
+void ModeQSystemId::_exit()
 {
     // reset the feedforward enabled parameter to the initialized state
     attitude_control->bf_feedforward(att_bf_feedforward);
+    quadplane.set_sysid_roll_input(0.0f);
+    quadplane.set_sysid_pitch_input(0.0f);
+    quadplane.set_sysid_yaw_input(0.0f);
+
 }
-*/
+
 // systemId_run - runs the systemId controller
 // should be called at 100hz or more
 void ModeQSystemId::run()
 {
 
     const uint32_t now = AP_HAL::millis();
+//    uint32_t dt = (now - _last_loop_time_ms) * 0.001;
+//    gcs().send_text(MAV_SEVERITY_INFO, "SystemID Starting: now=%d", (unsigned)now);
+    float const last_loop_time_s = AP::scheduler().get_last_loop_time_s();
+
+//    _last_loop_time_ms = now;
     if (quadplane.tailsitter.in_vtol_transition(now)) {
         // Tailsitters in FW pull up phase of VTOL transition run FW controllers
         Mode::run();
@@ -156,7 +173,8 @@ void ModeQSystemId::run()
 
     float pilot_throttle_scaled = quadplane.get_pilot_throttle();
 
-    waveform_time += 0.0025; //G_Dt;
+    waveform_time += last_loop_time_s; 
+    _last_loop_time_ms = now;
     waveform_sample = chirp_input.update(waveform_time - SYSTEM_ID_DELAY, waveform_magnitude);
     waveform_freq_rads = chirp_input.get_frequency_rads();
 
@@ -228,119 +246,6 @@ void ModeQSystemId::run()
         }
     }
     log_subsample -= 1;
-
-/*    float target_roll, target_pitch;
-    float target_yaw_rate = 0.0f;
-    float pilot_throttle_scaled = 0.0f;
-    float target_climb_rate = 0.0f;
-    Vector2f input_vel;
-
-    // convert pilot input to lean angles
-    get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, copter.aparm.angle_max);
-
-    // get pilot's desired yaw rate
-    target_yaw_rate = get_pilot_desired_yaw_rate();
-
-    if (!motors->armed()) {
-        // Motors should be Stopped
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
-    // Tradheli doesn't set spool state to ground idle when throttle stick is zero.  Ground idle only set when
-    // motor interlock is disabled.
-    } else if (copter.ap.throttle_zero && !copter.is_tradheli()) {
-        // Attempting to Land
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
-    } else {
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
-    }
-
-    switch (motors->get_spool_state()) {
-    case AP_Motors::SpoolState::SHUT_DOWN:
-        // Motors Stopped
-        attitude_control->reset_yaw_target_and_rate();
-        attitude_control->reset_rate_controller_I_terms();
-        break;
-
-    case AP_Motors::SpoolState::GROUND_IDLE:
-        // Landed
-        // Tradheli initializes targets when going from disarmed to armed state.
-        // init_targets_on_arming is always set true for multicopter.
-        if (motors->init_targets_on_arming()) {
-            attitude_control->reset_yaw_target_and_rate();
-            attitude_control->reset_rate_controller_I_terms_smoothly();
-        }
-        break;
-
-    case AP_Motors::SpoolState::THROTTLE_UNLIMITED:
-        // clear landing flag above zero throttle
-        if (!motors->limit.throttle_lower) {
-            set_land_complete(false);
-        }
-        break;
-
-    case AP_Motors::SpoolState::SPOOLING_UP:
-    case AP_Motors::SpoolState::SPOOLING_DOWN:
-        // do nothing
-        break;
-    }
-
-    // get pilot's desired throttle
-    pilot_throttle_scaled = get_pilot_desired_throttle();
-
-    if ((systemid_state == SystemIDModeState::SYSTEMID_STATE_TESTING) &&
-        (!is_positive(frequency_start) || !is_positive(frequency_stop) || is_negative(time_fade_in) || !is_positive(time_record) || is_negative(time_fade_out) || (time_record <= time_const_freq))) {
-        systemid_state = SystemIDModeState::SYSTEMID_STATE_STOPPED;
-        gcs().send_text(MAV_SEVERITY_INFO, "SystemID Parameter Error");
-    }
-
-    waveform_time += G_Dt;
-    waveform_sample = chirp_input.update(waveform_time - SYSTEM_ID_DELAY, waveform_magnitude);
-    waveform_freq_rads = chirp_input.get_frequency_rads();
-    Vector2f disturb_state;
-    switch (systemid_state) {
-        case SystemIDModeState::SYSTEMID_STATE_STOPPED:
-            attitude_control->bf_feedforward(att_bf_feedforward);
-            break;
-        case SystemIDModeState::SYSTEMID_STATE_TESTING:
-
-            if (copter.ap.land_complete) {
-                systemid_state = SystemIDModeState::SYSTEMID_STATE_STOPPED;
-                gcs().send_text(MAV_SEVERITY_INFO, "SystemID Stopped: Landed");
-                break;
-            }
-            if (attitude_control->lean_angle_deg()*100 > attitude_control->lean_angle_max_cd()) {
-                systemid_state = SystemIDModeState::SYSTEMID_STATE_STOPPED;
-                gcs().send_text(MAV_SEVERITY_INFO, "SystemID Stopped: lean=%f max=%f", (double)attitude_control->lean_angle_deg(), (double)attitude_control->lean_angle_max_cd());
-                break;
-            }
-            if (waveform_time > SYSTEM_ID_DELAY + time_fade_in + time_const_freq + time_record + time_fade_out) {
-                systemid_state = SystemIDModeState::SYSTEMID_STATE_STOPPED;
-                gcs().send_text(MAV_SEVERITY_INFO, "SystemID Finished");
-                break;
-            }
-
-            }
-            break;
-    }
-
-    // call attitude controller
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
-
-    // output pilot's throttle
-    attitude_control->set_throttle_out(pilot_throttle_scaled, !copter.is_tradheli(), g.throttle_filt);
-
-    if (log_subsample <= 0) {
-        log_data();
-        if (copter.should_log(MASK_LOG_ATTITUDE_FAST) && copter.should_log(MASK_LOG_ATTITUDE_MED)) {
-            log_subsample = 1;
-        } else if (copter.should_log(MASK_LOG_ATTITUDE_FAST)) {
-            log_subsample = 2;
-        } else if (copter.should_log(MASK_LOG_ATTITUDE_MED)) {
-            log_subsample = 4;
-        } else {
-            log_subsample = 8;
-        }
-    }
-    log_subsample -= 1; */
 }
 
 // log system id and attitude
@@ -360,8 +265,39 @@ void ModeQSystemId::log_data() const
 
     // Full rate logging of attitude, rate and pid loops
     plane.Log_Write_Attitude();
-//    copter.Log_Write_Rate();
+    quadplane.attitude_control->Write_ANG();
+    quadplane.Log_Write_Rate();
 
+}
+
+// set the desired roll and pitch for a tailsitter
+void ModeQSystemId::set_tailsitter_roll_pitch(const float roll_input, const float pitch_input)
+{
+    // separate limit for roll, if set
+    if (plane.quadplane.tailsitter.max_roll_angle > 0) {
+        // roll param is in degrees not centidegrees
+        plane.nav_roll_cd = plane.quadplane.tailsitter.max_roll_angle * 100.0f * roll_input;
+    } else {
+        plane.nav_roll_cd = roll_input * plane.quadplane.aparm.angle_max;
+    }
+
+    // angle max for tailsitter pitch
+    plane.nav_pitch_cd = pitch_input * plane.quadplane.aparm.angle_max;
+
+    plane.quadplane.transition->set_VTOL_roll_pitch_limit(plane.nav_roll_cd, plane.nav_pitch_cd);
+}
+
+// set the desired roll and pitch for normal quadplanes, also limited by forward flight limits
+void ModeQSystemId::set_limited_roll_pitch(const float roll_input, const float pitch_input)
+{
+    plane.nav_roll_cd = roll_input * MIN(plane.roll_limit_cd, plane.quadplane.aparm.angle_max);
+    // pitch is further constrained by PTCH_LIM_MIN/MAX which may impose
+    // tighter (possibly asymmetrical) limits than Q_ANGLE_MAX
+    if (pitch_input > 0) {
+        plane.nav_pitch_cd = pitch_input * MIN(plane.aparm.pitch_limit_max*100, plane.quadplane.aparm.angle_max);
+    } else {
+        plane.nav_pitch_cd = pitch_input * MIN(-plane.pitch_limit_min*100, plane.quadplane.aparm.angle_max);
+    }
 }
 
 #endif
