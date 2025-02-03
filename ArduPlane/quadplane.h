@@ -318,6 +318,8 @@ private:
     // distance for cruise speed
     float transition_threshold(void);
 
+    void Log_Write_Rate(void);
+
     AP_Int16 transition_time_ms;
     AP_Int16 back_trans_pitch_limit_ms;
 

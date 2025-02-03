@@ -728,6 +728,8 @@ public:
 
     void run() override;
 
+    void _exit() override;
+
 
 //   bool logs_attitude() const override { return true; }
 
@@ -738,6 +740,9 @@ public:
     Chirp chirp_input;
 
 private:
+    void set_tailsitter_roll_pitch(const float roll_input, const float pitch_input);
+    void set_limited_roll_pitch(const float roll_input, const float pitch_input);
+
 
     void log_data() const;
     enum class AxisType {
@@ -774,6 +779,7 @@ private:
     Vector2f target_vel;        // target velocity for position controller modes
     Vector2f target_pos;       // target positon
     Vector2f input_vel_last;    // last cycle input velocity
+    uint32_t _last_loop_time_ms;   // time in milliseconds of last loop
     // System ID states
     enum class SystemIDModeState {
         SYSTEMID_STATE_STOPPED,
