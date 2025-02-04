@@ -69,7 +69,9 @@ public:
 #if MODE_AUTOLAND_ENABLED
         AUTOLAND      = 26,
 #endif
+#if HAL_QUADPLANE_ENABLED
         QSYSTEMID     = 27,
+#endif
 
     // Mode number 30 reserved for "offboard" for external/lua control.
     };

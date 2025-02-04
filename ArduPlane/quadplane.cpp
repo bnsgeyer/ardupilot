@@ -546,11 +546,11 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Increment: 1
     // @User: Standard
     AP_GROUPINFO("APPROACH_DIST", 39, QuadPlane, approach_distance, 0),
-/*    
+    
     // @Group: SID
     // @Path: mode_qsystemid.cpp
     AP_SUBGROUPPTR(mode_qsystemid_ptr, "SID", 40, QuadPlane, ModeQSystemId),
-*/
+
     AP_GROUPEND
 };
 

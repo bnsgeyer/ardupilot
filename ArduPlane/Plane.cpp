@@ -267,7 +267,7 @@ void Plane::update_compass(void)
 void Plane::update_logging10(void)
 {
     bool log_faster = (should_log(MASK_LOG_ATTITUDE_FULLRATE) || should_log(MASK_LOG_ATTITUDE_FAST));
-    if (should_log(MASK_LOG_ATTITUDE_MED) && !log_faster && plane.control_mode != &plane.mode_qsystemid) {
+    if (should_log(MASK_LOG_ATTITUDE_MED) && !log_faster) {
         Log_Write_Attitude();
         ahrs.Write_AOA_SSA();
     } else if (log_faster) {
@@ -288,7 +288,7 @@ void Plane::update_logging25(void)
     // MASK_LOG_ATTITUDE_FULLRATE logs at 400Hz, MASK_LOG_ATTITUDE_FAST at 25Hz, MASK_LOG_ATTIUDE_MED logs at 10Hz
     // highest rate selected wins
     bool log_faster = should_log(MASK_LOG_ATTITUDE_FULLRATE);
-    if (should_log(MASK_LOG_ATTITUDE_FAST) && !log_faster && plane.control_mode != &plane.mode_qsystemid) {
+    if (should_log(MASK_LOG_ATTITUDE_FAST) && !log_faster) {
         Log_Write_Attitude();
     }
 

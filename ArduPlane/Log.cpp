@@ -72,7 +72,7 @@ void Plane::Log_Write_FullRate(void)
 #endif
 }
 
-
+#if HAL_QUADPLANE_ENABLED
 struct PACKED log_SysIdD {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -136,6 +136,7 @@ void Plane::Log_Write_SysID_Setup(uint8_t systemID_axis, float waveform_magnitud
     };
     logger.WriteBlock(&pkt_sids, sizeof(pkt_sids));
 }
+#endif
 
 struct PACKED log_Control_Tuning {
     LOG_PACKET_HEADER;
@@ -578,8 +579,10 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: Ay: Delta velocity, Y-Axis
 // @Field: Az: Delta velocity, Z-Axis
 
+#if HAL_QUADPLANE_ENABLED
     { LOG_SYSIDD_MSG, sizeof(log_SysIdD),
       "SIDD", "Qfffffffff",  "TimeUS,Time,Targ,F,Gx,Gy,Gz,Ax,Ay,Az", "ss-zkkkooo", "F---------" , true },
+#endif
 
 // @LoggerMessage: SIDS
 // @Description: System ID settings
@@ -593,9 +596,10 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: TR: Time taken to complete chirp waveform
 // @Field: TFout: Time to reach zero amplitude after chirp finishes
 
+#if HAL_QUADPLANE_ENABLED
     { LOG_SYSIDS_MSG, sizeof(log_SysIdS),
       "SIDS", "QBfffffff",  "TimeUS,Ax,Mag,FSt,FSp,TFin,TC,TR,TFout", "s--ssssss", "F--------" , true },
-
+#endif
 };
 
 uint8_t Plane::get_num_log_structures() const

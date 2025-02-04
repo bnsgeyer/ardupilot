@@ -196,6 +196,7 @@ public:
     void set_sysid_roll_input(float input) { sysid_roll_cd = input; };
     void set_sysid_pitch_input(float input) { sysid_pitch_cd = input; };
     void set_sysid_yaw_input(float input) { sysid_yaw = input; };
+    void *mode_qsystemid_ptr;
 
 
 private:
@@ -438,8 +439,6 @@ private:
     } vel_forward;
 
     AC_WeatherVane *weathervane;
-
-//    ModeQSystemId mode_qsystemid_ptr;
 
     bool initialised;
 
