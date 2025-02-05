@@ -537,12 +537,11 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Increment: 0.1
     // @User: Standard
     AP_GROUPINFO("BCK_PIT_LIM", 38, QuadPlane, q_bck_pitch_lim, 10.0f),
-
-/*    
+    
     // @Group: SID
     // @Path: mode_qsystemid.cpp
     AP_SUBGROUPPTR(mode_qsystemid_ptr, "SID", 40, QuadPlane, ModeQSystemId),
-*/
+
     AP_GROUPEND
 };
 
@@ -648,6 +647,9 @@ const AP_Param::ConversionInfo mot_pwm_conversion_table[] = {
 QuadPlane::QuadPlane(AP_AHRS &_ahrs) :
     ahrs(_ahrs)
 {
+    // setup pointer so QSYSTEMID parameters appear
+    mode_qsystemid_ptr = &plane.mode_qsystemid;
+
     AP_Param::setup_object_defaults(this, var_info);
     AP_Param::setup_object_defaults(this, var_info2);
 
@@ -4852,7 +4854,7 @@ bool QuadPlane::allow_forward_throttle_in_vtol_mode() const
 
 void QuadPlane::Log_Write_Rate()
 {
-    attitude_control->Write_Rate(*pos_control);
+    ahrs_view->Write_Rate(*motors, *attitude_control, *pos_control);
 }
 
 #endif  // HAL_QUADPLANE_ENABLED

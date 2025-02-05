@@ -15,7 +15,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @Description: Controls which axis are being excited.  Set to non-zero to see more parameters
     // @User: Standard
     // @Values: 0:None, 1:Input Roll Angle, 2:Input Pitch Angle, 3:Input Yaw Angle, 4:Recovery Roll Angle, 5:Recovery Pitch Angle, 6:Recovery Yaw Angle, 7:Rate Roll, 8:Rate Pitch, 9:Rate Yaw, 10:Mixer Roll, 11:Mixer Pitch, 12:Mixer Yaw, 13:Mixer Thrust, 14:Measured Lateral Position, 15:Measured Longitudinal Position, 16:Measured Lateral Velocity, 17:Measured Longitudinal Velocity, 18:Input Lateral Velocity, 19:Input Longitudinal Velocity
-    AP_GROUPINFO_FLAGS("_AXIS", 1, ModeQSystemId, axis, 1, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("_AXIS", 1, ModeQSystemId, axis, 0, AP_PARAM_FLAG_ENABLE),
 
     // @Param: _MAGNITUDE
     // @DisplayName: System identification Chirp Magnitude
@@ -29,7 +29,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @Range: 0.01 100
     // @Units: Hz
     // @User: Standard
-    AP_GROUPINFO("_F_START_HZ", 3, ModeQSystemId, frequency_start, 0.25f),
+    AP_GROUPINFO("_F_START_HZ", 3, ModeQSystemId, frequency_start, 0.5f),
 
     // @Param: _F_STOP_HZ
     // @DisplayName: System identification Stop Frequency
@@ -37,7 +37,7 @@ const AP_Param::GroupInfo ModeQSystemId::var_info[] = {
     // @Range: 0.01 100
     // @Units: Hz
     // @User: Standard
-    AP_GROUPINFO("_F_STOP_HZ", 4, ModeQSystemId, frequency_stop, 10),
+    AP_GROUPINFO("_F_STOP_HZ", 4, ModeQSystemId, frequency_stop, 15),
 
     // @Param: _T_FADE_IN
     // @DisplayName: System identification Fade in time
@@ -265,7 +265,6 @@ void ModeQSystemId::log_data() const
 
     // Full rate logging of attitude, rate and pid loops
     plane.Log_Write_Attitude();
-    quadplane.attitude_control->Write_ANG();
     quadplane.Log_Write_Rate();
 
 }

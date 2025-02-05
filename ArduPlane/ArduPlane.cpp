@@ -251,9 +251,17 @@ void Plane::update_compass(void)
  */
 void Plane::update_logging10(void)
 {
+    bool systemid_logging_attitude = false;
+#if HAL_QUADPLANE_ENABLED
+    if (control_mode == &mode_qsystemid) {
+        systemid_logging_attitude = true;
+    }
+#endif
     bool log_faster = (should_log(MASK_LOG_ATTITUDE_FULLRATE) || should_log(MASK_LOG_ATTITUDE_FAST));
     if (should_log(MASK_LOG_ATTITUDE_MED) && !log_faster) {
-        Log_Write_Attitude();
+        if (!systemid_logging_attitude) {
+            Log_Write_Attitude();
+        }
         ahrs.Write_AOA_SSA();
     } else if (log_faster) {
         ahrs.Write_AOA_SSA();
@@ -272,8 +280,14 @@ void Plane::update_logging25(void)
 {
     // MASK_LOG_ATTITUDE_FULLRATE logs at 400Hz, MASK_LOG_ATTITUDE_FAST at 25Hz, MASK_LOG_ATTIUDE_MED logs at 10Hz
     // highest rate selected wins
+    bool systemid_logging_attitude = false;
+#if HAL_QUADPLANE_ENABLED
+    if (control_mode == &mode_qsystemid) {
+        systemid_logging_attitude = true;
+    }
+#endif
     bool log_faster = should_log(MASK_LOG_ATTITUDE_FULLRATE);
-    if (should_log(MASK_LOG_ATTITUDE_FAST) && !log_faster) {
+    if (should_log(MASK_LOG_ATTITUDE_FAST) && !log_faster && !systemid_logging_attitude) {
         Log_Write_Attitude();
     }
 

@@ -55,7 +55,10 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+
+#if HAL_QUADPLANE_ENABLED
         QSYSTEMID     = 27,
+#endif
     };
 
     // Constructor

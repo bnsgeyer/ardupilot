@@ -449,7 +449,7 @@ private:
 
     AC_WeatherVane *weathervane;
 
-//    ModeQSystemId mode_qsystemid_ptr;
+    void *mode_qsystemid_ptr;
 
     bool initialised;
 
