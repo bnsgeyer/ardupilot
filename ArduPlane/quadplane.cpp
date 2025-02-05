@@ -822,6 +822,9 @@ bool QuadPlane::setup(void)
 
     transition->force_transition_complete();
 
+    // setup pointer so QSYSTEMID parameters appear
+    mode_qsystemid_ptr = &plane.mode_qsystemid;
+
     // param count will have changed
     AP_Param::invalidate_count();
 
