@@ -277,6 +277,7 @@ void AP_SystemID::log_data() const
                                     delta_velocity.y * dt_vel_inv,
                                     delta_velocity.z * dt_vel_inv);
     }
+    plane.quadplane.Log_Write_AttRate();
 }
 
 #endif // AP_PLANE_SYSTEMID_ENABLED
