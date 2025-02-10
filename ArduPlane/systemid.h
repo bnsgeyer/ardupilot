@@ -27,6 +27,10 @@ public:
         return throttle_offset;
     }
 
+    bool is_running(void) const {
+        return running;
+    }
+
 private:
     Chirp chirp_input;
     bool running;

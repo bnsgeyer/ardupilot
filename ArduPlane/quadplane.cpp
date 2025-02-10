@@ -1898,9 +1898,14 @@ void QuadPlane::update(void)
     if (motors->armed()) {
         const bool motors_active = in_vtol_mode() || assisted_flight;
         if (motors_active && (motors->get_spool_state() != AP_Motors::SpoolState::SHUT_DOWN)) {
-            // log RATE at main loop rate
-            ahrs_view->Write_Rate(*motors, *attitude_control, *pos_control);
-
+            bool sysid_running = false;
+#if AP_PLANE_SYSTEMID_ENABLED
+            sysid_running = plane.g2.systemid.is_running();
+#endif
+            if (!sysid_running) {
+                // log RATE at main loop rate
+                ahrs_view->Write_Rate(*motors, *attitude_control, *pos_control);
+            }
             // log CTRL and MOTB at 10 Hz
             if (now - last_ctrl_log_ms > 100) {
                 last_ctrl_log_ms = now;
@@ -4826,6 +4831,12 @@ float QuadPlane::get_throttle_input() const
 bool QuadPlane::allow_forward_throttle_in_vtol_mode() const
 {
     return in_vtol_mode() && motors->armed() && (motors->get_desired_spool_state() != AP_Motors::DesiredSpoolState::SHUT_DOWN);
+}
+
+void QuadPlane::Log_Write_AttRate()
+{
+    plane.Log_Write_Attitude();
+    ahrs_view->Write_Rate(*motors, *attitude_control, *pos_control);
 }
 
 #endif  // HAL_QUADPLANE_ENABLED

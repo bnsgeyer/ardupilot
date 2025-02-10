@@ -916,6 +916,8 @@ private:
     void Log_Write_Vehicle_Startup_Messages();
     void Log_Write_AETR();
     void log_init();
+    bool sysid_running;
+    void sysid_is_running(bool running) { sysid_running = running; }
 
     // Parameters.cpp
     void load_parameters(void) override;

@@ -119,6 +119,7 @@ void AP_SystemID::start()
     plane.Log_Write_SysID_Setup(axis, waveform_magnitude, frequency_start, frequency_stop, time_fade_in, time_const_freq, time_record, time_fade_out);
 
     running = true;
+    plane.sysid_is_running(running);
 }
 
 /*
@@ -128,6 +129,7 @@ void AP_SystemID::stop()
 {
     if (running) {
         running = false;
+        plane.sysid_is_running(running);
         attitude_offset_deg.zero();
         throttle_offset = 0;
 
@@ -150,6 +152,8 @@ void AP_SystemID::update()
     if (!running) {
         return;
     }
+    plane.sysid_is_running(running);
+
     if (chirp_input.completed()) {
         stop();
         return;
@@ -237,6 +241,7 @@ void AP_SystemID::log_data() const
                                    delta_velocity.y / delta_velocity_dt,
                                    delta_velocity.z / delta_velocity_dt);
     }
+    plane.quadplane.Log_Write_AttRate();
 }
 
 #endif // AP_PLANE_SYSTEMID_ENABLED
