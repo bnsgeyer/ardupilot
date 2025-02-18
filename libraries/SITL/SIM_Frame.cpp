@@ -635,9 +635,9 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 
     // Updated model using sweeps in aerodrome
     float Mu = 1.421f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s
-    float Lv = -1.36f * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s
+    float Lv = -2 * m2ftd;  //value has been converted from rad/s/s/ft/s to rad/s/s/m/s
     float Xu = -0.2179f;
-    float Yv = -0.201f;
+    float Yv = -0.3f;
     float Nr = -0.5513f;
     float Nped = 12.07f;
     float Zcol = -71.64f * m2ftn;  //value has been converted from ft/s/s to m/s/s
@@ -646,8 +646,10 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 	float Mlon = 112.93f;
 	float Lag = 24.94f;
 	float Lead = 1.54f;
-	float Ylat = 13.79f * m2ftn;  //value has been converted from ft/s/s to m/s/s
-	float Llat = 144.32f;
+	float Ylat = 6.3f * m2ftn;  //value has been converted from ft/s/s to m/s/s
+	float Llat = 43.15f;
+    float rLag = 37.1;
+    float Lp = -2;
 	uint16_t _time_delay_rp = 0;
 	uint16_t _time_delay_ped = 14;
 	uint16_t _time_delay_col = 26;
@@ -755,7 +757,7 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 
     const Vector3f &gyro = aircraft.get_gyro();
     // rotational acceleration (in rad/s/s?) in body frame
-    rot_accel.x = (Lv)*(velocity_air_bf.y)+(Llat)*(Dlatlag);
+    rot_accel.x = (Lv)*(velocity_air_bf.y)+(Llat)*(Dlatlag)+(Lp)*(gyro.x);
     rot_accel.y = (Mu)*(velocity_air_bf.x)+(Mlon)*(Dlonlag);
     rot_accel.z = (Nr)*(gyro.z)+((Nped)-(Lag*Lead))*(Dpedlag)+(Lag*Lead)*(_yaw_in);
 
@@ -764,7 +766,7 @@ void Frame::calculate_forces_x8(const Aircraft &aircraft,
 	float thrust = Zcol * Dcollag + (Zw * velocity_air_bf.z) + 0.1f * Zcol;
     body_accel = Vector3f(lateral_x_thrust, lateral_y_thrust, thrust);
 
-	float Dlatlag_dot = (-Lag)*(Dlatlag)+(Lag)*(_roll_in);
+	float Dlatlag_dot = (-rLag)*(Dlatlag)+(rLag)*(_roll_in);
 	float Dlonlag_dot = (-Lag)*(Dlonlag)+(Lag)*(_pitch_in);
 	float Dcollag_dot = (-Lag)*(Dcollag)+(Lag)*(_throttle_in);
 	float Dpedlag_dot = (-Lag)*(Dpedlag)+(Lag)*(_yaw_in);
