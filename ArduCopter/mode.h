@@ -1757,6 +1757,7 @@ private:
         DISTURB_VEL_LONG = 17,  // longitudinal body axis measured velocity is being excited
         INPUT_VEL_LAT = 18,     // lateral body axis commanded velocity is being excited
         INPUT_VEL_LONG = 19,    // longitudinal body axis commanded velocity is being excited
+        INPUT_VEL_VERT = 24,    // vertical body axis commanded velocity is being excited
     };
 
     AP_Int8 axis;               // Controls which axis are being excited. Set to non-zero to display other parameters
@@ -1773,9 +1774,8 @@ private:
     float waveform_freq_rads;       // Instantaneous waveform frequency
     float time_const_freq;          // Time at constant frequency before chirp starts
     int8_t log_subsample;           // Subsample multiple for logging.
-    Vector2f target_vel_ne_ms;      // target velocity for position controller modes
-    Vector2p target_pos_ne_m;       // target position
-    Vector2f input_vel_last_ne_ms;  // last cycle input velocity
+    Vector3p target_pos_neu_m;       // target position
+    Vector3f input_vel_last_neu_ms;  // last cycle input velocity
     // System ID states
     enum class SystemIDModeState {
         SYSTEMID_STATE_STOPPED,

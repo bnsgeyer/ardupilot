@@ -13,7 +13,7 @@ const AP_Param::GroupInfo ModeSystemId::var_info[] = {
     // @DisplayName: System identification axis
     // @Description: Controls which axis are being excited.  Set to non-zero to see more parameters
     // @User: Standard
-    // @Values: 0:None, 1:Input Roll Angle, 2:Input Pitch Angle, 3:Input Yaw Angle, 4:Recovery Roll Angle, 5:Recovery Pitch Angle, 6:Recovery Yaw Angle, 7:Rate Roll, 8:Rate Pitch, 9:Rate Yaw, 10:Mixer Roll, 11:Mixer Pitch, 12:Mixer Yaw, 13:Mixer Thrust, 14:Measured Lateral Position, 15:Measured Longitudinal Position, 16:Measured Lateral Velocity, 17:Measured Longitudinal Velocity, 18:Input Lateral Velocity, 19:Input Longitudinal Velocity
+    // @Values: 0:None, 1:Input Roll Angle, 2:Input Pitch Angle, 3:Input Yaw Angle, 4:Recovery Roll Angle, 5:Recovery Pitch Angle, 6:Recovery Yaw Angle, 7:Rate Roll, 8:Rate Pitch, 9:Rate Yaw, 10:Mixer Roll, 11:Mixer Pitch, 12:Mixer Yaw, 13:Mixer Thrust, 14:Measured Lateral Position, 15:Measured Longitudinal Position, 16:Measured Lateral Velocity, 17:Measured Longitudinal Velocity, 18:Input Lateral Velocity, 19:Input Longitudinal Velocity, 24:Input Vertical Velocity
     AP_GROUPINFO_FLAGS("_AXIS", 1, ModeSystemId, axis, 0, AP_PARAM_FLAG_ENABLE),
 
     // @Param: _MAGNITUDE
@@ -128,7 +128,7 @@ bool ModeSystemId::init(bool ignore_checks)
         if (!pos_control->is_active_U()) {
             pos_control->init_U_controller();
         }
-        target_pos_ne_m = pos_control->get_pos_estimate_NEU_m().xy();
+        target_pos_neu_m = pos_control->get_pos_estimate_NEU_m();
     }
 
     att_bf_feedforward = attitude_control->get_bf_feedforward();
@@ -163,8 +163,7 @@ void ModeSystemId::run()
     float target_pitch_rad = 0.0f;
     float target_yaw_rate_rads = 0.0f;
     float pilot_throttle_scaled = 0.0f;
-    float target_climb_rate_ms = 0.0f;
-    Vector2f input_vel_ne_ms;
+    Vector3f input_vel_neu_ms;
 
     if (!is_poscontrol_axis_type()) {
 
@@ -238,6 +237,7 @@ void ModeSystemId::run()
     waveform_sample = chirp_input.update(waveform_time - SYSTEM_ID_DELAY, waveform_magnitude);
     waveform_freq_rads = chirp_input.get_frequency_rads();
     Vector2f disturb_state;
+    Vector2f input_vel_ne_ms;
     switch (systemid_state) {
         case SystemIDModeState::SYSTEMID_STATE_STOPPED:
             attitude_control->bf_feedforward(att_bf_feedforward);
@@ -335,13 +335,22 @@ void ModeSystemId::run()
                     input_vel_ne_ms.x = 0.0f;
                     input_vel_ne_ms.y = waveform_sample;
                     input_vel_ne_ms.rotate(attitude_control->get_att_target_euler_rad().z);
+                    input_vel_neu_ms.x = input_vel_ne_ms.x;
+                    input_vel_neu_ms.y = input_vel_ne_ms.y;
                     break;
                 case AxisType::INPUT_VEL_LONG:
                     input_vel_ne_ms.x = waveform_sample;
                     input_vel_ne_ms.y = 0.0f;
                     input_vel_ne_ms.rotate(attitude_control->get_att_target_euler_rad().z);
+                    input_vel_neu_ms.x = input_vel_ne_ms.x;
+                    input_vel_neu_ms.y = input_vel_ne_ms.y;
                     break;
-            }
+                case AxisType::INPUT_VEL_VERT:
+                    input_vel_neu_ms.x = 0.0f;
+                    input_vel_neu_ms.y = 0.0f;
+                    input_vel_neu_ms.z = waveform_sample;
+                    break;
+             }
             break;
     }
 
@@ -360,22 +369,20 @@ void ModeSystemId::run()
             pos_control->soften_for_landing_NE();
         }
 
-        Vector2f accel_ne_mss;
-        target_pos_ne_m += input_vel_ne_ms.topostype() * G_Dt;
+    
+        Vector3f accel_neu_mss;
+        target_pos_neu_m += input_vel_neu_ms.topostype() * G_Dt;
         if (is_positive(G_Dt)) {
-            accel_ne_mss = (input_vel_ne_ms - input_vel_last_ne_ms) / G_Dt;
-            input_vel_last_ne_ms = input_vel_ne_ms;
+            accel_neu_mss = (input_vel_neu_ms - input_vel_last_neu_ms) / G_Dt;
+            input_vel_last_neu_ms = input_vel_neu_ms;
         }
-        pos_control->set_pos_vel_accel_NE_m(target_pos_ne_m, input_vel_ne_ms, accel_ne_mss);
+        pos_control->set_pos_vel_accel_NEU_m(target_pos_neu_m, input_vel_neu_ms, accel_neu_mss);
 
         // run pos controller
         pos_control->update_NE_controller();
 
         // call attitude controller
         attitude_control->input_thrust_vector_rate_heading_rads(pos_control->get_thrust_vector(), target_yaw_rate_rads, false);
-
-        // Send the commanded climb rate to the position controller
-        pos_control->set_pos_target_U_from_climb_rate_ms(target_climb_rate_ms);
 
         // run the vertical position controller and set output throttle
         pos_control->update_U_controller();
@@ -435,6 +442,7 @@ bool ModeSystemId::is_poscontrol_axis_type() const
         case AxisType::DISTURB_VEL_LONG:
         case AxisType::INPUT_VEL_LAT:
         case AxisType::INPUT_VEL_LONG:
+        case AxisType::INPUT_VEL_VERT:
             ret = true;
             break;
         default:
