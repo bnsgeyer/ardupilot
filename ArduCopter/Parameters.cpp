@@ -1381,8 +1381,8 @@ void Copter::convert_pid_parameters(void)
     static const struct AP_Param::defaults_table_struct heli_defaults_table[] = {
         { "RC8_OPTION", 32 },
         { "RC_OPTIONS", 0 },
-        { "ATC_RAT_RLL_ILMI", 0.05},
-        { "ATC_RAT_PIT_ILMI", 0.05},
+//        { "ATC_RAT_RLL_ILMI", 0.05},
+//        { "ATC_RAT_PIT_ILMI", 0.05},
     };
     AP_Param::set_defaults_from_table(heli_defaults_table, ARRAY_SIZE(heli_defaults_table));
 #endif  // FRAME_CONFIG == HELI_FRAME
