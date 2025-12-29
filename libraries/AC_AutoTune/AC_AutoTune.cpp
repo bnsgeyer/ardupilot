@@ -202,6 +202,10 @@ const char *AC_AutoTune::get_tune_type_name() const
         return "Check Tune Frequency Response";
     case TuneType::TUNE_COMPLETE:
         return "Tune Complete";
+    case TuneType::CTRL_COUPLING:
+        return "Tune Control Coupling";
+    case TuneType::RATE_COUPLING:
+        return "Tune Rate Coupling";
     }
     return "";
     // this should never happen
@@ -466,6 +470,12 @@ void AC_AutoTune::control_attitude()
             break;
         case TuneType::MAX_GAINS:
             updating_max_gains_all(axis);
+            break;
+        case TuneType::CTRL_COUPLING:
+            updating_ctrl_coupling_all(axis);
+            break;
+        case TuneType::RATE_COUPLING:
+            updating_rate_coupling_all(axis);
             break;
         case TuneType::TUNE_CHECK:
             success_counter = AUTOTUNE_SUCCESS_COUNT;

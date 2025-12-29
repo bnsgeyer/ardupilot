@@ -157,6 +157,12 @@ protected:
     // set gains post tune for the tune type
     virtual void set_tuning_gains_with_backoff(AxisType test_axis)=0;
 
+    // update gains for the control coupling tune type
+    virtual void updating_ctrl_coupling_all(AxisType test_axis)=0;
+
+    // update gains for the rate coupling tune type
+    virtual void updating_rate_coupling_all(AxisType test_axis)=0;
+
     // reverse the direction of the next test
     virtual bool reverse_test_direction() = 0;
 
@@ -222,10 +228,12 @@ protected:
         ANGLE_P_UP = 5,     // angle P is being tuned up
         MAX_GAINS = 6,      // max allowable stable gains are determined
         TUNE_CHECK = 7,     // frequency sweep with tuned gains
-        TUNE_COMPLETE = 8   // Reached end of tuning
+        TUNE_COMPLETE = 8,   // Reached end of tuning
+        CTRL_COUPLING = 9,    // control coupling test
+        RATE_COUPLING = 10   // rate coupling test
     };
     TuneType tune_type;     // see TuneType
-    TuneType tune_seq[6];   // holds sequence of tune_types to be performed
+    TuneType tune_seq[12];   // holds sequence of tune_types to be performed
     uint8_t tune_seq_index; // current tune sequence step
 
     // get the next tune type
