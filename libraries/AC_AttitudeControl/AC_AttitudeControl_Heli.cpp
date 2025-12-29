@@ -303,6 +303,40 @@ const AP_Param::GroupInfo AC_AttitudeControl_Heli::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("PIRO_COMP",    5, AC_AttitudeControl_Heli, _piro_comp_enabled, 0),
     
+    // @Param: RLLCMD2PIT
+    // @DisplayName: Roll Command to Pitch Coupling
+    // @Description: Cross coupling factor from roll command to pitch cyclic
+    // @Increment: 0.01
+    // @Range: -1 1
+    // @User: Advanced
+    AP_GROUPINFO("RLLCMD2PIT",    6, AC_AttitudeControl_Heli, _roll_cmd_to_pitch, 0),
+
+    // @Param: PITCMD2RLL
+    // @DisplayName: Pitch Command to Roll Coupling
+    // @Description: Cross coupling factor from pitch command to roll cyclic
+    // @Increment: 0.01
+    // @Range: -1 1
+    // @User: Advanced
+    AP_GROUPINFO("PITCMD2RLL",    7, AC_AttitudeControl_Heli, _pitch_cmd_to_roll, 0),
+
+    // @Param: RLLRAT2PIT
+    // @DisplayName: Roll Rate to Pitch Coupling
+    // @Description: Cross coupling factor from roll rate to pitch cyclic
+    // @Units: 1/rps
+    // @Increment: 0.01
+    // @Range: -1 1
+    // @User: Advanced
+    AP_GROUPINFO("RLLRAT2PIT",    8, AC_AttitudeControl_Heli, _roll_rate_to_pitch, 0),
+
+    // @Param: PITRAT2RLL
+    // @DisplayName: Pitch Rate to Roll Coupling
+    // @Description: Cross coupling factor from pitch rate to roll cyclic
+    // @Units: 1/rps
+    // @Increment: 0.01
+    // @Range: -1 1
+    // @User: Advanced
+    AP_GROUPINFO("PITRAT2RLL",    9, AC_AttitudeControl_Heli, _pitch_rate_to_roll, 0),
+
     AP_GROUPEND
 };
 
@@ -478,6 +512,10 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(const Vector3f &rate_r
     // add feed forward and final output
     float roll_out = roll_pid + roll_ff;
     float pitch_out = pitch_pid + pitch_ff;
+
+    // add cross coupling
+    roll_out += (pitch_pid + pitch_ff) * _pitch_cmd_to_roll + rate_rads.y * _pitch_rate_to_roll;
+    pitch_out += (roll_pid + roll_ff) * _roll_cmd_to_pitch + rate_rads.x * _roll_rate_to_pitch;
 
     // constrain output
     roll_out = constrain_float(roll_out, -AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX, AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX);

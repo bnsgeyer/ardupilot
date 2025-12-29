@@ -158,6 +158,10 @@ private:
     // parameters
     AP_Int8         _piro_comp_enabled;             // Flybar present or not.  Affects attitude controller used during ACRO flight mode
     AP_Int16        _hover_roll_trim_cd;               // Angle in centi-degrees used to counter tail rotor thrust in hover
+    AP_Float        _roll_rate_to_pitch;               // Cross coupling factor from roll rate to pitch cyclic
+    AP_Float        _pitch_rate_to_roll;               // Cross coupling factor from pitch rate to roll cyclic
+    AP_Float        _roll_cmd_to_pitch;               // Cross coupling factor from roll command to pitch cyclic
+    AP_Float        _pitch_cmd_to_roll;               // Cross coupling factor from pitch command to roll cyclic
 
     // Roll and Pitch rate PIDs share the same defaults:
     const AC_PID::Defaults rp_defaults {
