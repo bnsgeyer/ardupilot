@@ -59,6 +59,8 @@
 #define AUTOTUNE_SEQ_BITMASK_ANGLE_P         4
 #define AUTOTUNE_SEQ_BITMASK_MAX_GAIN        8
 #define AUTOTUNE_SEQ_BITMASK_TUNE_CHECK      16
+#define AUTOTUNE_SEQ_BITMASK_CTRL_COUPLING   32
+#define AUTOTUNE_SEQ_BITMASK_RATE_COUPLING   64
 
 // angle limits preserved from previous behaviour as Multi changed:
 #define AUTOTUNE_ANGLE_TARGET_MAX_RP_CD     2000    // target angle during TESTING_RATE step that will cause us to move to next step
@@ -248,6 +250,10 @@ void AC_AutoTune_Heli::test_init()
         resp_type = AC_AutoTune_FreqResp::ResponseType::ANGLE;
         calc_type = ANGLE;
         freq_resp_input = TARGET;
+        break;
+    case TuneType::CTRL_COUPLING:
+        break;
+    case TuneType::RATE_COUPLING:
         break;
     default:
         break;
@@ -1714,6 +1720,14 @@ void AC_AutoTune_Heli::set_tune_sequence()
 
     if (seq_bitmask & AUTOTUNE_SEQ_BITMASK_VFF) {
         tune_seq[seq_cnt] = TuneType::RATE_FF_UP;
+        seq_cnt++;
+    }
+    if (seq_bitmask & AUTOTUNE_SEQ_BITMASK_CTRL_COUPLING) {
+        tune_seq[seq_cnt] = TuneType::CTRL_COUPLING;
+        seq_cnt++;
+    }
+    if (seq_bitmask & AUTOTUNE_SEQ_BITMASK_RATE_COUPLING) {
+        tune_seq[seq_cnt] = TuneType::RATE_COUPLING;
         seq_cnt++;
     }
     if (seq_bitmask & AUTOTUNE_SEQ_BITMASK_RATE_D) {

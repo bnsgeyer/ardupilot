@@ -100,6 +100,12 @@ protected:
     // set gains post tune for the tune type
     void set_tuning_gains_with_backoff(AxisType test_axis) override;
 
+    // update gains for the control coupling tune type
+    void updating_ctrl_coupling_all(AxisType test_axis) override {};
+
+    // update gains for the rate coupling tune type
+    void updating_rate_coupling_all(AxisType test_axis) override {};
+
     // reverse the direction of the next test
     bool reverse_test_direction() override { return positive_direction; }
 

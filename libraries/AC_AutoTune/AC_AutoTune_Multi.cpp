@@ -957,6 +957,8 @@ void AC_AutoTune_Multi::set_tuning_gains_with_backoff(AxisType test_axis)
     case TuneType::RATE_FF_UP:
     case TuneType::MAX_GAINS:
     case TuneType::TUNE_CHECK:
+    case TuneType::CTRL_COUPLING:
+    case TuneType::RATE_COUPLING:
         // this should never happen
         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
         break;

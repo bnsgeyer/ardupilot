@@ -189,6 +189,12 @@ void updating_angle_p_up(float &tune_p, float tune_p_max, float tune_p_step_rati
                          float angle_target, float meas_angle_max,
                          float meas_rate_min, float meas_rate_max);
 
+    // update gains for the control coupling tune type
+    void updating_ctrl_coupling_all(AxisType test_axis) override {};
+
+    // update gains for the rate coupling tune type
+    void updating_rate_coupling_all(AxisType test_axis) override {};
+
     // Formats and sends gain reports
     void report_axis_gains(const char* axis_string, float rate_P, float rate_I,
                            float rate_D, float angle_P, float max_accel_radss) const;
