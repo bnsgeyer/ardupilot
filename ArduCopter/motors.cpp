@@ -33,6 +33,11 @@ void Copter::auto_disarm_check()
 #if FRAME_CONFIG != HELI_FRAME
         // Shorten delay when motors may be stopped (interlock off / e-stop), since arming is less obvious.
         disarm_delay_ms /= 2;
+#else
+        if (!ap.land_complete) {
+            // For helicopters, if not landed, do not allow auto-disarm.
+            auto_disarm_begin = tnow_ms;
+        }
 #endif
     } else {
         bool sprung_throttle_stick = (g.throttle_behavior & THR_BEHAVE_FEEDBACK_FROM_MID_STICK) != 0;
