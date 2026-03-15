@@ -8,7 +8,7 @@
 #include "AP_MotorsHeli.h"
 #include "AP_MotorsHeli_RSC.h"
 #include "AP_MotorsHeli_Swash.h"
-#include "AP_Motors_Thrust_Linearization.h"
+#include "AP_MotorsHeli_Thruster.h"
 
 // rsc and extgyro function output channels.
 #define AP_MOTORS_HELI_SINGLE_EXTGYRO                          CH_7
@@ -75,7 +75,7 @@ public:
     void heli_motors_param_conversions(void) override;
 
     // Thrust Linearization handling
-    Thrust_Linearization thr_lin {*this};
+    AP_MotorsHeli_Thruster tail_thruster {*this};
 
 #if HAL_LOGGING_ENABLED
     // Blade angle logging - called at 10 Hz

@@ -137,47 +137,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("COL2YAW", 21,  AP_MotorsHeli_Single, _collective_yaw_scale, 0),
 
-    // @Param: DDFP_THST_EXPO
-    // @DisplayName: DDFP Tail Rotor Thrust Curve Expo
-    // @Description: Tail rotor DDFP motor thrust curve exponent (0.0 for linear to 1.0 for second order curve)
-    // @Range: -1 1
-    // @User: Standard
-
-    // @Param: DDFP_SPIN_MIN
-    // @DisplayName: DDFP Tail Rotor Motor Spin minimum
-    // @Description: Point at which the thrust starts expressed as a number from 0 to 1 in the entire output range.
-    // @Values: 0.0:Low, 0.15:Default, 0.3:High
-    // @Range: 0.0 0.3
-    // @User: Standard
-
-    // @Param: DDFP_SPIN_MAX
-    // @DisplayName: DDFP Tail Rotor Motor Spin maximum
-    // @Description: Point at which the thrust saturates expressed as a number from 0 to 1 in the entire output range
-    // @Values: 0.9:Low, 0.95:Default, 1.0:High
-    // @Range: 0.9 1.0
-    // @User: Standard
-
-    // @Param: DDFP_BAT_IDX
-    // @DisplayName: DDFP Tail Rotor Battery compensation index
-    // @Description: Which battery monitor should be used for doing compensation
-    // @Values: 0:First battery, 1:Second battery
-    // @Range: 0 15
-    // @User: Standard
-
-    // @Param: DDFP_BAT_V_MAX
-    // @DisplayName: Battery voltage compensation maximum voltage
-    // @Description: Battery voltage compensation maximum voltage (voltage above this will have no additional scaling effect on thrust).  Recommend 4.2 * cell count, 0 = Disabled
-    // @Range: 6 53
-    // @Units: V
-    // @User: Standard
-
-    // @Param: DDFP_BAT_V_MIN
-    // @DisplayName: Battery voltage compensation minimum voltage
-    // @Description: Battery voltage compensation minimum voltage (voltage below this will have no additional scaling effect on thrust).  Recommend 3.3 * cell count, 0 = Disabled
-    // @Range: 6 42
-    // @Units: V
-    // @User: Standard
-    AP_SUBGROUPINFO(thr_lin, "DDFP_", 22, AP_MotorsHeli_Single, Thrust_Linearization),
+    // Indices 22 was DDFP linearization and should not be used
 
     // @Param: YAW_TRIM
     // @DisplayName: Tail Rotor Trim
@@ -185,6 +145,55 @@ const AP_Param::GroupInfo AP_MotorsHeli_Single::var_info[] = {
     // @Range: -1 1
     // @User: Standard
     AP_GROUPINFO("YAW_TRIM", 23,  AP_MotorsHeli_Single, _yaw_trim, 0.0f),
+
+    // @Param: TYPE
+    // @DisplayName: Thruster Type
+    // @Description: Type of thruster used
+    // @Values: 0:Variable Pitch,1:Fixed Pitch Clockwise,2:Fixed Pitch Counterclockwise
+    // @User: Standard
+
+    // @Param: THST_EXPO
+    // @DisplayName: Thrust Curve Expo
+    // @Description: Tail rotor DDFP motor thrust curve exponent (0.0 for linear to 1.0 for second order curve)
+    // @Range: -1 1
+    // @User: Standard
+
+    // @Param: SPIN_MIN
+    // @DisplayName: Motor Spin minimum
+    // @Description: Point at which the thrust starts expressed as a number from 0 to 1 in the entire output range.
+    // @Values: 0.0:Low, 0.15:Default, 0.3:High
+    // @Range: 0.0 0.3
+    // @User: Standard
+
+    // @Param: SPIN_MAX
+    // @DisplayName: Motor Spin maximum
+    // @Description: Point at which the thrust saturates expressed as a number from 0 to 1 in the entire output range
+    // @Values: 0.9:Low, 0.95:Default, 1.0:High
+    // @Range: 0.9 1.0
+    // @User: Standard
+
+    // @Param: BAT_IDX
+    // @DisplayName: Battery compensation index
+    // @Description: Which battery monitor should be used for doing compensation
+    // @Values: 0:First battery, 1:Second battery
+    // @Range: 0 15
+    // @User: Standard
+
+    // @Param: BAT_V_MAX
+    // @DisplayName: Battery voltage compensation maximum voltage
+    // @Description: Battery voltage compensation maximum voltage (voltage above this will have no additional scaling effect on thrust).  Recommend 4.2 * cell count, 0 = Disabled
+    // @Range: 6 53
+    // @Units: V
+    // @User: Standard
+
+    // @Param: BAT_V_MIN
+    // @DisplayName: Battery voltage compensation minimum voltage
+    // @Description: Battery voltage compensation minimum voltage (voltage below this will have no additional scaling effect on thrust).  Recommend 3.3 * cell count, 0 = Disabled
+    // @Range: 6 42
+    // @Units: V
+    // @User: Standard
+
+    AP_SUBGROUPINFO(tail_thruster, "TR_", 24, AP_MotorsHeli_Single, AP_MotorsHeli_Thruster),
 
     AP_GROUPEND
 };
@@ -481,8 +490,6 @@ void AP_MotorsHeli_Single::output_to_motors()
             FALLTHROUGH;
 
         case TAIL_TYPE::DIRECTDRIVE_FIXEDPITCH_CW: {
-            // calc filtered battery voltage and lift_max
-            thr_lin.update_lift_max_from_batt_voltage();
 
             // Only throttle up if in active spool state
             switch (_spool_state) {
@@ -496,7 +503,7 @@ void AP_MotorsHeli_Single::output_to_motors()
                 case AP_Motors::SpoolState::SPOOLING_UP:
                 case AP_Motors::SpoolState::THROTTLE_UNLIMITED:
                     // Operate DDFP to between DDFP_SPIN_MIN and DDFP_SPIN_MAX using thrust linearisation
-                    output_to_ddfp_tail(thr_lin.thrust_to_actuator(_servo4_out));
+                    output_to_ddfp_tail(tail_thruster.get_output(_servo4_out));
                     break;
             }
             break;
