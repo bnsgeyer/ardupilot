@@ -60,7 +60,7 @@ const AP_Param::GroupInfo AP_MotorsHeli_RSC::var_info[] = {
     // @Param: MODE
     // @DisplayName: Rotor Speed Control Mode
     // @Description: Selects the type of rotor speed control used to determine throttle output to the HeliRSC servo channel when motor interlock is enabled (throttle hold off). RC Passthrough sends the input from the RC Motor Interlock channel as throttle output.  External Gov SetPoint sends the RSC SetPoint parameter value as throttle output.  Throttle Curve uses the 5 point throttle curve to determine throttle output based on the collective output.  AutoThrottle requires a rotor speed sensor, contains an advanced autothrottle governor and is primarily for piston and turbine engines. WARNING: Throttle ramp time and throttle curve MUST be tuned properly using Throttle Curve mode before using AutoThrottle
-    // @Values: 1:RC Passthrough, 2:External Gov SetPoint, 3:Throttle Curve, 4:AutoThrottle
+    // @Values: 1:RC Passthrough, 2:External Gov SetPoint, 3:Throttle Curve, 4:AutoThrottle, 5:Direct Drive Fixed Pitch
     // @User: Standard
     AP_GROUPINFO("MODE", 2, AP_MotorsHeli_RSC, _rsc_mode, (int8_t)ROTOR_CONTROL_MODE_PASSTHROUGH),
 
@@ -365,7 +365,7 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
         // if turbine engine started without using start sequence, set starting flag just to be sure it can't be triggered when back in idle
         _starting = false;
 
-        if ((_control_mode == ROTOR_CONTROL_MODE_PASSTHROUGH) || (_control_mode == ROTOR_CONTROL_MODE_SETPOINT)) {
+        if ((_control_mode == ROTOR_CONTROL_MODE_PASSTHROUGH) || (_control_mode == ROTOR_CONTROL_MODE_SETPOINT) || (_control_mode == ROTOR_CONTROL_MODE_DDFP)) {
             // set control rotor speed to ramp slewed value between idle and desired speed
             _control_output = _idle_throttle + (_rotor_ramp_output * (_desired_speed - _idle_throttle));
         } else if (_control_mode == ROTOR_CONTROL_MODE_THROTTLECURVE) {
