@@ -2134,6 +2134,7 @@ class TestSuite(abc.ABC):
                  asan=False,
                  check_parameter_leaks=True,
                  unix_domain_socket=False,
+                 realflight_address=None,
                  ):
         if breakpoints is None:
             breakpoints = []
@@ -2219,6 +2220,7 @@ class TestSuite(abc.ABC):
         self.enable_fgview = enable_fgview
         self.unix_domain_socket = unix_domain_socket
         self.unix_domain_socket_dir = os.getcwd()
+        self.realflight_address = realflight_address or os.getenv("REALFLIGHT_IPADDR")
 
         self.rc_thread: threading.Thread | None = None
         self.rc_thread_should_quit: bool = False
@@ -2288,6 +2290,31 @@ class TestSuite(abc.ABC):
                                 HOME.lng,
                                 HOME.get_alt_m(AltFrame.ABSOLUTE),
                                 self.sitl_start_heading())
+
+    def resolve_home_to_location(self, home_string):
+        '''Resolve a home string (location name or "lat,lng,alt,hdg") to mavutil.location'''
+        if home_string is None:
+            return self.sitl_start_location()
+        # Check if it's already coordinates (contains comma and starts with number or minus)
+        if ',' in home_string and (home_string[0].isdigit() or home_string[0] == '-'):
+            parts = home_string.split(',')
+            if len(parts) >= 4:
+                return mavutil.location(float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3]))
+        # It's a location name - look it up in locations.txt
+        locations_filepath = os.path.join(testdir, "locations.txt")
+        if os.path.isfile(locations_filepath):
+            with open(locations_filepath, 'r') as fd:
+                for line in fd:
+                    line = line.split('#')[0].strip()
+                    if not line:
+                        continue
+                    if '=' in line:
+                        name, loc = line.split('=', 1)
+                        if name == home_string:
+                            parts = loc.split(',')
+                            return mavutil.location(float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3]))
+        # Fall back to default
+        return self.sitl_start_location()
 
     def mavproxy_version(self):
         '''return the current version of mavproxy as a tuple e.g. (1,8,8)'''
@@ -3400,7 +3427,8 @@ class TestSuite(abc.ABC):
                                    defaults_filepath=None,
                                    wipe=False,
                                    set_streamrate_callback=None,
-                                   binary=None):
+                                   binary=None,
+                                   sitl_home=None):
         '''customisations could be "--serial5=sim:nmea" '''
         self.contexts[-1].sitl_commandline_customised = True
         self.mav.close()
@@ -3409,7 +3437,8 @@ class TestSuite(abc.ABC):
                         model=model,
                         defaults_filepath=defaults_filepath,
                         customisations=customisations,
-                        wipe=wipe)
+                        wipe=wipe,
+                        sitl_home=sitl_home)
         self.mav.do_connect()
         tstart = time.time()
         while True:
@@ -8056,7 +8085,7 @@ class TestSuite(abc.ABC):
 
     def assert_vehicle_location_is_at_startup_location(self, dist_max=1):
         here = self.get_location()
-        start_loc = self.sitl_start_location()
+        start_loc = getattr(self, 'current_home_location', None) or self.sitl_start_location()
         dist = self.get_distance(here, start_loc)
         data = "dist=%f max=%f (here: %s start-loc: %s)" % (dist, dist_max, here, start_loc)
 
@@ -8074,7 +8103,7 @@ class TestSuite(abc.ABC):
 
     def assert_simstate_location_is_at_startup_location(self, dist_max=1):
         simstate_loc = self.get_location('SIMSTATE')
-        start_loc = self.sitl_start_location()
+        start_loc = getattr(self, 'current_home_location', None) or self.sitl_start_location()
         dist = self.get_distance(simstate_loc, start_loc)
         data = "dist=%f max=%f (simstate: %s start-loc: %s)" % (dist, dist_max, simstate_loc, start_loc)
 
@@ -10422,6 +10451,8 @@ Also, ignores heartbeats not from our target system'''
     def start_SITL(self, binary=None, sitl_home=None, **sitl_args):
         if sitl_home is None:
             sitl_home = self.sitl_home()
+        # Store the resolved home location for position checks after reboot
+        self.current_home_location = self.resolve_home_to_location(sitl_home)
         start_sitl_args = {
             "breakpoints": self.breakpoints,
             "disable_breakpoints": self.disable_breakpoints,

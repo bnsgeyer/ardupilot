@@ -572,6 +572,8 @@ def run_step(step):
     }
     if opts.speedup is not None:
         fly_opts["speedup"] = opts.speedup
+    if opts.realflight_address is not None:
+        fly_opts["realflight_address"] = opts.realflight_address
 
     fly_opts["check_parameter_leaks"] = opts.check_parameter_leaks
     fly_opts["move_logs_on_test_failure"] = opts.move_logs_on_test_failure
@@ -1101,6 +1103,9 @@ if __name__ == "__main__":
                          action='store_true',
                          default=False,
                          help="use Unix domain sockets for SITL UARTs")
+    group_sim.add_option("--realflight-address",
+                         default=None,
+                         help="IP address of RealFlight simulator")
     parser.add_option_group(group_sim)
 
     group_completion = optparse.OptionGroup(parser, "Completion helpers")

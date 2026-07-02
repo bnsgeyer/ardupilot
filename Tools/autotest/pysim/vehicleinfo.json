@@ -322,6 +322,12 @@
                     "default_params/copter-X.parm",
                     "models/freestyle.parm"
                 ]
+            },
+            "realflight-Rise255": {
+                "model": "flightaxis",
+                "waf_target": "bin/arducopter",
+                "default_params_filename": "default_params/realflight-Rise255.parm",
+                "external": true
             }
         }
     },
