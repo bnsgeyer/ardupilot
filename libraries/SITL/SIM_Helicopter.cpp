@@ -156,6 +156,11 @@ void Helicopter::update(const struct sitl_input &input)
         float pitch_cyclic = 1.48 * ((swash1+swash2) / 2.0f - swash3) / cyclic_scalar;
         Vector2f ctrl_pos = Vector2f(roll_cyclic, pitch_cyclic);
         update_rotor_dynamics(gyro, ctrl_pos, _tpp_angle, dt);
+        static int16_t cnt = 800;
+        if (cnt++ > 800) {
+            cnt = 0;
+            GCS_SEND_TEXT(MAV_SEVERITY_NOTICE, "TPP angle (lat/long): %f %f", (float)57.3 * _tpp_angle.x, (float)57.3 * _tpp_angle.y);
+        }
 
         float yaw_cmd = 2.0f * tail_rotor - 1.0f; // convert range to -1 to 1
         float tail_rotor_torque = (21.6f * 2.96f * yaw_cmd - 2.96f * gyro.z) * sq(rpm[0]/nominal_rpm);
