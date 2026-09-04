@@ -189,6 +189,7 @@ protected:
     AP_Int32                _arming_options;
     AP_Int16                magfield_error_threshold;
     AP_Enum<RequireLocation> require_location;
+    AP_Float                arm_delay_sec;
 
     // internal members
     bool                    armed;

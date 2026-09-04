@@ -114,6 +114,13 @@
   #define AP_ARMING_IMU_CONSISTENCY_CHECK_TIME_MS 10000
 #endif
 
+// define the default value for ARMING_DELAY
+#if APM_BUILD_COPTER_OR_HELI
+#define AP_ARMING_DELAY_DEFAULT 2
+#else
+#define AP_ARMING_DELAY_DEFAULT 0
+#endif  // ARMING_DELAY_DEFAULT
+
 extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AP_Arming::var_info[] = {
@@ -203,6 +210,12 @@ const AP_Param::GroupInfo AP_Arming::var_info[] = {
     // @Bitmask{Plane}: 1:Barometer,2:Compass,3:GPS lock,4:INS,5:Parameters,6:RC Channels,7:Board voltage,8:Battery Level,9:Airspeed,10:Logging Available,11:Hardware safety switch,12:GPS Configuration,13:System,14:Mission,15:Rangefinder,16:Camera,17:AuxAuth,19:FFT
     // @User: Standard
     AP_GROUPINFO("SKIPCHK", 13, AP_Arming, checks_to_skip, 0),
+
+    // @Param: DELAY
+    // @DisplayName: Arm Delay
+    // @Description: Delay before arming motor. This is the time in seconds to wait before arming the motors.
+    // @User: Standard
+    AP_GROUPINFO("DELAY", 14, AP_Arming, arm_delay_sec, AP_ARMING_DELAY_DEFAULT),
 
     AP_GROUPEND
 };
