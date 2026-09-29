@@ -416,9 +416,9 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     } else {
         print = 2000;
         if (_thrust_boost) {
-        gcs().send_text(MAV_SEVERITY_INFO, "thrust boost true");
+    //    gcs().send_text(MAV_SEVERITY_INFO, "thrust boost true");
         } else {
-        gcs().send_text(MAV_SEVERITY_INFO, "thrust boost false");
+     //   gcs().send_text(MAV_SEVERITY_INFO, "thrust boost false");
         }
     }
 

@@ -1,15 +1,14 @@
 /*
  * QS_InnerRateLoop_data.cpp
  *
- * Student License - for use by students to meet course requirements and
- * perform academic research at degree granting institutions only.  Not
- * for government, commercial, or other organizational use.
+ * Classroom License -- for classroom instructional use only.  Not for
+ * government, commercial, academic research, or other organizational use.
  *
  * Code generation for model "QS_InnerRateLoop".
  *
- * Model version              : 1.539
- * Simulink Coder version : 9.1 (R2019a) 23-Nov-2018
- * C++ source code generated on : Wed Feb  9 13:00:44 2022
+ * Model version              : 10.34
+ * Simulink Coder version : 23.2 (R2023b) 01-Aug-2023
+ * C++ source code generated on : Tue Sep 29 13:52:37 2026
  *
  * Target selection: grt.tlc
  * Note: GRT includes extra infrastructure and instrumentation for prototyping
@@ -19,147 +18,135 @@
  */
 
 #include "QS_InnerRateLoop.h"
-#include "QS_InnerRateLoop_private.h"
 
 /* Invariant block signals (default storage) */
 const ConstB_QS_InnerRateLoop_T QS_InnerRateLoop_ConstB = {
   1.0F
-  ,                                    /* '<S9>/Trigonometric Function2' */
+  ,                                    /* '<S11>/Trigonometric Function3' */
   0.0F
-  ,                                    /* '<S9>/Trigonometric Function5' */
-  0.0F
-  ,                                    /* '<S9>/Trigonometric Function4' */
+  ,                                    /* '<S11>/Trigonometric Function6' */
   1.0F
-  ,                                    /* '<S9>/Trigonometric Function1' */
+  ,                                    /* '<S12>/Trigonometric Function1' */
   1.0F
-  ,                                    /* '<S8>/Trigonometric Function3' */
+  ,                                    /* '<S12>/Trigonometric Function2' */
   0.0F
-  ,                                    /* '<S8>/Trigonometric Function6' */
+  ,                                    /* '<S12>/Trigonometric Function4' */
+  0.0F
+  ,                                    /* '<S12>/Trigonometric Function5' */
   1.0F
   ,                                    /* '<S72>/Trigonometric Function1' */
-  0.0F
-  ,                                    /* '<S72>/Trigonometric Function5' */
-  0.0F
-  ,                                    /* '<S72>/Trigonometric Function4' */
   1.0F
   ,                                    /* '<S72>/Trigonometric Function2' */
-  1.0F
-  ,                                    /* '<S103>/Trigonometric Function1' */
   0.0F
-  ,                                    /* '<S103>/Trigonometric Function5' */
+  ,                                    /* '<S72>/Trigonometric Function4' */
   0.0F
-  ,                                    /* '<S103>/Trigonometric Function4' */
+  ,                                    /* '<S72>/Trigonometric Function5' */
   1.0F
-  ,                                    /* '<S103>/Trigonometric Function2' */
+  ,                                    /* '<S73>/Trigonometric Function1' */
+  1.0F
+  ,                                    /* '<S73>/Trigonometric Function2' */
   0.0F
-  ,                                    /* '<S71>/Trigonometric Function4' */
+  ,                                    /* '<S73>/Trigonometric Function4' */
   0.0F
-  ,                                    /* '<S71>/Trigonometric Function5' */
-  1.0F
-  ,                                    /* '<S71>/Trigonometric Function1' */
-  1.0F
-  ,                                    /* '<S71>/Trigonometric Function2' */
-  49.6F
-  ,                                    /* '<S12>/Sum2' */
-  29.6F
-  /* '<S12>/Sum1' */
+  ,                                    /* '<S73>/Trigonometric Function5' */
+  0
+  ,                                    /* '<S77>/Logical Operator' */
+  0
+  /* '<S78>/Logical Operator' */
 };
 
 /* Constant parameters (default storage) */
 const ConstP_QS_InnerRateLoop_T QS_InnerRateLoop_ConstP = {
   /* Pooled Parameter (Mixed Expressions)
    * Referenced by:
-   *   '<S29>/1-D Lookup Table2'
-   *   '<S55>/1-D Lookup Table2'
+   *   '<S30>/1-D Lookup Table2'
+   *   '<S56>/1-D Lookup Table2'
    */
-  { 1.70887494F, 1.70887494F, 1.70887494F, 1.70887494F, 1.70887494F },
+  { 1.395F, 1.395F, 1.395F, 1.395F, 1.395F },
 
   /* Pooled Parameter (Expression: bpV)
    * Referenced by:
-   *   '<S23>/1-D Lookup Table'
-   *   '<S23>/1-D Lookup Table1'
    *   '<S24>/1-D Lookup Table'
    *   '<S24>/1-D Lookup Table1'
    *   '<S25>/1-D Lookup Table'
    *   '<S25>/1-D Lookup Table1'
    *   '<S26>/1-D Lookup Table'
    *   '<S26>/1-D Lookup Table1'
-   *   '<S63>/1-D Lookup Table2'
+   *   '<S27>/1-D Lookup Table'
+   *   '<S27>/1-D Lookup Table1'
    *   '<S64>/1-D Lookup Table2'
-   *   '<S27>/1-D Lookup Table2'
+   *   '<S65>/1-D Lookup Table2'
    *   '<S28>/1-D Lookup Table2'
    *   '<S29>/1-D Lookup Table2'
-   *   '<S37>/1-D Lookup Table2'
+   *   '<S30>/1-D Lookup Table2'
    *   '<S38>/1-D Lookup Table2'
-   *   '<S43>/1-D Lookup Table2'
+   *   '<S39>/1-D Lookup Table2'
    *   '<S44>/1-D Lookup Table2'
    *   '<S45>/1-D Lookup Table2'
-   *   '<S54>/1-D Lookup Table2'
+   *   '<S46>/1-D Lookup Table2'
    *   '<S55>/1-D Lookup Table2'
    *   '<S56>/1-D Lookup Table2'
-   *   '<S73>/1-D Lookup Table'
-   *   '<S73>/1-D Lookup Table1'
+   *   '<S57>/1-D Lookup Table2'
    *   '<S74>/1-D Lookup Table'
    *   '<S74>/1-D Lookup Table1'
-   *   '<S35>/1-D Lookup Table2'
+   *   '<S75>/1-D Lookup Table'
+   *   '<S75>/1-D Lookup Table1'
    *   '<S36>/1-D Lookup Table2'
-   *   '<S42>/1-D Lookup Table2'
-   *   '<S51>/1-D Lookup Table2'
+   *   '<S37>/1-D Lookup Table2'
+   *   '<S43>/1-D Lookup Table2'
    *   '<S52>/1-D Lookup Table2'
-   *   '<S78>/1-D Lookup Table2'
+   *   '<S53>/1-D Lookup Table2'
    *   '<S79>/1-D Lookup Table2'
-   *   '<S82>/1-D Lookup Table2'
+   *   '<S80>/1-D Lookup Table2'
    *   '<S83>/1-D Lookup Table2'
-   *   '<S86>/1-D Lookup Table2'
+   *   '<S84>/1-D Lookup Table2'
    *   '<S87>/1-D Lookup Table2'
-   *   '<S89>/1-D Lookup Table2'
+   *   '<S88>/1-D Lookup Table2'
    *   '<S90>/1-D Lookup Table2'
-   *   '<S92>/1-D Lookup Table2'
+   *   '<S91>/1-D Lookup Table2'
    *   '<S93>/1-D Lookup Table2'
+   *   '<S94>/1-D Lookup Table2'
    */
   { 0.0F, 1.75F, 3.5F, 5.25F, 7.0F },
 
   /* Pooled Parameter (Mixed Expressions)
    * Referenced by:
-   *   '<S38>/1-D Lookup Table2'
-   *   '<S79>/1-D Lookup Table2'
+   *   '<S39>/1-D Lookup Table2'
+   *   '<S80>/1-D Lookup Table2'
    */
-  { 1.13925F, 1.13925F, 1.13925F, 1.13925F, 1.13925F },
+  { 0.93F, 0.93F, 0.93F, 0.93F, 0.93F },
 
   /* Computed Parameter: uDLookupTable2_tableData
-   * Referenced by: '<S45>/1-D Lookup Table2'
+   * Referenced by: '<S46>/1-D Lookup Table2'
    */
-  { 1.67469752F, 1.67469752F, 1.67469752F, 1.67469752F, 1.67469752F },
+  { 1.3671F, 1.3671F, 1.3671F, 1.3671F, 1.3671F },
 
   /* Computed Parameter: uDLookupTable2_tableData_f
-   * Referenced by: '<S83>/1-D Lookup Table2'
+   * Referenced by: '<S84>/1-D Lookup Table2'
    */
-  { 1.11646497F, 1.11646497F, 1.11646497F, 1.11646497F, 1.11646497F },
+  { 0.9114F, 0.9114F, 0.9114F, 0.9114F, 0.9114F },
 
   /* Computed Parameter: uDLookupTable2_tableData_e
-   * Referenced by: '<S86>/1-D Lookup Table2'
+   * Referenced by: '<S87>/1-D Lookup Table2'
    */
-  { 0.4557F, 0.4557F, 0.4557F, 0.4557F, 0.4557F },
+  { 0.372F, 0.372F, 0.372F, 0.372F, 0.372F },
 
   /* Pooled Parameter (Expression: KlatlonI)
    * Referenced by:
-   *   '<S90>/1-D Lookup Table2'
-   *   '<S93>/1-D Lookup Table2'
+   *   '<S91>/1-D Lookup Table2'
+   *   '<S94>/1-D Lookup Table2'
    */
-  { 0.22785F, 0.22785F, 0.22785F, 0.22785F, 0.22785F },
+  { 0.186F, 0.186F, 0.186F, 0.186F, 0.186F },
 
-  /* Pooled Parameter (Mixed Expressions)
+  /* Pooled Parameter (Expression: [ -8 -6 -4  -2 -1 0 1 2 4 6 8])
    * Referenced by:
-   *   '<S64>/Constant'
-   *   '<S64>/1-D Lookup Table2'
+   *   '<Root>/1-D Lookup Table1'
+   *   '<Root>/1-D Lookup Table2'
    */
-  { 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F,
-    13.0F, 14.0F, 15.0F, 16.0F, 17.0F, 18.0F, 19.0F, 20.0F, 21.0F, 22.0F, 23.0F,
-    24.0F, 25.0F, 26.0F, 27.0F, 28.0F, 29.0F, 30.0F, 31.0F, 32.0F, 33.0F, 34.0F,
-    35.0F, 36.0F },
+  { -8.0F, -6.0F, -4.0F, -2.0F, -1.0F, 0.0F, 1.0F, 2.0F, 4.0F, 6.0F, 8.0F },
 
   /* Computed Parameter: uDLookupTable2_tableData_g
-   * Referenced by: '<S64>/1-D Lookup Table2'
+   * Referenced by: '<S65>/1-D Lookup Table2'
    */
   { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 4.1F, 4.1F,
     2.505F, 2.505F, 2.505F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
@@ -178,183 +165,171 @@ const ConstP_QS_InnerRateLoop_T QS_InnerRateLoop_ConstP = {
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 0.0F },
 
+  /* Pooled Parameter (Mixed Expressions)
+   * Referenced by:
+   *   '<S65>/Constant'
+   *   '<S65>/1-D Lookup Table2'
+   */
+  { 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F,
+    13.0F, 14.0F, 15.0F, 16.0F, 17.0F, 18.0F, 19.0F, 20.0F, 21.0F, 22.0F, 23.0F,
+    24.0F, 25.0F, 26.0F, 27.0F, 28.0F, 29.0F, 30.0F, 31.0F, 32.0F, 33.0F, 34.0F,
+    35.0F, 36.0F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_b
+   * Referenced by: '<S64>/1-D Lookup Table2'
+   */
+  { -0.025305314F, -0.025305314F, -0.0254905038F, -0.0254905038F, -0.0254905038F,
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -0.000900337647F, -0.000900337647F,
+    -0.000900337647F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+    0.0068965517F, 0.0068965517F, 0.00709219836F, 0.00709219836F, 0.00709219836F,
+    0.0F, 0.0F, -0.0F, -0.0F, -0.0F, 0.0F, 0.0F, -0.0F, -0.0F, -0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.00593134388F,
+    0.00593134388F, 0.00641025649F, 0.00641025649F, 0.00641025649F, 0.0F, 0.0F,
+    -0.0F, -0.0F, -0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0871084109F, 0.0871084109F,
+    0.0887369215F, 0.0887369215F, 0.0887369215F },
+
   /* Pooled Parameter (Expression: [1:16])
    * Referenced by:
-   *   '<S63>/Constant'
-   *   '<S63>/1-D Lookup Table2'
+   *   '<S64>/Constant'
+   *   '<S64>/1-D Lookup Table2'
    */
   { 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F,
     13.0F, 14.0F, 15.0F, 16.0F },
 
-  /* Computed Parameter: uDLookupTable2_tableData_b
-   * Referenced by: '<S63>/1-D Lookup Table2'
-   */
-  { -0.025305314F, -0.025305314F, -0.0254905038F, -0.0254905038F, -0.0254905038F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -0.000900337647F, -0.000900337647F,
-    -0.000900337647F, -0.0F, -0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0068965517F, 0.0068965517F, 0.00709219836F, 0.00709219836F,
-    0.00709219836F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -0.0F, -0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.00593134388F,
-    0.00593134388F, 0.00641025649F, 0.00641025649F, 0.00641025649F, -0.0F, -0.0F,
-    0.0F, 0.0F, 0.0F, -0.0F, -0.0F, -0.0F, -0.0F, -0.0F, -0.0F, -0.0F, -0.0F,
-    -0.0F, -0.0F, -0.0F, -0.0F, -0.0F, -0.0F, -0.0F, 0.0871084109F,
-    0.0871084109F, 0.0887369215F, 0.0887369215F, 0.0887369215F },
-
   /* Pooled Parameter (Expression: Klatlon)
    * Referenced by:
-   *   '<S89>/1-D Lookup Table2'
-   *   '<S92>/1-D Lookup Table2'
+   *   '<S90>/1-D Lookup Table2'
+   *   '<S93>/1-D Lookup Table2'
    */
-  { 1.00830865F, 1.00830865F, 1.00830865F, 1.00830865F, 1.00830865F },
+  { 1.09302294F, 1.09302294F, 1.09302294F, 1.09302294F, 1.09302294F },
 
   /* Computed Parameter: uDLookupTable2_tableData_k
-   * Referenced by: '<S87>/1-D Lookup Table2'
+   * Referenced by: '<S88>/1-D Lookup Table2'
    */
-  { 1.0F, 1.0F, 1.0F, 1.0F, 1.0F },
+  { 1.30631721F, 1.30631721F, 1.30631721F, 1.30631721F, 1.30631721F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_j
+   * Referenced by: '<S43>/1-D Lookup Table2'
+   */
+  { 0.25F, 0.25F, 0.25F, 0.25F, 0.25F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_o
+   * Referenced by: '<S38>/1-D Lookup Table2'
+   */
+  { 15.5315018F, 15.5315018F, 15.5315018F, 15.5315018F, 15.5315018F },
+
+  /* Computed Parameter: uDLookupTable_tableData
+   * Referenced by: '<S25>/1-D Lookup Table'
+   */
+  { 5.77168226F, 5.77168226F, 5.77168226F, 5.77168226F, 5.77168226F },
+
+  /* Computed Parameter: uDLookupTable1_tableData
+   * Referenced by: '<S25>/1-D Lookup Table1'
+   */
+  { 14.9852324F, 14.9852324F, 14.9852324F, 14.9852324F, 14.9852324F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_a
+   * Referenced by: '<S29>/1-D Lookup Table2'
+   */
+  { 76.7134171F, 76.7134171F, 76.7134171F, 76.7134171F, 76.7134171F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_fu
+   * Referenced by: '<S28>/1-D Lookup Table2'
+   */
+  { 10.1607656F, 10.1607656F, 10.1607656F, 10.1607656F, 10.1607656F },
+
+  /* Computed Parameter: uDLookupTable_tableData_l
+   * Referenced by: '<S24>/1-D Lookup Table'
+   */
+  { 17.6654816F, 17.6654816F, 17.6654816F, 17.6654816F, 17.6654816F },
+
+  /* Computed Parameter: uDLookupTable1_tableData_n
+   * Referenced by: '<S24>/1-D Lookup Table1'
+   */
+  { 11.015975F, 11.015975F, 11.015975F, 11.015975F, 11.015975F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_ex
+   * Referenced by: '<S45>/1-D Lookup Table2'
+   */
+  { 74.339119F, 74.339119F, 74.339119F, 74.339119F, 74.339119F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_c
+   * Referenced by: '<S44>/1-D Lookup Table2'
+   */
+  { 9.69888592F, 9.69888592F, 9.69888592F, 9.69888592F, 9.69888592F },
+
+  /* Computed Parameter: uDLookupTable_tableData_m
+   * Referenced by: '<S26>/1-D Lookup Table'
+   */
+  { 17.6197205F, 17.6197205F, 17.6197205F, 17.6197205F, 17.6197205F },
+
+  /* Computed Parameter: uDLookupTable1_tableData_d
+   * Referenced by: '<S26>/1-D Lookup Table1'
+   */
+  { 10.6072197F, 10.6072197F, 10.6072197F, 10.6072197F, 10.6072197F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_au
+   * Referenced by: '<S55>/1-D Lookup Table2'
+   */
+  { 62.2932281F, 62.2932281F, 62.2932281F, 62.2932281F, 62.2932281F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_c0
+   * Referenced by: '<S57>/1-D Lookup Table2'
+   */
+  { 11.2615271F, 11.2615271F, 11.2615271F, 11.2615271F, 11.2615271F },
+
+  /* Computed Parameter: uDLookupTable_tableData_h
+   * Referenced by: '<S27>/1-D Lookup Table'
+   */
+  { 16.4246674F, 16.4246674F, 16.4246674F, 16.4246674F, 16.4246674F },
+
+  /* Computed Parameter: uDLookupTable1_tableData_f
+   * Referenced by: '<S27>/1-D Lookup Table1'
+   */
+  { 11.8481846F, 11.8481846F, 11.8481846F, 11.8481846F, 11.8481846F },
+
+  /* Computed Parameter: uDLookupTable2_tableData_kg
+   * Referenced by: '<S83>/1-D Lookup Table2'
+   */
+  { 0.215953469F, 0.215953469F, 0.215953469F, 0.215953469F, 0.215953469F },
+
+  /* Computed Parameter: uDLookupTable_tableData_d
+   * Referenced by: '<S75>/1-D Lookup Table'
+   */
+  { 19.2063885F, 19.2063885F, 19.2063885F, 19.2063885F, 19.2063885F },
+
+  /* Computed Parameter: uDLookupTable1_tableData_m
+   * Referenced by: '<S75>/1-D Lookup Table1'
+   */
+  { 1.08121574F, 1.08121574F, 1.08121574F, 1.08121574F, 1.08121574F },
 
   /* Pooled Parameter (Mixed Expressions)
    * Referenced by:
-   *   '<S12>/1-D Lookup Table1'
-   *   '<S12>/1-D Lookup Table2'
-   *   '<S12>/1-D Lookup Table3'
+   *   '<S36>/1-D Lookup Table2'
+   *   '<S52>/1-D Lookup Table2'
    */
-  { 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F },
+  { 2.0F, 2.0F, 2.0F, 2.0F, 2.0F },
 
-  /* Expression: VXdata'
-   * Referenced by: '<S12>/1-D Lookup Table'
+  /* Pooled Parameter (Mixed Expressions)
+   * Referenced by:
+   *   '<S37>/1-D Lookup Table2'
+   *   '<S53>/1-D Lookup Table2'
    */
-  { 0.0F, 0.24686F, 0.49371F, 0.74057F, 0.98743F, 1.2343F, 1.4811F, 1.728F,
-    1.9749F, 2.2217F, 2.4686F, 2.7154F, 2.592F, 2.3451F, 2.0983F, 1.8514F,
-    1.6046F, 1.3577F, 1.1109F, 0.864F, 0.61714F, 0.37029F, 0.12343F, 0.0F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_j
-   * Referenced by: '<S42>/1-D Lookup Table2'
-   */
-  { 0.05F, 0.05F, 0.05F, 0.05F, 0.05F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_o
-   * Referenced by: '<S37>/1-D Lookup Table2'
-   */
-  { 14.4735041F, 14.4735041F, 14.4735041F, 14.4735041F, 14.4735041F },
-
-  /* Computed Parameter: uDLookupTable_tableData_k
-   * Referenced by: '<S24>/1-D Lookup Table'
-   */
-  { 9.79965687F, 9.79965687F, 9.79965687F, 9.79965687F, 9.79965687F },
-
-  /* Computed Parameter: uDLookupTable1_tableData
-   * Referenced by: '<S24>/1-D Lookup Table1'
-   */
-  { 13.2442446F, 13.2442446F, 13.2442446F, 13.2442446F, 13.2442446F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_a
-   * Referenced by: '<S28>/1-D Lookup Table2'
-   */
-  { 113.135445F, 113.135445F, 113.135445F, 113.135445F, 113.135445F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_fu
-   * Referenced by: '<S27>/1-D Lookup Table2'
-   */
-  { 10.5738382F, 10.5738382F, 10.5738382F, 10.5738382F, 10.5738382F },
-
-  /* Computed Parameter: uDLookupTable_tableData_l
-   * Referenced by: '<S23>/1-D Lookup Table'
-   */
-  { 26.5284462F, 26.5284462F, 26.5284462F, 26.5284462F, 26.5284462F },
-
-  /* Computed Parameter: uDLookupTable1_tableData_n
-   * Referenced by: '<S23>/1-D Lookup Table1'
-   */
-  { 11.008009F, 11.008009F, 11.008009F, 11.008009F, 11.008009F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_ex
-   * Referenced by: '<S44>/1-D Lookup Table2'
-   */
-  { 136.347137F, 136.347137F, 136.347137F, 136.347137F, 136.347137F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_c
-   * Referenced by: '<S43>/1-D Lookup Table2'
-   */
-  { 10.6858244F, 10.6858244F, 10.6858244F, 10.6858244F, 10.6858244F },
-
-  /* Computed Parameter: uDLookupTable_tableData_m
-   * Referenced by: '<S25>/1-D Lookup Table'
-   */
-  { 27.4979649F, 27.4979649F, 27.4979649F, 27.4979649F, 27.4979649F },
-
-  /* Computed Parameter: uDLookupTable1_tableData_d
-   * Referenced by: '<S25>/1-D Lookup Table1'
-   */
-  { 10.1993437F, 10.1993437F, 10.1993437F, 10.1993437F, 10.1993437F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_au
-   * Referenced by: '<S54>/1-D Lookup Table2'
-   */
-  { 92.1007614F, 92.1007614F, 92.1007614F, 92.1007614F, 92.1007614F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_c0
-   * Referenced by: '<S56>/1-D Lookup Table2'
-   */
-  { 12.9308949F, 12.9308949F, 12.9308949F, 12.9308949F, 12.9308949F },
-
-  /* Computed Parameter: uDLookupTable_tableData_h
-   * Referenced by: '<S26>/1-D Lookup Table'
-   */
-  { 22.6359711F, 22.6359711F, 22.6359711F, 22.6359711F, 22.6359711F },
-
-  /* Computed Parameter: uDLookupTable1_tableData_f
-   * Referenced by: '<S26>/1-D Lookup Table1'
-   */
-  { 12.9009438F, 12.9009438F, 12.9009438F, 12.9009438F, 12.9009438F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_kg
-   * Referenced by: '<S82>/1-D Lookup Table2'
-   */
-  { 0.357682616F, 0.357682616F, 0.357682616F, 0.357682616F, 0.357682616F },
-
-  /* Computed Parameter: uDLookupTable_tableData_d
-   * Referenced by: '<S74>/1-D Lookup Table'
-   */
-  { 13.388237F, 13.388237F, 13.388237F, 13.388237F, 13.388237F },
-
-  /* Computed Parameter: uDLookupTable1_tableData_m
-   * Referenced by: '<S74>/1-D Lookup Table1'
-   */
-  { 2.3275919F, 2.3275919F, 2.3275919F, 2.3275919F, 2.3275919F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_or
-   * Referenced by: '<S51>/1-D Lookup Table2'
-   */
-  { 3.73125648F, 3.73125648F, 3.73125648F, 3.73125648F, 3.73125648F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_gp
-   * Referenced by: '<S52>/1-D Lookup Table2'
-   */
-  { 14.9250259F, 14.9250259F, 14.9250259F, 14.9250259F, 14.9250259F },
+  { 8.0F, 8.0F, 8.0F, 8.0F, 8.0F },
 
   /* Computed Parameter: uDLookupTable2_tableData_n
-   * Referenced by: '<S78>/1-D Lookup Table2'
+   * Referenced by: '<S79>/1-D Lookup Table2'
    */
-  { 0.234992728F, 0.234992728F, 0.234992728F, 0.234992728F, 0.234992728F },
+  { 0.216432646F, 0.216432646F, 0.216432646F, 0.216432646F, 0.216432646F },
 
   /* Computed Parameter: uDLookupTable_tableData_hs
-   * Referenced by: '<S73>/1-D Lookup Table'
+   * Referenced by: '<S74>/1-D Lookup Table'
    */
-  { 24.229393F, 24.229393F, 24.229393F, 24.229393F, 24.229393F },
+  { 19.9177628F, 19.9177628F, 19.9177628F, 19.9177628F, 19.9177628F },
 
   /* Computed Parameter: uDLookupTable1_tableData_p
-   * Referenced by: '<S73>/1-D Lookup Table1'
+   * Referenced by: '<S74>/1-D Lookup Table1'
    */
-  { 1.3391695F, 1.3391695F, 1.3391695F, 1.3391695F, 1.3391695F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_ob
-   * Referenced by: '<S35>/1-D Lookup Table2'
-   */
-  { 2.25760984F, 2.25760984F, 2.25760984F, 2.25760984F, 2.25760984F },
-
-  /* Computed Parameter: uDLookupTable2_tableData_l
-   * Referenced by: '<S36>/1-D Lookup Table2'
-   */
-  { 9.03043938F, 9.03043938F, 9.03043938F, 9.03043938F, 9.03043938F }
+  { 1.08558869F, 1.08558869F, 1.08558869F, 1.08558869F, 1.08558869F }
 };

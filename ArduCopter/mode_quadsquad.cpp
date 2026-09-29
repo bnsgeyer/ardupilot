@@ -150,7 +150,7 @@ void ModeQuadsquad::run()
  //    Trajectory on or off
 
      QS_InnerRateLoop_Obj.QS_InnerRateLoop_U.TrajectorySwitch = traj_sw;
-     alpha.set(1.0f);
+   //  alpha.set(1.0f);
 //     alpha = 1.0f; // hard coding alpha
      //Scale RV
          if(alpha <= 0 || alpha > 3 ){
@@ -210,7 +210,7 @@ void ModeQuadsquad::run()
                                                     (double)QS_InnerRateLoop_Obj.QS_InnerRateLoop_Y.CF_Alt,
                                                     (double)QS_InnerRateLoop_Obj.QS_InnerRateLoop_Y.CF_Vz);
 
-            AP::logger().Write("QS3", "TimeUS,pN,pE,pD,vN,vE,vD,tSW,tON,pNc,pEc,pDc,psc" , "Qffffffffffff",
+            AP::logger().Write("QS3", "TimeUS,pN,pE,pD,vN,vE,vD,tSW,tON,vNc,vEc,vDc,psc" , "Qffffffffffff",
                                                     AP_HAL::micros64(),
                                                     (double)QS_InnerRateLoop_Obj.QS_InnerRateLoop_U.posNorthKF,
                                                     (double)QS_InnerRateLoop_Obj.QS_InnerRateLoop_U.posEastKF,

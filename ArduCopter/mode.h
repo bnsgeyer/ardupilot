@@ -267,7 +267,8 @@ protected:
     RC_Channel *&channel_yaw;
     float &G_Dt;
 
-    QS_InnerRateLoopModelClass QS_InnerRateLoop_Obj;
+   // QS_InnerRateLoopModelClass QS_InnerRateLoop_Obj; //2019 Matlab version
+	QS_InnerRateLoop QS_InnerRateLoop_Obj; //2023 Matlab version														   
     AP_AHRS &QSahrs;
 
     // note that we support two entirely different automatic takeoffs:
@@ -2095,7 +2096,7 @@ public:
 
     bool requires_GPS() const override { return false; }
     bool has_manual_throttle() const override { return true; }
-    bool allows_arming(AP_Arming::Method method) const override { return true; };
+    bool allows_arming(AP_Arming::Method method) const override { return false; };
     bool is_autopilot() const override { return false; }
     void set_traj_sw(uint8_t sw_status) { traj_sw = sw_status; }
 
@@ -2131,7 +2132,7 @@ private:
     float trajectorycount;
     int log_counter_qs;
     uint8_t traj_sw;
-
+    
     AP_Float alpha;
 
 };
