@@ -1174,6 +1174,21 @@ const AP_Param::GroupInfo AP_OSD_Screen::var_info2[] = {
     AP_GROUPINFO("ESC_IDX", 10, AP_OSD_Screen, esc_index, 0),
 #endif
 
+#if HAL_OSD_SIDEBAR_ENABLE || HAL_MSP_ENABLED
+
+    // @Param: MTE_HDG_DEG
+    // @DisplayName: MTE Heading in Degrees
+    // @Description: Heading for the Lateral Reposition MTE to provide transformation of NED position to aircraft
+    // @Range: 0 360
+    AP_GROUPINFO("MTE_HDG_DEG", 11, AP_OSD_Screen, mte_heading_deg, 0.0f),
+
+    // @Param: MTE_DES_M
+    // @DisplayName: MTE Desired Distance in Meters
+    // @Description: Desired longitudinal deviation distance for the Lateral Reposition MTE
+    // @Range: 0.1 5
+    AP_GROUPINFO("MTE_DES_M", 12, AP_OSD_Screen, mte_desired_distance_m, 0.4f),
+#endif
+
     AP_GROUPEND
 };
 
@@ -1851,29 +1866,34 @@ void AP_OSD_Screen::draw_sidebars(uint8_t x, uint8_t y)
         SYM_SIDEBAR_J,
     };
 
-    // Get altitude and airspeed, scaled to appropriate units
-    float aspd = 0.0f;
+    // Get altitude and position, scaled to appropriate units
     float alt = 0.0f;
+    Vector3f pos = Vector3f(0.0f, 0.0f, 0.0f);
+
     AP_AHRS &ahrs = AP::ahrs();
     WITH_SEMAPHORE(ahrs.get_semaphore());
-    bool have_speed_estimate = ahrs.airspeed_estimate(aspd);
-    if (!have_speed_estimate) { aspd = 0.0f; }
     ahrs.get_relative_position_D_home(alt);
-    float scaled_aspd = u_scale(SPEED, aspd);
+    float scaled_position = 0.0f;
+    if (ahrs.get_relative_position_NED_home(pos)) {
+        scaled_position = pos.x*cosf(radians(mte_heading_deg))+pos.y*sinf(radians(mte_heading_deg));
+        scaled_position = u_scale(DISTANCE, scaled_position);
+    }
     float scaled_alt = u_scale(ALTITUDE, -alt);
-    static const int aspd_interval = 10; //units between large tick marks
     int alt_interval = (osd->units == AP_OSD::UNITS_AVIATION || osd->units == AP_OSD::UNITS_IMPERIAL) ? 20 : 10;
 
-    // render airspeed ladder
-    int aspd_symbol_index = fmodf(scaled_aspd, aspd_interval) / aspd_interval * total_sectors;
+    float desired_distance = u_scale(DISTANCE, mte_desired_distance_m);
+    static const int pos_interval = desired_distance * 10.0f; //units between large tick marks
+
+    // render longitudinal deviation ladder
+    int pos_symbol_index = fmodf(scaled_position*10, pos_interval) / pos_interval * total_sectors;
     for (int i = 0; i < 7; i++){
         if (i == 3) {
-            // the middle section of the ladder with the currrent airspeed
-            backend->write(x, y+i, false, "%3d%c%c", (int) scaled_aspd, u_icon(SPEED), SYMBOL(SYM_SIDEBAR_R_ARROW));
+            // the middle section of the ladder with the currrent position
+            backend->write(x, y+i, false, "%2.1f%c%c", scaled_position, u_icon(DISTANCE), SYMBOL(SYM_SIDEBAR_R_ARROW));
         } else {
-            backend->write(x+4, y+i, false,  "%c", SYMBOL(sidebar_sectors[aspd_symbol_index]));
+            backend->write(x+4, y+i, false,  "%c", SYMBOL(sidebar_sectors[pos_symbol_index]));
         }
-        aspd_symbol_index = (aspd_symbol_index + 12) % 18;
+        pos_symbol_index = (pos_symbol_index + 12) % 18;
     }
 
     // render the altitude ladder
