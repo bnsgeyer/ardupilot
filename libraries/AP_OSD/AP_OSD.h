@@ -348,7 +348,10 @@ private:
     void draw_rc_active_antenna(uint8_t x, uint8_t y);    
     void draw_rc_lq(uint8_t x, uint8_t y);
 #endif
-
+#if HAL_OSD_SIDEBAR_ENABLE || HAL_MSP_ENABLED
+    AP_Float mte_heading_deg;
+    AP_Float mte_desired_distance_m;
+#endif
     struct {
         bool load_attempted;
         const char *str;
