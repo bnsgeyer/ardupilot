@@ -1881,11 +1881,13 @@ void AP_OSD_Screen::draw_sidebars(uint8_t x, uint8_t y)
     ahrs.get_relative_position_D_home(alt);
     float scaled_position = 0.0f;
     if (ahrs.get_relative_position_NED_home(pos)) {
-        scaled_position = u_scale(DISTANCE, pos.x);
+        scaled_position = pos.x*cosf(radians(mte_heading_deg))+pos.y*sinf(radians(mte_heading_deg));
+        scaled_position = u_scale(DISTANCE, scaled_position);
     }
     float scaled_alt = u_scale(ALTITUDE, -alt);
     int alt_interval = (osd->units == AP_OSD::UNITS_AVIATION || osd->units == AP_OSD::UNITS_IMPERIAL) ? 20 : 10;
-    static const int pos_interval = 14; //units between large tick marks
+    float desired_distance = u_scale(DISTANCE, mte_desired_distance_m);
+    static const int pos_interval = desired_distance * 10.0f; //units between large tick marks
     // Height values taking into account configurable vertical extension
     const int bar_total_height = 7 + (osd->sidebar_v_ext * 2);
     const int bar_middle = bar_total_height / 2;     // Integer division
