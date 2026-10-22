@@ -65,7 +65,7 @@ public:
     void        governor_reset();
     float       get_control_output() const { return _control_output; }
     void        set_idle_output(float idle_output) { _idle_output.set(idle_output); }
-    void        autothrottle_run();
+    void        autothrottle_run(float dt);
     void        set_throttle_curve();
 
     // functions for ramp and runup timers, runup_complete flag
@@ -120,7 +120,7 @@ private:
     const SRV_Channel::Aux_servo_function_t _aux_fn;
     const uint8_t _default_channel;
 
-    bool rotor_runup_manager(float rotor_rpm, float ctrl_output, float ramp_output);
+    bool rotor_runup_manager(float rotor_rpm, float ctrl_output, float engine_rpm, float dt);
 
     // internal variables
     RotorControlMode _control_mode = ROTOR_CONTROL_MODE_DISABLED;   // motor control mode, Passthrough or Setpoint
@@ -143,7 +143,9 @@ private:
     uint8_t         _governor_fault_count;        // variable for tracking governor speed sensor faults
     float           _governor_torque_reference;   // governor reference for load calculations
     float           _idle_throttle;               // current idle throttle setting
-    bool           _ramp_hold;                   // holds ramp_output value while waiting for rotor to catch up to engine
+    bool            _ramp_hold;                   // holds ramp_output value while waiting for rotor to catch up to engine
+    float           _engine_rpm;                  // engine rpm from speed sensor for governor
+    uint16_t        _runup_hold_counter = 0;      // counter for holding ramp_output while waiting for rotor to catch up to engine
 
     RotorControlState _rsc_state;
 
@@ -169,8 +171,10 @@ private:
     AP_Float        _governor_ff;               // governor feedforward variable
     AP_Float        _governor_range;            // RPM range +/- governor rpm reference setting where governor is operational
     AP_Int16        _cooldown_time;             // cooldown time to provide a fast idle
-    AP_Float        _governor_init_ramp;
-    AP_Float        _governor_rotor_rpm_lag;
+    AP_Float        _runup_rotor_lag_rpm;       // allowable rotor lag during runup
+    AP_Float        _runup_hold_time_sec;       // time to hold rotor runup to allow engine clutch to engage
+    AP_Float        _runup_hold_rpm;            // rpm to hold rotor runup to allow engine clutch to engage
+    AP_Float        _engine_to_rotor_ratio;     // ratio of engine rpm to rotor rpm for governor calculations
 
     // parameter accessors to allow conversions
     float       get_critical_speed() const { return _critical_speed * 0.01; }
