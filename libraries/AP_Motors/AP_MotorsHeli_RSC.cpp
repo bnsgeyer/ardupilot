@@ -224,23 +224,42 @@ const AP_Param::GroupInfo AP_MotorsHeli_RSC::var_info[] = {
 
     // 27 was AROT_IDLE, moved to RSC autorotation sub group
 
-    // @Param: GOV_RAMP
-    // @DisplayName: Governor Inital Ramp Point
-    // @Description: percent of RPM where autothrottle runup starts
-    // @Range: 10 60
-    // @Units: %
-    // @Increment: 1
-    // @User: Standard
-    AP_GROUPINFO("GOV_RAMP", 28, AP_MotorsHeli_RSC, _governor_init_ramp, 20),
+    // 28 was GOV_RAMP, it was deprecated
 
-    // @Param: GOV_RLAG
-    // @DisplayName: Governor rotor runup RPM lag
+    // @Param: RNUP_RLAG
+    // @DisplayName: Rotor runup RPM lag
     // @Description: Allowable RPM lag before engine advancement will halt and wait for rotor to catch up
     // @Range: 50 200
-    // @Units: %
+    // @Units: RPM
     // @Increment: 1
     // @User: Standard
-    AP_GROUPINFO("GOV_RLAG", 30, AP_MotorsHeli_RSC, _governor_rotor_rpm_lag, 100),
+    AP_GROUPINFO("RNUP_RLAG", 30, AP_MotorsHeli_RSC, _runup_rotor_lag_rpm, 100),
+
+    // @Param: RNUP_HLD_T
+    // @DisplayName: Rotor runup hold time
+    // @Description: Time to hold rotor runup to allow engine clutch to engage
+    // @Range: 1 10
+    // @Units: sec
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("RNUP_HLD_T", 31, AP_MotorsHeli_RSC, _runup_hold_time_sec, 5),
+
+    // @Param: RNUP_H_RPM
+    // @DisplayName: Engine runup hold RPM
+    // @Description: Engine RPM to hold rotor runup to allow engine clutch to engage
+    // @Range: 1000 5000
+    // @Units: RPM
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("RNUP_H_RPM", 32, AP_MotorsHeli_RSC, _runup_hold_rpm, 3500),
+
+    // @Param: ENG_RTR_RAT
+    // @DisplayName: Engine to Rotor Ratio
+    // @Description: Gearing ration of the engine to the main rotor for governor calculations. This is used to calculate the main rotor speed from the engine speed for the rotor runup. For example, if the engine is geared 3:1 to the main rotor, then this parameter should be set to 3.0
+    // @Range: 1 20
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("ENGRTR_RAT", 33, AP_MotorsHeli_RSC, _engine_to_rotor_ratio, 5.0f),
 
     AP_GROUPEND
 };
@@ -280,12 +299,18 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
             // No valid RPM data
             _rotor_rpm = -1;
         }
+        if (!rpm->get_rpm(1, _engine_rpm)) {
+            // No valid RPM data
+            _engine_rpm = -1;
+        }
     } else {
         // No RPM because pointer is null
         _rotor_rpm = -1;
+        _engine_rpm = -1;
     }
 #else
     _rotor_rpm = -1;
+    _engine_rpm = -1;
 #endif
 
     float dt;
@@ -392,11 +417,11 @@ void AP_MotorsHeli_RSC::output(RotorControlState state)
             // throttle output from throttle curve based on collective position
             float throttlecurve = calculate_throttlecurve(_collective_in);
             _control_output = _idle_throttle + (_rotor_ramp_output * (throttlecurve - _idle_throttle));
-            if (is_positive(_rotor_rpm) && !_runup_complete) {
-                _ramp_hold = rotor_runup_manager(_rotor_rpm, _control_output, _rotor_ramp_output);
+            if (is_positive(_engine_rpm) && !_runup_complete) {
+                _ramp_hold = rotor_runup_manager(_rotor_rpm, _control_output, _engine_rpm, dt);
             }
         } else if (_control_mode == ROTOR_CONTROL_MODE_AUTOTHROTTLE) {
-            autothrottle_run();
+            autothrottle_run(dt);
         }
         break;
     }
@@ -535,7 +560,7 @@ float AP_MotorsHeli_RSC::calculate_throttlecurve(float collective_in)
 }
 
 // autothrottle_run - calculate throttle output for governor controlled throttle
-void AP_MotorsHeli_RSC::autothrottle_run()
+void AP_MotorsHeli_RSC::autothrottle_run(float dt)
 {
     float throttlecurve = calculate_throttlecurve(_collective_in);
     float const torque_ref_error_rpm = 2.0f;
@@ -592,10 +617,8 @@ void AP_MotorsHeli_RSC::autothrottle_run()
 
             // torque rise limiter accelerates rotor to the reference speed
             // this limits the max torque rise the governor could call for from the main power loop
-        } else if (_control_output >= _governor_init_ramp * 0.01) {
-            if (is_positive(_rotor_rpm) && !_runup_complete) {
-                _ramp_hold = rotor_runup_manager(_rotor_rpm, _control_output, _rotor_ramp_output);
-            }
+        } else if (_rotor_rpm < _governor_rpm + _governor_range) {
+            _ramp_hold = rotor_runup_manager(_rotor_rpm, _control_output, _engine_rpm, dt);
             float torque_limit = (get_governor_torque() * get_governor_torque());
             _governor_output = (_rotor_rpm / (float)_governor_rpm) * torque_limit;
             if (_rotor_rpm >= ((float)_governor_rpm - torque_ref_error_rpm)) {
@@ -612,14 +635,25 @@ void AP_MotorsHeli_RSC::autothrottle_run()
     }
 }
 
-bool AP_MotorsHeli_RSC::rotor_runup_manager(float rotor_rpm, float ctrl_output, float ramp_output)
+bool AP_MotorsHeli_RSC::rotor_runup_manager(float rotor_rpm, float ctrl_output, float engine_rpm, float dt)
 {
+    uint16_t throttle_hold_count = (uint16_t)(_runup_hold_time_sec / dt);  // throttle hold before allowing ramp to continue
+    float engine_to_rotor_ratio = _engine_to_rotor_ratio;
     bool ret = false;
-    if (ctrl_output >= _governor_init_ramp * 0.01) {
-        float est_rpm = ramp_output * (float)_governor_rpm;
-        if (est_rpm - rotor_rpm > _governor_rotor_rpm_lag) {
-            ret = true;  // hold ramp_output if rotor doesn't keep up with engine
+    if (engine_rpm >= _runup_hold_rpm) {
+        if (_runup_hold_counter < throttle_hold_count) {
+            _runup_hold_counter++;
+            ret = true;  // hold ramp_output until throttle hold count expires
+        } else {
+            if (!is_positive(engine_to_rotor_ratio)) {
+                engine_to_rotor_ratio = 1.0f;
+            }
+            if (engine_rpm / engine_to_rotor_ratio - rotor_rpm > _runup_rotor_lag_rpm) {
+                ret = true;  // hold ramp_output if rotor doesn't keep up with engine
+            }
         }
+    } else {
+        _runup_hold_counter = 0;  // reset counter if engine rpm is below runup hold rpm
     }
     return ret;
 }
