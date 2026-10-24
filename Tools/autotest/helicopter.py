@@ -464,6 +464,90 @@ class AutoTestHelicopter(AutoTestCopter):
         self.fly_inverted_flight(yaw_tolerance=30)
         self.do_RTL()
 
+    def install_tick_tock(self, params, ttoc_params):
+        '''apply params and load Heli_tick_tock.lua, started by RC9'''
+        self.context_collect('STATUSTEXT')
+        params = copy.copy(params)
+        params.update({
+            "SCR_ENABLE": 1,
+            "RC9_OPTION": 300,
+        })
+        self.set_parameters(params)
+        self.install_applet_script_context("Heli_tick_tock.lua")
+        self.reboot_sitl()
+        self.wait_statustext("TTOC: heli tick-tock loaded", check_context=True)
+        ttoc_params = copy.copy(ttoc_params)
+        ttoc_params["TTOC_ENABLE"] = 1
+        self.set_parameters(ttoc_params)
+
+    def fly_tick_tock(self, max_height_lost):
+        '''fly the tick-tock from LOITER and check it reversed the collective
+        and held height'''
+        self.change_mode('LOITER')
+        self.wait_groundspeed(0, 0.5, minimum_duration=5)
+        start_alt = self.get_altitude(relative=True)
+
+        # the tock half of each swing needs negative collective, which on
+        # an H3-120 head is the mean of the three swash servos
+        col_min = self.get_parameter("H_COL_MIN")
+        col_max = self.get_parameter("H_COL_MAX")
+        ang_min = self.get_parameter("H_COL_ANG_MIN")
+        ang_max = self.get_parameter("H_COL_ANG_MAX")
+        zero_thrust = col_min + (self.get_parameter("H_COL_ZERO_THRST") - ang_min) / (ang_max - ang_min) * (col_max - col_min)
+        lowest = {"collective": col_max, "alt": start_alt}
+
+        def record_lowest(mav, m):
+            if m.get_type() == 'SERVO_OUTPUT_RAW':
+                collective = (m.servo1_raw + m.servo2_raw + m.servo3_raw) / 3.0
+                lowest["collective"] = min(lowest["collective"], collective)
+            elif m.get_type() == 'GLOBAL_POSITION_INT':
+                lowest["alt"] = min(lowest["alt"], m.relative_alt * 0.001)
+
+        self.set_message_rate_hz('SERVO_OUTPUT_RAW', 50)
+        self.install_message_hook(record_lowest)
+        self.set_rc(9, 2000)
+        self.wait_statustext("TTOC: start", check_context=True)
+        self.wait_statustext("TTOC: done, 3 cycles", check_context=True, timeout=60)
+        self.wait_mode('LOITER')
+        self.set_rc(9, 1000)
+        self.remove_message_hook(record_lowest)
+
+        if self.statustext_in_collections("TTOC: recovering"):
+            raise NotAchievedException("tick-tock had to recover")
+        self.progress("lowest collective %.0fus (zero thrust %.0fus), height lost %.1fm" %
+                      (lowest["collective"], zero_thrust, start_alt - lowest["alt"]))
+        if lowest["collective"] > zero_thrust - 0.5 * (zero_thrust - col_min):
+            raise NotAchievedException("collective did not go well negative")
+        if start_alt - lowest["alt"] > max_height_lost:
+            raise NotAchievedException("lost too much height")
+
+    def HeliTickTock(self):
+        '''fly the Heli_tick_tock.lua applet'''
+        self.install_tick_tock({
+            # a 3D setup: +-15 deg of blade pitch, hovering at 5 deg, and full cyclic throw
+            "H_COL_MIN": 1200,
+            "H_COL_MAX": 1800,
+            "H_COL_ANG_MIN": -15,
+            "H_COL_ANG_MAX": 15,
+            "H_COL_HOVER": 0.667,
+            "H_CYC_MAX": 4500,
+        }, {
+            # the SITL heli cannot swing as fast as the defaults ask
+            "TTOC_ANGLE": 45,
+            "TTOC_PERIOD": 2.5,
+        })
+        self.takeoff(40, mode='GUIDED')
+
+        # at high speedup SITL wakes the scripting thread late, so the
+        # script would run at a fraction of the rate it gets on a real board
+        speedup = self.get_parameter("SIM_SPEEDUP")
+        self.set_parameter("SIM_SPEEDUP", 1)
+        # Guided holding the collective above H_COL_LAND_MIN while the heli
+        # is slow cuts the tock short, and loses about 19m here
+        self.fly_tick_tock(max_height_lost=10)
+        self.set_parameter("SIM_SPEEDUP", speedup)
+        self.do_RTL()
+
     def hover(self):
         self.progress("Setting hover collective")
         self.set_rc(3, 1500)
@@ -1468,6 +1552,7 @@ class AutoTestHelicopter(AutoTestCopter):
             self.HeliQuadFlip,
             self.HeliQuadInvertedFlight,
             self.HeliSingleInvertedFlight,
+            self.HeliTickTock,
             self.MountFailsafeAction,
             self.StickArmingRequiresZeroThrottle,
         ])
