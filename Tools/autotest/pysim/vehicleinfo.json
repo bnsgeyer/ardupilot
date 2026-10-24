@@ -334,6 +334,12 @@
     "Helicopter": {
         "default_frame": "heli",
         "frames": {
+            "realflight-RaptorE720": {
+                "model": "flightaxis",
+                "waf_target": "bin/arducopter-heli",
+                "default_params_filename": "default_params/realflight-RaptorE720.parm",
+                "external": true
+            },
             "heli": {
                 "waf_target": "bin/arducopter-heli",
                 "default_params_filename": "default_params/copter-heli.parm"

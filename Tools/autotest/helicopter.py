@@ -548,6 +548,27 @@ class AutoTestHelicopter(AutoTestCopter):
         self.set_parameter("SIM_SPEEDUP", speedup)
         self.do_RTL()
 
+    def RealFlightTickTock(self, model, home):
+        '''fly the Heli_tick_tock.lua applet in RealFlight, which must be
+        running with the Thunder Tiger Raptor E720 FBL - CPPM APM model loaded'''
+        if not self.realflight_address:
+            raise NotAchievedException("Specify an IP address with --realflight-address or REALFLIGHT_IPADDR to run this test")
+        self.setup_RealFlight_vehicle(model, home)
+        self.install_tick_tock({
+            # the model's head gives -13 to +13 deg of blade pitch, and the
+            # tune's 19.3us/deg puts that at 1250..1750us
+            "H_COL_MIN": 1250,
+            "H_COL_MAX": 1750,
+            "H_COL_ANG_MIN": -13,
+            "H_COL_ANG_MAX": 13,
+            # the tune's hover collective of 1571us in the wider range
+            "H_COL_HOVER": 0.642,
+        }, {})
+        self.takeoff(40, mode='GUIDED')
+        self.fly_tick_tock(max_height_lost=10)
+        self.change_mode("LAND")
+        self.wait_disarmed(timeout=120)
+
     def hover(self):
         self.progress("Setting hover collective")
         self.set_rc(3, 1500)
@@ -1553,11 +1574,17 @@ class AutoTestHelicopter(AutoTestCopter):
             self.HeliQuadInvertedFlight,
             self.HeliSingleInvertedFlight,
             self.HeliTickTock,
+            vehicle_test_suite.Test(self.RealFlightTickTock, speedup=1, kwargs={
+                'model': 'realflight-RaptorE720',
+                'home': 'EliField'
+            }),
             self.MountFailsafeAction,
             self.StickArmingRequiresZeroThrottle,
         ])
         return ret
 
     def disabled_tests(self):
-        return {
-        }
+        ret = {}
+        if not self.realflight_address:
+            ret["RealFlightTickTock"] = "Requires a running RealFlight simulator (--realflight-address or REALFLIGHT_IPADDR)"
+        return ret
