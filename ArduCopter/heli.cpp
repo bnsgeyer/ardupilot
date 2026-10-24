@@ -127,6 +127,12 @@ bool Copter::should_use_landing_swash() const
         // when waiting to takeoff in non-manual throttle mode limit swash range
         return true;
     }
+#if MODE_GUIDED_ENABLED
+    if (flightmode->in_guided_mode() && mode_guided.angle_control_uses_thrust()) {
+        // the guided caller sets collective directly, as a pilot does in a manual collective mode
+        return false;
+    }
+#endif
     if (!heli_flags.dynamic_flight) {
         // Just in case we are unsure of being in non-manual throttle
         // mode, limit swash range in low speed and hovering flight.

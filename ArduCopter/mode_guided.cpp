@@ -654,6 +654,13 @@ bool ModeGuided::set_attitude_target_provides_thrust() const
     return option_is_enabled(Option::SetAttitudeTarget_ThrustAsThrust);
 }
 
+// returns true if angle control is active with a thrust command rather than a climb rate,
+// so the caller rather than the vertical position controller is setting the throttle or collective
+bool ModeGuided::angle_control_uses_thrust() const
+{
+    return guided_mode == SubMode::Angle && guided_angle_state.use_thrust;
+}
+
 // returns true if GUIDED_OPTIONS param specifies position should be controlled (when velocity and/or acceleration control is active)
 bool ModeGuided::stabilizing_pos_NE() const
 {

@@ -1153,6 +1153,8 @@ public:
 
     // returns true if GUIDED_OPTIONS param suggests SET_ATTITUDE_TARGET's "thrust" field should be interpreted as thrust instead of climb rate
     bool set_attitude_target_provides_thrust() const;
+    // returns true if angle control is passing a commanded thrust straight to the motors
+    bool angle_control_uses_thrust() const;
     bool stabilizing_pos_NE() const;
     bool stabilizing_vel_NE() const;
     bool use_wpnav_for_position_control() const;
