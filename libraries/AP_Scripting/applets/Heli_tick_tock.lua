@@ -35,17 +35,27 @@ local MANOEUVRE_GUID_TIMEOUT_S = 0.3
 local ABORT_TIME_S = 0.5
 -- recovery hands back once the disc is this close to level, or after the timeout
 local RECOVER_LEVEL_DEG = 10
+local RECOVER_RATE_DEGS = 20
 local RECOVER_TIMEOUT_S = 3
 -- mean vertical thrust the swing must be able to make, as a multiple of
 -- weight, leaving room for the altitude correction
 local MIN_SUPPORT_RATIO = 1.1
+--[[
+   Share of the planned thrust the rotor is taken to deliver until the swing
+   has measured it. A rotor moving along its own axis loses thrust, by a third
+   in RealFlight on a 2 second swing, so start pessimistic: the first swing
+   then gets full collective rather than winding up to it.
+--]]
+local EFFICIENCY_START = 0.5
+local EFFICIENCY_MIN = 0.3
+local EFFICIENCY_MAX = 1.5
 -- fraction of ATC_ACC_P_MAX or ATC_ACC_R_MAX the planned swing may use
 local ACCEL_MARGIN = 0.9
 -- AP_MotorsHeli limits on H_COL_HOVER
 local COL_HOVER_MIN = 0.3
 local COL_HOVER_MAX = 0.8
 
-assert(param:add_table(PARAM_TABLE_KEY, PARAM_TABLE_PREFIX, 16), 'could not add param table')
+assert(param:add_table(PARAM_TABLE_KEY, PARAM_TABLE_PREFIX, 17), 'could not add param table')
 
 -- bind a parameter to a variable
 local function bind_param(name)
@@ -94,7 +104,7 @@ local TTOC_AXIS = bind_add_param('AXIS', 3, 0)
   // @Values: -1:Nose down or left side down,1:Nose up or right side down
   // @User: Standard
 --]]
-local TTOC_DIR = bind_add_param('DIR', 4, 1)
+local TTOC_DIR = bind_add_param('DIR', 4, -1)
 
 --[[
   // @Param: TTOC_ANGLE
@@ -177,12 +187,12 @@ local TTOC_VEL_I = bind_add_param('VEL_I', 12, 0.3)
 --[[
   // @Param: TTOC_ACC_MAX
   // @DisplayName: Tick-tock correction acceleration limit
-  // @Description: Largest acceleration the position correction, and separately the height correction, may ask for
+  // @Description: Largest acceleration each of the corrections along the swing, across it and in height may ask for. The tail rotor pushes sideways hard at tick-tock collective, about 4m/s/s on a 700-size heli in RealFlight.
   // @Units: m/s/s
   // @Range: 0 6
   // @User: Advanced
 --]]
-local TTOC_ACC_MAX = bind_add_param('ACC_MAX', 13, 4)
+local TTOC_ACC_MAX = bind_add_param('ACC_MAX', 13, 6)
 
 --[[
   // @Param: TTOC_ABORT_ANG
@@ -213,6 +223,16 @@ local TTOC_ALT_MIN = bind_add_param('ALT_MIN', 15, 15)
 --]]
 local TTOC_STK_ABORT = bind_add_param('STK_ABORT', 16, 0.3)
 
+--[[
+  // @Param: TTOC_ALT_LOSS
+  // @DisplayName: Tick-tock height loss limit
+  // @Description: If the heli sinks this far below the height it started at, the script stops the tick-tock and levels the heli. A rotor that cannot make the thrust the swing needs, for instance because the swing is too slow, otherwise sinks all the way down.
+  // @Units: m
+  // @Range: 2 50
+  // @User: Standard
+--]]
+local TTOC_ALT_LOSS = bind_add_param('ALT_LOSS', 17, 10)
+
 -- bound before anything else so a non-heli build fails here, at load
 local H_COL_ANG_MIN = bind_param('H_COL_ANG_MIN')
 local H_COL_ANG_MAX = bind_param('H_COL_ANG_MAX')
@@ -231,7 +251,7 @@ local rc_roll = assert(rc:get_channel(math.floor(assert(param:get('RCMAP_ROLL'))
 local rc_pitch = assert(rc:get_channel(math.floor(assert(param:get('RCMAP_PITCH')))))
 local rc_yaw = assert(rc:get_channel(math.floor(assert(param:get('RCMAP_YAW')))))
 
-local STATE = {IDLE=0, ENTRY=1, SWING=2, EXIT=3, RECOVER=4}
+local STATE = {IDLE=0, ENTRY=1, SWING=2, EXIT=3, RECOVER=4, SETTLE=5}
 local state = STATE.IDLE
 -- start true so a switch already high at boot does not start a manoeuvre
 local last_switch_high = true
@@ -447,7 +467,7 @@ end
 --]]
 local function track_aim(r)
     local F, slope = mean_support(m.samples, m.K, m.s_rev, m.tw_lim)
-    m.K = constrain(m.K + (r - F) / math.max(slope, 0.1), r, m.tw_lim)
+    m.K = constrain(m.K + (r - F) / math.max(slope, 0.1), math.min(r, m.tw_lim), m.tw_lim)
 end
 
 -- put back the parameters changed for the manoeuvre
@@ -483,6 +503,18 @@ local function start_recover(reason)
     restore_params()
     gcs:send_text(MAV_SEVERITY.WARNING, "TTOC: recovering, " .. reason)
     state = STATE.RECOVER
+    m.t = 0
+end
+
+--[[
+   level the heli after the exit before handing back. The exit ends on plan,
+   but the heli is still tilted and turning, and a position-holding mode
+   handed that much rotation overshoots: LOITER in RealFlight took a heli
+   handed back at 30 deg and 100 deg/s to an 87 deg tilt.
+--]]
+local function start_settle()
+    restore_params()
+    state = STATE.SETTLE
     m.t = 0
 end
 
@@ -559,11 +591,12 @@ local function plan()
     if support_max < MIN_SUPPORT_RATIO then
         return nil, string.format("swing holds only %.2fx weight: raise TTOC_ANGLE or collective range", support_max)
     end
-    -- aim for holding height, so the swing starts with the aim it will need
+    -- aim for holding height with the starting efficiency, so the swing starts with the aim it will need
+    local aim = 1 / EFFICIENCY_START
     local K = 1
     for _ = 1, 4 do
         local F, slope = mean_support(samples, K, s_rev, tw_lim)
-        K = constrain(K + (1 - F) / math.max(slope, 0.1), 1, tw_lim)
+        K = constrain(K + (aim - F) / math.max(slope, 0.1), math.min(aim, tw_lim), tw_lim)
     end
 
     if wind.alpha ~= alpha or not wind.beta then
@@ -587,11 +620,17 @@ local function plan()
     end
 
     local yaw = ahrs:get_yaw_rad()
+    -- horizontal directions of the body's forward and right axes at the start
+    local forward = {math.cos(yaw), math.sin(yaw)}
+    local right = {-math.sin(yaw), math.cos(yaw)}
     return {
         prev_mode = prev_mode,
         yaw = yaw,
         q_yaw = q_axis(3, yaw),
         axis = roll_axis and 1 or 2,
+        -- the swing moves the heli across the axis it rocks about, and not along it
+        along = roll_axis and right or forward,
+        cross = roll_axis and forward or right,
         dir = TTOC_DIR:get() < 0 and -1 or 1,
         alpha = alpha,
         omega = omega,
@@ -603,6 +642,8 @@ local function plan()
         s_rev = s_rev,
         samples = samples,
         K = K,
+        eta = EFFICIENCY_START,
+        support = 0,
         entry = entry,
         exit = exit,
         lead = lead,
@@ -620,23 +661,29 @@ local function plan()
     }
 end
 
--- record the position along the swing for the one-period averages
-local function push_hist(pos, dt)
+--[[
+   record the position along the swing for the one-period averages, with the
+   vertical velocity and the running total of commanded vertical thrust that
+   the efficiency is measured from
+--]]
+local function push_hist(pos, vel, dt)
     local h = m.hist
     local p = {pos:x(), pos:y(), pos:z()}
     local last = h[m.hist_last]
     local s
+    local cs = 0
     if last then
         s = {
             last.s[1] + 0.5*(last.p[1] + p[1])*dt,
             last.s[2] + 0.5*(last.p[2] + p[2])*dt,
             last.s[3] + 0.5*(last.p[3] + p[3])*dt,
         }
+        cs = last.cs + m.support*dt
     else
         s = {0, 0, 0}
     end
     m.hist_last = m.hist_last + 1
-    h[m.hist_last] = {t=m.t, p=p, s=s}
+    h[m.hist_last] = {t=m.t, p=p, s=s, vz=vel:z(), cs=cs}
 end
 
 --[[
@@ -644,6 +691,8 @@ end
    much has been recorded. which picks the window, whose start index is kept
    so it only moves forward. Averaging over a whole period removes the
    back-and-forth the swing itself causes, leaving the drift to correct.
+   Also returns the mean vertical specific force measured over the window and
+   the mean vertical thrust commanded, both as multiples of weight.
 --]]
 local function window_average(W, which)
     local h = m.hist
@@ -668,7 +717,10 @@ local function window_average(W, which)
         pavg[k] = (last.s[k] - s_old) / W
         vavg[k] = (last.p[k] - p_old) / W
     end
-    return pavg, vavg
+    local vz_old = a.vz + f*(b.vz - a.vz)
+    local cs_old = a.cs + f*(b.cs - a.cs)
+    local force_up = 1 - (last.vz - vz_old) / (W*GRAVITY_MSS)
+    return pavg, vavg, force_up, (last.cs - cs_old) / W
 end
 
 -- drop history older than the full-period window needs
@@ -679,47 +731,59 @@ local function prune_hist()
     m.hist_first = math.max(m.hist_first, m.win[1])
 end
 
--- PI correction on one axis, NED index k, returning acceleration
-local function correct_axis(k, p, v, dt, acc_max)
-    local vel_err = TTOC_POS_P:get()*(m.p_target[k] - p) - v
+-- PI correction on one axis (1 along the swing, 2 across it, 3 down) from its position error and velocity, returning acceleration
+local function correct_axis(k, pos_err, v, dt, acc_max)
+    local vel_err = TTOC_POS_P:get()*pos_err - v
     m.integ[k] = constrain(m.integ[k] + TTOC_VEL_I:get()*vel_err*dt, -acc_max, acc_max)
     return constrain(TTOC_VEL_P:get()*vel_err + m.integ[k], -acc_max, acc_max)
+end
+
+-- component of a horizontal north, east vector along a unit horizontal direction
+local function horiz_dot(n, e, dir)
+    return n*dir[1] + e*dir[2]
 end
 
 --[[
    Acceleration to correct position and height drift, NED.
 
-   In the swing, horizontal position and velocity are averaged over a full
-   period. Height bounces once per crossing, twice a period, so averaging it
-   over half a period is enough, and lets the height correction act sooner.
-   The entry and exit do not oscillate, so their height correction uses the
-   current height, and their sideways pushes are planned to cancel, so the
-   horizontal correction is held.
+   The swing pushes the heli back and forth along its plane and bounces it at
+   every crossing, so along the swing position and velocity are averaged over
+   a full period, and height over half a period. Nothing oscillates across the
+   swing plane, where the tail rotor pushes steadily sideways, so that drift
+   is corrected from the current position all through the manoeuvre. The
+   entry and exit do not oscillate either, so their height correction uses
+   the current height, and their pushes along the swing are planned to
+   cancel, so that correction is held.
 --]]
 local function correction_accel(pos, vel, dt)
     local acc_max = TTOC_ACC_MAX:get()
-    local acc = {m.integ[1], m.integ[2], m.integ[3]}
+    local along = m.along
+    local cross = m.cross
+    local a_along = m.integ[1]
+    local a_down = m.integ[3]
+    local a_cross = correct_axis(2, horiz_dot(m.p_target[1] - pos:x(), m.p_target[2] - pos:y(), cross),
+                                 horiz_dot(vel:x(), vel:y(), cross), dt, acc_max)
     if state == STATE.SWING then
-        push_hist(pos, dt)
-        local pz, vz = window_average(0.5*m.period, 2)
+        push_hist(pos, vel, dt)
+        local pz, vz, force_up, support = window_average(0.5*m.period, 2)
         if pz then
-            acc[3] = correct_axis(3, pz[3], vz[3], dt, acc_max)
+            a_down = correct_axis(3, m.p_target[3] - pz[3], vz[3], dt, acc_max)
+            -- learn the share of the commanded thrust the rotor really delivers over a half period
+            if support > 0.2 then
+                local eta = constrain(force_up / support, EFFICIENCY_MIN, EFFICIENCY_MAX)
+                m.eta = m.eta + (eta - m.eta) * math.min(1, dt / (0.5*m.period))
+            end
         end
         local pxy, vxy = window_average(m.period, 1)
         if pxy then
             prune_hist()
-            acc[1] = correct_axis(1, pxy[1], vxy[1], dt, acc_max)
-            acc[2] = correct_axis(2, pxy[2], vxy[2], dt, acc_max)
-            local len = math.sqrt(acc[1]*acc[1] + acc[2]*acc[2])
-            if len > acc_max then
-                acc[1] = acc[1] * acc_max / len
-                acc[2] = acc[2] * acc_max / len
-            end
+            a_along = correct_axis(1, horiz_dot(m.p_target[1] - pxy[1], m.p_target[2] - pxy[2], along),
+                                   horiz_dot(vxy[1], vxy[2], along), dt, acc_max)
         end
     else
-        acc[3] = correct_axis(3, pos:z(), vel:z(), dt, acc_max)
+        a_down = correct_axis(3, m.p_target[3] - pos:z(), vel:z(), dt, acc_max)
     end
-    return acc
+    return {along[1]*a_along + cross[1]*a_cross, along[2]*a_along + cross[2]*a_cross, a_down}
 end
 
 --[[
@@ -732,6 +796,11 @@ local function fly(th, thd, thdd, dt)
     local vel = ahrs:get_velocity_NED()
     if not q_act or not pos or not vel then
         start_recover("no position estimate")
+        return
+    end
+    local sunk = pos:z() - m.p_target[3]
+    if sunk > TTOC_ALT_LOSS:get() then
+        start_recover(string.format("sank %.0fm", sunk))
         return
     end
 
@@ -776,19 +845,20 @@ local function fly(th, thd, thdd, dt)
     local c = u[1]*d[1] + u[2]*d[2] + u[3]*d[3]
     local K = r
     if state == STATE.SWING then
-        track_aim(r)
+        track_aim(r / m.eta)
         K = m.K
     end
     local tw = thrust_ratio(c, K, m.s_rev, m.tw_lim)
     local thr = constrain(m.mid + (m.hover - m.mid)*tw, 0, 1)
+    m.support = c*tw
 
     if not vehicle:set_target_rate_and_throttle(math.deg(w[1]), math.deg(w[2]), math.deg(w[3]), thr) then
         release("Guided rejected the command")
         return
     end
 
-    logger:write('TTOC', 'St,Ang,Err,C,TW,Thr,R,K,AN,AE,AD', 'Bffffffffff',
-                 state, math.deg(m.dir*th), err_deg, c, tw, thr, r, K, acc[1], acc[2], acc[3])
+    logger:write('TTOC', 'St,Ang,Err,C,TW,Thr,R,K,Eta,AN,AE,AD', 'Bfffffffffff',
+                 state, math.deg(m.dir*th), err_deg, c, tw, thr, r, K, m.eta, acc[1], acc[2], acc[3])
 
     if err_deg > TTOC_ABORT_ANG:get() then
         m.abort_t = m.abort_t + dt
@@ -801,16 +871,23 @@ local function fly(th, thd, thdd, dt)
 end
 
 -- level the heli and hold height, then hand back
+-- level the heli and hold height, then hand back once it is level and has stopped turning
 local function run_recover()
     vehicle:set_target_angle_and_climbrate(0, 0, math.deg(m.yaw), 0, false, 0)
     local q = get_q_act()
-    local level = false
-    if q then
+    local gyro = ahrs:get_gyro()
+    local settled = false
+    if q and gyro then
         local u = q_rotate(q, {0, 0, -1})
-        level = math.deg(math.acos(constrain(-u[3], -1, 1))) < RECOVER_LEVEL_DEG
+        settled = math.deg(math.acos(constrain(-u[3], -1, 1))) < RECOVER_LEVEL_DEG and
+            math.deg(gyro:length()) < RECOVER_RATE_DEGS
     end
-    if level or m.t > RECOVER_TIMEOUT_S then
-        hand_back("recovered")
+    if settled or m.t > RECOVER_TIMEOUT_S then
+        if state == STATE.SETTLE then
+            hand_back(string.format("%d cycles", m.flown))
+        else
+            hand_back("recovered")
+        end
     end
 end
 
@@ -864,7 +941,7 @@ local function run(switch_high)
         m.stop = true
     end
 
-    if state == STATE.RECOVER then
+    if state == STATE.RECOVER or state == STATE.SETTLE then
         run_recover()
         return
     end
@@ -899,7 +976,7 @@ local function run(switch_high)
     elseif state == STATE.EXIT then
         th, thd, thdd, done = profile(m.exit, m.t)
         if done then
-            hand_back(string.format("%d cycles", m.flown))
+            start_settle()
             return
         end
     end

@@ -8,8 +8,8 @@ pendulum.
 
 Raise the aux switch while flying. The script switches to Guided, swings the
 heli up into the tick-tock, rocks it for `TTOC_CYCLES` cycles (or while the
-switch stays high), brings it back upright and returns to the mode it was
-flown in. Moving the roll, pitch or yaw stick hands control straight back to
+switch stays high), brings it back upright, holds it level until it has
+stopped turning, and returns to the mode it was flown in. Moving the roll, pitch or yaw stick hands control straight back to
 that mode.
 
 ## Requirements
@@ -55,15 +55,20 @@ The collective is set from where the thrust axis actually points: it is the
 thrust that holds the heli up at that attitude, limited by the collective
 range, and it reverses smoothly as the disc passes within `TTOC_REV_ANG` of
 vertical. Near vertical the collective runs out, so the thrust at the ends of
-the swing is raised until the mean over a swing holds the heli up.
+the swing is raised until the mean over a swing holds the heli up. The rotor
+delivers less than that plan, more so the faster the heli moves along its own
+axis, so over each half period the script compares the vertical acceleration
+it measures with the thrust it commanded and scales its aim by the share that
+arrived. It starts by assuming half, so the first swing uses full collective.
 
 Drift is corrected by tilting the whole manoeuvre a few degrees towards where
 the heli should be, and height by raising or lowering the thrust. The swing
-itself moves the heli back and forth once a period and bounces it up and down
-at every crossing, so horizontal position and velocity are averaged over
-exactly one period and height over half a period before they are corrected.
-The correction therefore starts half a period into the swing for height and a
-full period in for position. A heli flying fast along its own thrust axis gets
+itself moves the heli back and forth along its plane once a period and bounces
+it up and down at every crossing, so position along the swing is averaged over
+exactly one period and height over half a period before they are corrected,
+and those corrections start that far into the swing. Nothing oscillates across
+the swing plane, where the tail rotor pushes steadily sideways at the high
+collective a tick-tock uses, so that drift is corrected from the start. A heli flying fast along its own thrust axis gets
 less thrust from its rotor, so a slow tick-tock loses some height before the
 height correction catches up; shorter periods lose less.
 
@@ -78,13 +83,20 @@ last commanded rate for long. Both are put back when the manoeuvre ends. They
 are not saved, so a reboot also restores them.
 
 If the heli is more than `TTOC_ABORT_ANG` from the planned attitude for half a
-second, the script abandons the tick-tock, levels the heli holding height, and
-then returns to the pilot's mode.
+second, or sinks more than `TTOC_ALT_LOSS` below the height it started at, the
+script abandons the tick-tock, levels the heli holding height, and then returns
+to the pilot's mode.
+
+A rotor moving fast along its own axis makes much less thrust than it does in
+a hover, and a slow swing lets the heli build that speed every half cycle. In
+RealFlight a 700-size heli on a 2 second swing got two thirds of the thrust the
+script planned for and sank 40 m in three cycles, so fly the swing as fast as
+the heli and `ATC_ACC_P_MAX` allow.
 
 The script logs a `TTOC` message each update: state, planned swing angle,
 attitude error, thrust axis component along the wanted direction, thrust
-ratio, collective, wanted and aimed thrust ratios, and the correction
-acceleration.
+ratio, collective, wanted and aimed thrust ratios, the measured share of the
+planned thrust the rotor delivers, and the correction acceleration.
 
 ## Parameters
 
@@ -98,7 +110,8 @@ acceleration.
 - `TTOC_REV_ANG`: the collective reverses smoothly while the disc is within this many degrees of vertical.
 - `TTOC_ATT_P`: rate correction per radian of attitude error.
 - `TTOC_POS_P`, `TTOC_VEL_P`, `TTOC_VEL_I`: position and velocity gains for the drift and height correction, on the averaged position and velocity.
-- `TTOC_ACC_MAX`: largest acceleration the drift correction, and separately the height correction, may ask for.
+- `TTOC_ACC_MAX`: largest acceleration each of the corrections along the swing, across it and in height may ask for.
 - `TTOC_ABORT_ANG`: attitude error, held for half a second, that abandons the tick-tock.
 - `TTOC_ALT_MIN`: the tick-tock will not start below this height above home.
+- `TTOC_ALT_LOSS`: sinking this far below the starting height abandons the tick-tock.
 - `TTOC_STK_ABORT`: roll, pitch or yaw stick input beyond this fraction of full throw hands control back to the pilot.
