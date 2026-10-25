@@ -31,8 +31,9 @@ to the pilot's mode.
   2.5 m/s.
 - The applet and its doc.
 - `HeliTickTock` (SITL heli) and `RealFlightTickTock` (Thunder Tiger Raptor
-  E720 FBL in RealFlight), with the Raptor defaults converted from a
-  RealFlight tune on Copter 4.6.3 using master's own conversion tables.
+  E720 FBL in RealFlight). Runs 1-11 below flew a RealFlight tune from
+  Copter 4.6.3, converted with master's own conversion tables; the
+  defaults are now a newer 4.8-dev acro tune of the same model.
 
 ## Running the tests
 
@@ -93,9 +94,15 @@ unless noted.
 | 10 | 40 deg, 0.6 s, 14 deg cyclic | +-13, 2000 | pitch overshoot, 584 deg/s yaw, aborted |
 | 11 | 45 deg, 0.8 s, 14 deg cyclic | +-13, 2000 | pitch lags 0.1 s and overshoots, tail saturates, aborted |
 
-`RealFlightTickTock` is set to run 8, the last passing configuration.
-`HeliTickTock` passes in SITL with about 6 m of height lost on a 2.5 s
-swing.
+`RealFlightTickTock` flies run 8's swing and collective, the last passing
+configuration, but on the 4.8-dev acro tune, which has not flown it in
+RealFlight yet. That tune filters the pitch rate target at 30 Hz instead
+of 4 Hz and the gyro at 40 Hz instead of 20 Hz, which should cut the
+pitch lag, but has less pitch feedforward (0.1, was 0.154) and half the
+yaw P with no yaw feedforward. On the SITL heli model the same settings
+abort 3 s in, as that heli needs about twice the tune's pitch
+feedforward. `HeliTickTock` passes in SITL with about 6 m of height lost
+on a 2.5 s swing.
 
 ## Where it stands, and what is next
 
