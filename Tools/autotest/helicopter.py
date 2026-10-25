@@ -507,13 +507,13 @@ class AutoTestHelicopter(AutoTestCopter):
         self.install_message_hook(record_lowest)
         self.set_rc(9, 2000)
         self.wait_statustext("TTOC: start", check_context=True)
-        self.wait_statustext("TTOC: done, 3 cycles", check_context=True, timeout=60)
-        self.wait_mode('LOITER')
+        # a recovery or a stop also ends with "done" or "stopped", so fail on it at once
+        end = self.wait_statustext("TTOC: (done|stopped)", regex=True, check_context=True, timeout=60)
         self.set_rc(9, 1000)
         self.remove_message_hook(record_lowest)
-
-        if self.statustext_in_collections("TTOC: recovering"):
-            raise NotAchievedException("tick-tock had to recover")
+        if end.text != "TTOC: done, 3 cycles" or self.statustext_in_collections("TTOC: recovering"):
+            raise NotAchievedException("tick-tock ended with '%s'" % end.text)
+        self.wait_mode('LOITER')
         self.progress("lowest collective %.0fus (zero thrust %.0fus), height lost %.1fm" %
                       (lowest["collective"], zero_thrust, start_alt - lowest["alt"]))
         if lowest["collective"] > zero_thrust - 0.5 * (zero_thrust - col_min):
@@ -555,19 +555,45 @@ class AutoTestHelicopter(AutoTestCopter):
             raise NotAchievedException("Specify an IP address with --realflight-address or REALFLIGHT_IPADDR to run this test")
         self.setup_RealFlight_vehicle(model, home)
         self.install_tick_tock({
-            # the model's head gives -13 to +13 deg of blade pitch, and the
-            # tune's 19.3us/deg puts that at 1250..1750us
-            "H_COL_MIN": 1250,
-            "H_COL_MAX": 1750,
+            # the model head's +-13 deg of collective at 19.1us/deg about
+            # zero thrust at 1500us
+            "H_COL_MIN": 1252,
+            "H_COL_MAX": 1748,
             "H_COL_ANG_MIN": -13,
             "H_COL_ANG_MAX": 13,
-            # the tune's hover collective of 1571us in the wider range
-            "H_COL_HOVER": 0.642,
-        }, {})
+            # a 3D headspeed: at the tune's 1600rpm, +-10.5 deg is only 2.8x
+            # hover thrust, too little to hold a tick-tock up
+            "H_RSC_GOV_RPM": 2000,
+            # the governor only engages once the throttle curve plus its torque
+            # rise reaches 2000rpm, so give it a curve that sits about there
+            "H_RSC_THRCRV_0": 74,
+            "H_RSC_THRCRV_25": 74,
+            "H_RSC_THRCRV_50": 75,
+            "H_RSC_THRCRV_75": 76,
+            "H_RSC_THRCRV_100": 77,
+            # the 2.4 deg hover collective learned at 2000rpm, in this range
+            "H_COL_HOVER": 0.591,
+            # a slow swing loses rotor thrust and sinks, so allow the
+            # acceleration of a 1s one, and the full cyclic throw of a 3D
+            # setup to reach it
+            "ATC_ACC_P_MAX": 3000,
+            "H_CYC_MAX": 4500,
+            # full-rate attitude and rate logging, to see the pitch and tail loops
+            "LOG_BITMASK": 0x10FFFF,
+        }, {
+            # faster than the defaults, which this tune can follow, and a wide
+            # swing so the disc spends less time near vertical
+            "TTOC_PERIOD": 1.0,
+            "TTOC_ANGLE": 60,
+        })
         self.takeoff(40, mode='GUIDED')
-        self.fly_tick_tock(max_height_lost=10)
-        self.change_mode("LAND")
-        self.wait_disarmed(timeout=120)
+        # land even if the tick-tock fails, since RealFlight crashes the
+        # model when the harness reboots SITL in the air to clean up
+        try:
+            self.fly_tick_tock(max_height_lost=10)
+        finally:
+            self.change_mode("LAND")
+            self.wait_disarmed(timeout=120)
 
     def hover(self):
         self.progress("Setting hover collective")
