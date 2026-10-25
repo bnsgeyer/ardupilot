@@ -96,6 +96,8 @@ as an A/B of the two tunes.
 | 11 | 45 deg, 0.8 s, 14 deg cyclic | +-13, 2000 | pitch lags 0.1 s and overshoots, tail saturates, aborted |
 | 12 | 60 deg, 1 s, 4.8-dev acro tune | +-13, 2000 | passed, 1.3 m lost; pitch lag 23 ms, cyclic at its limit 23% of the swing, yaw under 209 deg/s, handed back at 1.6 m/s |
 | 13 | 60 deg, 1 s (run 8 again) | +-13, 2000 | passed, 1.4 m lost; pitch lag 55 ms, cyclic at its limit 55% of the swing, 372 deg/s yaw with the tail at its limit, handed back at 6.7 m/s |
+| 14 | 60 deg, 1 s, 4.8-dev tune, 14 deg cyclic | +-13, 2000 | passed, 0.9 m lost; attitude error 13 deg mean, 28 max; pitch reached 93% of the rate asked for, cyclic never at its limit; handed back at 1.0 m/s |
+| 15 | 45 deg, 0.8 s, 4.8-dev tune, 14 deg cyclic | +-13, 2000 | passed, 1.0 m lost; attitude error 11 deg mean, 36 max; pitch reached 99% of the rate asked for, cyclic never at its limit; tail under 40% of its travel |
 
 `RealFlightTickTock` flies run 8's swing and collective on the 4.8-dev
 acro tune (run 12). That tune filters the pitch rate target at 30 Hz
@@ -118,10 +120,14 @@ the tune's pitch feedforward. `HeliTickTock` passes in SITL with about
   1.6 m/s, but the hold should still brake to a stop as well as level.
 - Faster than 1 s needs more pitch authority, not script changes: on the
   4.8-dev tune the 10 deg cyclic is at its limit for a quarter of a 1 s
-  swing. Runs 9-11 raised it to 14 deg on the 4.6.3 tune, whose pitch
-  loop lagged about 0.1 s and overshot and whose tail kicked at every
-  collective reversal (`H_COL2YAW` is 0 in both tunes); the 14 deg model
-  has not been flown on the 4.8-dev tune. The test
+  swing. A copy of the model with 14 deg of cyclic (`PitchDeflectionDEG`
+  and `RollDeflectionDEG` 14 in the `.RFX`, flown with `H_CYC_ANG_MAX` 14)
+  flew 1 s and 0.8 s on the 4.8-dev tune without the cyclic reaching its
+  limit (runs 14-15); on the 4.6.3 tune the same model lagged, overshot
+  and saturated the tail (runs 9-11). `RealFlightTickTock` still flies
+  the 10 deg model. Faster than 0.8 s needs `ATC_ACC_P_MAX` and the
+  test's pitch rate cap raised: 0.6 s at 40 deg asks for 4400 deg/s/s
+  and 419 deg/s. The test
   logs at full rate (`LOG_BITMASK` 0x10FFFF) to make that tuning possible.
   A pilot's tick-tock, from a slow-motion Trex 700 video, looks smaller and
   faster than ours, about +-30-40 deg, and may be on roll rather than
