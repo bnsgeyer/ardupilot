@@ -78,7 +78,8 @@ loaded and the FlightAxis link enabled. The `.RFX` is not in the repo.
 ## RealFlight results
 
 Raptor E720, tail up from run 4 on (tail down before), 10 deg of cyclic
-unless noted.
+and the 4.6.3 tune unless noted. Runs 12 and 13 were flown back to back
+as an A/B of the two tunes.
 
 | Run | Swing | Collective, rpm | Result |
 |-----|-------|-----------------|--------|
@@ -93,25 +94,34 @@ unless noted.
 | 9 | 40 deg, 0.6 s, 14 deg cyclic, gains x10/14 | +-13, 2000 | lagged without saturating, aborted |
 | 10 | 40 deg, 0.6 s, 14 deg cyclic | +-13, 2000 | pitch overshoot, 584 deg/s yaw, aborted |
 | 11 | 45 deg, 0.8 s, 14 deg cyclic | +-13, 2000 | pitch lags 0.1 s and overshoots, tail saturates, aborted |
+| 12 | 60 deg, 1 s, 4.8-dev acro tune | +-13, 2000 | passed, 1.3 m lost; pitch lag 23 ms, cyclic at its limit 23% of the swing, yaw under 209 deg/s, handed back at 1.6 m/s |
+| 13 | 60 deg, 1 s (run 8 again) | +-13, 2000 | passed, 1.4 m lost; pitch lag 55 ms, cyclic at its limit 55% of the swing, 372 deg/s yaw with the tail at its limit, handed back at 6.7 m/s |
 
-`RealFlightTickTock` flies run 8's swing and collective, the last passing
-configuration, but on the 4.8-dev acro tune, which has not flown it in
-RealFlight yet. That tune filters the pitch rate target at 30 Hz instead
-of 4 Hz and the gyro at 40 Hz instead of 20 Hz, which should cut the
-pitch lag, but has less pitch feedforward (0.1, was 0.154) and half the
-yaw P with no yaw feedforward. On the SITL heli model the same settings
-abort 3 s in, as that heli needs about twice the tune's pitch
-feedforward. `HeliTickTock` passes in SITL with about 6 m of height lost
-on a 2.5 s swing.
+`RealFlightTickTock` flies run 8's swing and collective on the 4.8-dev
+acro tune (run 12). That tune filters the pitch rate target at 30 Hz
+instead of 4 Hz and the gyro at 40 Hz instead of 20 Hz, and against the
+4.6.3 tune on the same swing it more than halved the pitch lag and the
+time the cyclic spent at its limit, kept the tail off its limit, and
+levelled after the exit in 0.5 s instead of timing out at 3 s. Mean
+attitude error over the swing fell from 30 to 23 deg. Pitch still
+reaches only about two thirds of the rate asked for, with the 10 deg
+cyclic at its limit for a quarter of the swing. On the SITL
+heli model the same settings abort 3 s in, as that heli needs about twice
+the tune's pitch feedforward. `HeliTickTock` passes in SITL with about
+6 m of height lost on a 2.5 s swing.
 
 ## Where it stands, and what is next
 
-- The level-hold after the exit times out after 3 s and hands back with
-  the heli still moving at 6-9 m/s, leaving LOITER 20-30 m to stop. It
-  should brake to a stop as well as level.
-- Faster than 1 s needs tuning, not script changes: the pitch rate loop
-  lags about 0.1 s and overshoots once cyclic is raised, and the tail kicks
-  at every collective reversal (`H_COL2YAW` is 0 in this tune). The test
+- On the 4.6.3 tune the level-hold after the exit timed out after 3 s
+  and handed back with the heli still moving at 6-9 m/s, leaving LOITER
+  20-30 m to stop. The 4.8-dev tune levels in 0.5 s and hands back at
+  1.6 m/s, but the hold should still brake to a stop as well as level.
+- Faster than 1 s needs more pitch authority, not script changes: on the
+  4.8-dev tune the 10 deg cyclic is at its limit for a quarter of a 1 s
+  swing. Runs 9-11 raised it to 14 deg on the 4.6.3 tune, whose pitch
+  loop lagged about 0.1 s and overshot and whose tail kicked at every
+  collective reversal (`H_COL2YAW` is 0 in both tunes); the 14 deg model
+  has not been flown on the 4.8-dev tune. The test
   logs at full rate (`LOG_BITMASK` 0x10FFFF) to make that tuning possible.
   A pilot's tick-tock, from a slow-motion Trex 700 video, looks smaller and
   faster than ours, about +-30-40 deg, and may be on roll rather than
