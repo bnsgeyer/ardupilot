@@ -561,23 +561,11 @@ class AutoTestHelicopter(AutoTestCopter):
             "H_COL_MAX": 1748,
             "H_COL_ANG_MIN": -13,
             "H_COL_ANG_MAX": 13,
-            # a 3D headspeed: at the tune's 1600rpm, +-10.5 deg is only 2.8x
-            # hover thrust, too little to hold a tick-tock up
-            "H_RSC_GOV_RPM": 2000,
-            # the governor only engages once the throttle curve plus its torque
-            # rise reaches 2000rpm, so give it a curve that sits about there
-            "H_RSC_THRCRV_0": 74,
-            "H_RSC_THRCRV_25": 74,
-            "H_RSC_THRCRV_50": 75,
-            "H_RSC_THRCRV_75": 76,
-            "H_RSC_THRCRV_100": 77,
             # the 2.4 deg hover collective learned at 2000rpm, in this range
             "H_COL_HOVER": 0.591,
-            # a slow swing loses rotor thrust and sinks, so allow the
-            # acceleration of a 1s one, and the full cyclic throw of a 3D
-            # setup to reach it
-            "ATC_ACC_P_MAX": 3000,
-            "H_CYC_MAX": 4500,
+            # the tune caps pitch rate at 350deg/s, and a 60 deg swing over
+            # 1s peaks at 377deg/s
+            "ATC_RATE_P_MAX": 400,
             # full-rate attitude and rate logging, to see the pitch and tail loops
             "LOG_BITMASK": 0x10FFFF,
         }, {
