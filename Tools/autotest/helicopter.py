@@ -550,7 +550,9 @@ class AutoTestHelicopter(AutoTestCopter):
 
     def RealFlightTickTock(self, model, home):
         '''fly the Heli_tick_tock.lua applet in RealFlight, which must be
-        running with the Thunder Tiger Raptor E720 FBL - CPPM APM model loaded'''
+        running with the Raptor 720 from ArduPilot's SITL_Models with its
+        cyclic raised to 14 deg (PitchDeflectionDEG and RollDeflectionDEG
+        14), since 10 deg runs out on a fast swing'''
         if not self.realflight_address:
             raise NotAchievedException("Specify an IP address with --realflight-address or REALFLIGHT_IPADDR to run this test")
         self.setup_RealFlight_vehicle(model, home)
@@ -566,6 +568,8 @@ class AutoTestHelicopter(AutoTestCopter):
             # the tune caps pitch rate at 350deg/s, and a 60 deg swing over
             # 1s peaks at 377deg/s
             "ATC_RATE_P_MAX": 400,
+            # the model's cyclic throw, for the swashplate log
+            "H_CYC_ANG_MAX": 14,
             # full-rate attitude and rate logging, to see the pitch and tail loops
             "LOG_BITMASK": 0x10FFFF,
         }, {
