@@ -42,8 +42,11 @@ to the pilot's mode.
     python3 Tools/autotest/autotest.py --realflight-address 127.0.0.1 \
         test.Helicopter.RealFlightTickTock
 
-RealFlight must be running with "Thunder Tiger Raptor E720 FBL - CPPM APM"
-loaded and the FlightAxis link enabled. The `.RFX` is not in the repo.
+RealFlight must be running with the FlightAxis link enabled and the
+Raptor 720 from ArduPilot's `SITL_Models` loaded, with its cyclic raised
+to 14 deg: in the `.rfvehicle` inside the `.RFX`, `PitchDeflectionDEG` and
+`RollDeflectionDEG` 14, with the file list in `g3x.enc` updated if the
+files are renamed. The `.RFX` is not in the repo.
 
 ## What we found
 
@@ -79,15 +82,26 @@ loaded and the FlightAxis link enabled. The `.RFX` is not in the repo.
   drops it and lets yaw follow the gyro (`attitude_controller_run_quat`).
   Every failed 1 s run went over that edge: the script's error grew first,
   then the controller's followed it past 60 deg and the heli tumbled.
+- In SITL with RealFlight the scripting thread is sometimes not scheduled
+  for 30-90 ms, in bursts of several within a fraction of a second, while
+  the main loop runs on undisturbed. Guided keeps flying the last rates and
+  collective meanwhile, so a stall at a vertical crossing holds the
+  collective on the wrong side of it. Every failed run of the 14 deg model
+  (10 of 10) had such stalls in the 0.2 s before its error passed 35 deg,
+  and none of the 28 passing runs had any (longest gap 27 ms); the
+  script's own run time stayed under 6 ms (`SCR_DEBUG_OPTS` 8). Gaps
+  between `TTOC` records show whether a run was hit. The Linux side was
+  idle when they happened, so the host running RealFlight is the likely
+  cause. A flight controller also runs scripting at low priority, so the
+  applet should cope with late updates; `SCR_THD_PRIORITY` raises it.
 - Each vertical crossing in the swing takes the collective to full for a
-  moment (12-16% of each 1 s cycle above 90% collective). Occasionally,
-  late in the manoeuvre, the tail then runs out of travel and the heli
-  yaws away at 300+ deg/s, whichever join is used (runs 7 and two of the
-  1 s join runs). A fit of yaw acceleration against tail output and
+  moment (12-16% of each 1 s cycle above 90% collective), and the tail
+  rides it out. A fit of yaw acceleration against tail output and
   collective over the 1 s runs gives `H_COL2YAW` +0.43 to +0.75, against 0
-  in both tunes; at 0.5 the swing's peak yaw rate fell from 215 to 175
-  deg/s and its rms from 89 to 73. That is a tune change for whoever owns
-  the tune, not something the test sets.
+  in both tunes. On runs without stalls, 0.5 cut the swing's yaw rms from
+  89 to 73 deg/s, and with the 4.6.3 tune's yaw rate gains as well to
+  59-64, and the worst attitude error from 27 to 18 deg. A tune change for
+  whoever owns the tune; no test failure turned out to need it.
 - Both Raptor tunes run `AHRS_EKF_TYPE` 10, under which the EKF3 core is
   logged but not used; check `XKF1` against `SIM2` (simulator truth) before
   trusting it. It agreed to 0.2-0.6 m/s in these heli runs. `ATT` logs at
@@ -142,17 +156,19 @@ after the entry and in the exit.
 | 1 s, 60 deg | far end, thrust capped | 4 | 3 passed, 1 tail upset in cycle 3 | 21-22 / 17-18 deg |
 | 1 s, 60 deg | far end, thrust capped, `H_COL2YAW` 0.5 | 4 | all passed | 23 / 16-17 deg |
 
-Without a cap the far-end entry failed at 60 deg: holding height as the
-disc passed vertical took the collective to full one way and then the
-other, the torque swing yawed the heli 17-21 deg, and past vertical that
-heading error became 30-39 deg of roll error at the far end, which the
-first swing back could not recover. The entry and exit now use at most
-twice hover thrust (or what the far end needs, if more), and lose about
-the same height (1.0-1.5 m over the manoeuvre).
+The pass counts in this table say more about script stalls than about
+the joins: every failure in it followed a stall of the scripting thread
+(see What we found), and no passing run had one. The errors in the last
+column come from runs without stalls and stand. The uncapped far-end runs
+at 60 deg both stalled, so whether the cap was needed there is open. In
+them, holding height as the disc passed vertical took the collective to
+full one way and then the other, the heli yawed 17-21 deg, and past
+vertical that became 30-39 deg of roll error at the far end. The entry and
+exit now use at most twice hover thrust (or what the far end needs, if
+more), and lose about the same height (1.0-1.5 m over the manoeuvre).
 
 RealFlight replays these flights very closely: repeat runs of one setup
-agree to a degree or two, so a pass rate here says more about how near a
-setup is to an edge than about independent trials.
+agree to a degree or two.
 
 `RealFlightTickTock` flies run 8's swing and collective on the 4.8-dev
 acro tune (run 12). That tune filters the pitch rate target at 30 Hz
@@ -173,8 +189,15 @@ the tune's pitch feedforward. `HeliTickTock` passes in SITL with about
   and handed back with the heli still moving at 6-9 m/s, leaving LOITER
   20-30 m to stop. The 4.8-dev tune levels in 0.5 s and hands back at
   1.6 m/s, but the hold should still brake to a stop as well as level.
-- `RealFlightTickTock` flies the 10 deg model, which has not flown the
-  far-end join yet; it needs that model loaded in RealFlight to run.
+- `RealFlightTickTock` flies the 14 deg model, the `SITL_Models` Raptor
+  720 with `PitchDeflectionDEG` and `RollDeflectionDEG` raised to 14; the
+  10 deg original has not flown the far-end join. Run it on a quiet host,
+  and check the `TTOC` gaps before reading anything into a failure.
+- The applet should survive a late update. Ideas, none tried: warn when an
+  update arrives late, so a flight log says when it happened; widen the
+  collective reversal so a collective held across vertical does less harm;
+  or have Guided reverse the collective from the attitude itself, which
+  needs C++.
 - Faster than 1 s needs more pitch authority, not script changes: on the
   4.8-dev tune the 10 deg cyclic is at its limit for a quarter of a 1 s
   swing. A copy of the model with 14 deg of cyclic (`PitchDeflectionDEG`
