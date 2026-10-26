@@ -74,6 +74,25 @@ loaded and the FlightAxis link enabled. The `.RFX` is not in the repo.
   now holds level until it has stopped turning.
 - The harness's failure cleanup reboots SITL in the air, which crashes the
   RealFlight model, so `RealFlightTickTock` always lands in a `finally`.
+- Once the attitude controller's own thrust-direction error passes 30 deg
+  it fades out the rate feed-forward the script sends, and past 60 deg it
+  drops it and lets yaw follow the gyro (`attitude_controller_run_quat`).
+  Every failed 1 s run went over that edge: the script's error grew first,
+  then the controller's followed it past 60 deg and the heli tumbled.
+- Each vertical crossing in the swing takes the collective to full for a
+  moment (12-16% of each 1 s cycle above 90% collective). Occasionally,
+  late in the manoeuvre, the tail then runs out of travel and the heli
+  yaws away at 300+ deg/s, whichever join is used (runs 7 and two of the
+  1 s join runs). A fit of yaw acceleration against tail output and
+  collective over the 1 s runs gives `H_COL2YAW` +0.43 to +0.75, against 0
+  in both tunes; at 0.5 the swing's peak yaw rate fell from 215 to 175
+  deg/s and its rms from 89 to 73. That is a tune change for whoever owns
+  the tune, not something the test sets.
+- Both Raptor tunes run `AHRS_EKF_TYPE` 10, under which the EKF3 core is
+  logged but not used; check `XKF1` against `SIM2` (simulator truth) before
+  trusting it. It agreed to 0.2-0.6 m/s in these heli runs. `ATT` logs at
+  10 Hz; take attitude from `ANG` and rates from `RATE`, which log at the
+  loop rate.
 
 ## RealFlight results
 
@@ -98,6 +117,42 @@ as an A/B of the two tunes.
 | 13 | 60 deg, 1 s (run 8 again) | +-13, 2000 | passed, 1.4 m lost; pitch lag 55 ms, cyclic at its limit 55% of the swing, 372 deg/s yaw with the tail at its limit, handed back at 6.7 m/s |
 | 14 | 60 deg, 1 s, 4.8-dev tune, 14 deg cyclic | +-13, 2000 | passed, 0.9 m lost; attitude error 13 deg mean, 28 max; pitch reached 93% of the rate asked for, cyclic never at its limit; handed back at 1.0 m/s |
 | 15 | 45 deg, 0.8 s, 4.8-dev tune, 14 deg cyclic | +-13, 2000 | passed, 1.0 m lost; attitude error 11 deg mean, 36 max; pitch reached 99% of the rate asked for, cyclic never at its limit; tail under 40% of its travel |
+| 16 | 40 deg, 0.6 s, 4.8-dev tune, 14 deg cyclic, `ATC_ACC_P_MAX` 5000, `ATC_RATE_P_MAX` 500 | +-13, 2000 | passed, 0.7 m lost; 14 deg mean error once swinging, but 52 deg just after the entry and 59 deg in the exit |
+
+### Entry and exit joins
+
+Run 16's spikes came from how the entry joined the swing: it stopped the
+disc at the near end of the swing and the swing set it off again the same
+way, a step of twice the swing's peak angular acceleration (the exit did
+the same in reverse). The entry now swings in one move from upright to the
+far end, so the swing starts by turning round as at every other end, and a
+planned tilt cancels the entry's net sideways push instead of a wind-up.
+All on the 14 deg model with the 4.8-dev tune; worst attitude error just
+after the entry and in the exit.
+
+| Swing | Join | Runs | Result | After entry / exit |
+|-------|------|------|--------|--------------------|
+| 0.6 s, 40 deg | near end | 2 | both passed | 52-59 / 57-59 deg |
+| 0.6 s, 40 deg | far end | 1 | passed | 26 / 16 deg |
+| 0.6 s, 40 deg | far end, thrust capped | 2 | both passed | 24-25 / 15-17 deg |
+| 0.8 s, 45 deg | near end | 1 (run 15) | passed | 36 / 38 deg |
+| 0.8 s, 45 deg | far end, thrust capped | 1 | passed | 18 / 13 deg |
+| 1 s, 60 deg | near end | 3 | 1 passed; 1 lost pitch at the swing start (133 deg), 1 tail upset in cycle 3 | 28-31 / 29 deg |
+| 1 s, 60 deg | far end | 2 | both failed at the swing start | 66-99 deg |
+| 1 s, 60 deg | far end, thrust capped | 4 | 3 passed, 1 tail upset in cycle 3 | 21-22 / 17-18 deg |
+| 1 s, 60 deg | far end, thrust capped, `H_COL2YAW` 0.5 | 4 | all passed | 23 / 16-17 deg |
+
+Without a cap the far-end entry failed at 60 deg: holding height as the
+disc passed vertical took the collective to full one way and then the
+other, the torque swing yawed the heli 17-21 deg, and past vertical that
+heading error became 30-39 deg of roll error at the far end, which the
+first swing back could not recover. The entry and exit now use at most
+twice hover thrust (or what the far end needs, if more), and lose about
+the same height (1.0-1.5 m over the manoeuvre).
+
+RealFlight replays these flights very closely: repeat runs of one setup
+agree to a degree or two, so a pass rate here says more about how near a
+setup is to an edge than about independent trials.
 
 `RealFlightTickTock` flies run 8's swing and collective on the 4.8-dev
 acro tune (run 12). That tune filters the pitch rate target at 30 Hz
@@ -118,6 +173,8 @@ the tune's pitch feedforward. `HeliTickTock` passes in SITL with about
   and handed back with the heli still moving at 6-9 m/s, leaving LOITER
   20-30 m to stop. The 4.8-dev tune levels in 0.5 s and hands back at
   1.6 m/s, but the hold should still brake to a stop as well as level.
+- `RealFlightTickTock` flies the 10 deg model, which has not flown the
+  far-end join yet; it needs that model loaded in RealFlight to run.
 - Faster than 1 s needs more pitch authority, not script changes: on the
   4.8-dev tune the 10 deg cyclic is at its limit for a quarter of a 1 s
   swing. A copy of the model with 14 deg of cyclic (`PitchDeflectionDEG`
