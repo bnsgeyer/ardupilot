@@ -72,9 +72,15 @@ collective a tick-tock uses, so that drift is corrected from the start. A heli f
 less thrust from its rotor, so a slow tick-tock loses some height before the
 height correction catches up; shorter periods lose less.
 
-Swinging straight up from a hover into the tick-tock would push the heli
-sideways the whole way and leave it drifting, so the entry first dips the
-other way by an amount that cancels that push. The exit mirrors the entry.
+The entry swings the disc in one move from upright, through vertical, to the
+far end of the swing, and the swing starts there by turning round as it does
+at every other end. Stopping at the near end and setting off again the same
+way would ask for an instant reversal of the angular acceleration, which the
+heli overshoots. The entry pushes the heli further one way than the other, so
+the manoeuvre is tilted slightly while it flies to cancel that. It uses at
+most twice hover thrust, since holding height as the disc passes vertical
+would swing the collective from full one way to full the other and yaw the
+heli. The exit mirrors the entry.
 
 While the tick-tock runs the script sets `ATC_ANGLE_BOOST` to 0, since heli
 angle boost rescales and flips the collective, and sets `GUID_TIMEOUT` to

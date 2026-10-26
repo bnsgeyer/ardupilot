@@ -41,6 +41,14 @@ local RECOVER_TIMEOUT_S = 3
 -- weight, leaving room for the altitude correction
 local MIN_SUPPORT_RATIO = 1.1
 --[[
+   Thrust the entry and exit may use, as a multiple of hover thrust. Holding
+   height as the disc passes vertical would take the collective to full one
+   way and then the other, and that torque swing yaws the heli, which the
+   rest of the entry turns into roll. The crossing is brief, so it costs
+   little height to let it sink instead.
+--]]
+local JOIN_THRUST_MAX = 2
+--[[
    Share of the planned thrust the rotor is taken to deliver until the swing
    has measured it. A rotor moving along its own axis loses thrust, by a third
    in RealFlight on a 2 second swing, so start pessimistic: the first swing
@@ -350,67 +358,6 @@ local function profile(segs, t)
 end
 
 --[[
-   sideways velocity change over a list of segments, in units of g times
-   seconds. Holding height while tilted by th pushes sideways at g*tan(th).
---]]
-local function profile_impulse(segs)
-    local N = 24
-    local sum = 0
-    for _, seg in ipairs(segs) do
-        if seg.dur > 0 then
-            local h = seg.dur / N
-            for i = 0, N-1 do
-                local th = cos_segment(seg, (i + 0.5)*h)
-                sum = sum + math.tan(th)*h
-            end
-        end
-    end
-    return sum
-end
-
---[[
-   Entry from upright to the first end of the swing at theta0. Swinging
-   straight up would push the heli sideways the whole way and start the
-   tick-tock drifting, so the disc first winds up the other way by beta.
---]]
-local function entry_segments(theta0, beta, accel)
-    return {
-        {from=0, to=-beta, dur=cos_segment_duration(beta, accel)},
-        {from=-beta, to=theta0, dur=cos_segment_duration(theta0 + beta, accel)},
-    }
-end
-
---[[
-   Wind-up angle that makes the entry's sideways pushes cancel, so the swing
-   starts at rest. It depends only on TTOC_ANGLE, since a different
-   acceleration only rescales time, and the search is too much work for one
-   update, so it runs a step at a time while idle.
---]]
-local WIND_ITERATIONS = 24
-local wind = {}
-
--- one step of the wind-up search, restarting it if TTOC_ANGLE has changed
-local function wind_up_step()
-    local alpha = math.rad(constrain(TTOC_ANGLE:get(), 20, 80))
-    if wind.alpha ~= alpha then
-        wind = {alpha=alpha, lo=0, hi=math.rad(80), iter=0}
-    end
-    if wind.beta then
-        return
-    end
-    local beta = 0.5*(wind.lo + wind.hi)
-    if profile_impulse(entry_segments(0.5*math.pi - alpha, beta, 1)) > 0 then
-        wind.lo = beta
-    else
-        wind.hi = beta
-    end
-    wind.iter = wind.iter + 1
-    if wind.iter >= WIND_ITERATIONS then
-        wind.beta = 0.5*(wind.lo + wind.hi)
-    end
-end
-
---[[
    Rotor thrust as a multiple of hover thrust when the thrust axis has
    component c along the wanted direction and the aim is K times weight
    along it. Outside the reversal band the thrust is K/c, limited by the
@@ -422,6 +369,26 @@ local function thrust_ratio(c, K, s_rev, tw_lim)
         return constrain(K / c, -tw_lim, tw_lim)
     end
     return math.min(K / s_rev, tw_lim) * c / s_rev
+end
+
+--[[
+   Sideways velocity change over a list of segments flown holding height, in
+   units of g times seconds, positive towards the side the disc tilts to at
+   positive angles. Holding height while tilted by th pushes sideways at
+   g*tan(th) until the collective runs out, and past vertical the reversed
+   collective pushes back.
+--]]
+local function profile_impulse(segs, s_rev, tw_lim)
+    local N = 48
+    local sum = 0
+    for _, seg in ipairs(segs) do
+        local h = seg.dur / N
+        for i = 0, N-1 do
+            local th = cos_segment(seg, (i + 0.5)*h)
+            sum = sum + thrust_ratio(math.cos(th), 1, s_rev, tw_lim)*math.sin(th)*h
+        end
+    end
+    return sum
 end
 
 -- thrust axis components along the wanted direction at evenly spaced phases of a quarter swing of +-alpha
@@ -599,19 +566,30 @@ local function plan()
         K = constrain(K + (aim - F) / math.max(slope, 0.1), math.min(aim, tw_lim), tw_lim)
     end
 
-    if wind.alpha ~= alpha or not wind.beta then
-        return nil, "still planning, try again"
-    end
-    local beta = wind.beta
-    local theta0 = 0.5*math.pi - alpha
-    local entry = entry_segments(theta0, beta, swing_accel)
-    if 1 / math.cos(beta) > tw_lim then
-        return nil, "not enough collective for the entry: raise TTOC_ANGLE"
-    end
-    local exit = {
-        {from=theta0, to=-beta, dur=entry[2].dur},
-        {from=-beta, to=0, dur=entry[1].dur},
-    }
+    --[[
+       The entry swings in one move from upright to the far end of the swing,
+       and the exit back, so the swing starts and ends by turning round as it
+       does at every other end. Stopping at the near end and setting off again
+       the same way asks for a step of twice the swing's peak angular
+       acceleration, which the heli overshoots. The entry's acceleration
+       makes its peak rate the swing's.
+    --]]
+    local far = 0.5*math.pi + alpha
+    local join_accel = math.min(swing_accel, 2*(alpha*omega)^2 / far)
+    local join_dur = cos_segment_duration(far, join_accel)
+    local entry = {{from=0, to=far, dur=join_dur}}
+    local exit = {{from=far, to=0, dur=join_dur}}
+    --[[
+       The entry and exit each push the heli further one way than the other,
+       so the manoeuvre is tilted by the acceleration that cancels that over
+       each of them. Pitching nose up tilts the thrust backwards, and rolling
+       right tilts it right.
+    --]]
+    local dir = TTOC_DIR:get() < 0 and -1 or 1
+    local push_sign = (roll_axis and 1 or -1) * dir
+    -- enough to hold height at the far end, where the swing takes over
+    local join_tw_lim = math.min(tw_lim, math.max(JOIN_THRUST_MAX, 1 / math.sin(alpha)))
+    local join_accel_along = -push_sign*GRAVITY_MSS*profile_impulse(entry, s_rev, join_tw_lim) / join_dur
 
     -- the rate input is shaped with ACRO_RP_RATE_TC, or 10 loops when that is zero
     local lead = ACRO_RP_RATE_TC:get()
@@ -631,7 +609,7 @@ local function plan()
         -- the swing moves the heli across the axis it rocks about, and not along it
         along = roll_axis and right or forward,
         cross = roll_axis and forward or right,
-        dir = TTOC_DIR:get() < 0 and -1 or 1,
+        dir = dir,
         alpha = alpha,
         omega = omega,
         period = period,
@@ -639,6 +617,7 @@ local function plan()
         mid = mid,
         hover = hover,
         tw_lim = tw_lim,
+        join_tw_lim = join_tw_lim,
         s_rev = s_rev,
         samples = samples,
         K = K,
@@ -646,6 +625,7 @@ local function plan()
         support = 0,
         entry = entry,
         exit = exit,
+        join_accel_along = join_accel_along,
         lead = lead,
         p_target = {pos:x(), pos:y(), pos:z()},
         integ = {0, 0, 0},
@@ -752,8 +732,8 @@ end
    swing plane, where the tail rotor pushes steadily sideways, so that drift
    is corrected from the current position all through the manoeuvre. The
    entry and exit do not oscillate either, so their height correction uses
-   the current height, and their pushes along the swing are planned to
-   cancel, so that correction is held.
+   the current height. Along the swing they hold the correction and add the
+   planned tilt that cancels their own push.
 --]]
 local function correction_accel(pos, vel, dt)
     local acc_max = TTOC_ACC_MAX:get()
@@ -782,6 +762,7 @@ local function correction_accel(pos, vel, dt)
         end
     else
         a_down = correct_axis(3, m.p_target[3] - pos:z(), vel:z(), dt, acc_max)
+        a_along = a_along + m.join_accel_along
     end
     return {along[1]*a_along + cross[1]*a_cross, along[2]*a_along + cross[2]*a_cross, a_down}
 end
@@ -844,11 +825,13 @@ local function fly(th, thd, thdd, dt)
     local u = q_rotate(q_act, {0, 0, -1})
     local c = u[1]*d[1] + u[2]*d[2] + u[3]*d[3]
     local K = r
+    local tw_lim = m.join_tw_lim
     if state == STATE.SWING then
         track_aim(r / m.eta)
         K = m.K
+        tw_lim = m.tw_lim
     end
-    local tw = thrust_ratio(c, K, m.s_rev, m.tw_lim)
+    local tw = thrust_ratio(c, K, m.s_rev, tw_lim)
     local thr = constrain(m.mid + (m.hover - m.mid)*tw, 0, 1)
     m.support = c*tw
 
@@ -969,10 +952,11 @@ local function run(switch_high)
     end
 
     if state == STATE.SWING then
+        -- starts and ends at the far end, where the entry stops and the exit starts
         local x = m.omega*m.t
-        th = 0.5*math.pi - m.alpha*math.cos(x)
-        thd = m.alpha*m.omega*math.sin(x)
-        thdd = m.alpha*m.omega*m.omega*math.cos(x)
+        th = 0.5*math.pi + m.alpha*math.cos(x)
+        thd = -m.alpha*m.omega*math.sin(x)
+        thdd = -m.alpha*m.omega*m.omega*math.cos(x)
     elseif state == STATE.EXIT then
         th, thd, thdd, done = profile(m.exit, m.t)
         if done then
@@ -993,8 +977,6 @@ local function update()
     elseif state == STATE.IDLE then
         if switch_high and not last_switch_high then
             start()
-        else
-            wind_up_step()
         end
     else
         run(switch_high)
