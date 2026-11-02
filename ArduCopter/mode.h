@@ -1812,6 +1812,8 @@ public:
 
     void set_magnitude(float input) { waveform_magnitude.set(input); }
 
+    bool load_multisine(char *multisine_name);
+
     static const struct AP_Param::GroupInfo var_info[];
 
     Chirp chirp_input;
@@ -1847,6 +1849,7 @@ private:
         DISTURB_VEL_LONG = 17,  // longitudinal body axis measured velocity is being excited
         INPUT_VEL_LAT = 18,     // lateral body axis commanded velocity is being excited
         INPUT_VEL_LONG = 19,    // longitudinal body axis commanded velocity is being excited
+        MULTISINE = 20,         // multisine input is being excited
     };
 
     AP_Int8 axis;               // Controls which axis are being excited. Set to non-zero to display other parameters
@@ -1871,6 +1874,31 @@ private:
         SYSTEMID_STATE_STOPPED,
         SYSTEMID_STATE_TESTING
     } systemid_state;
+
+    // Multisine variables
+    const char *_multisine_name;          // Name of the multisine component that was loaded
+    float _multisine_time;                // Time period for multisine
+    // One sinusoidal component belonging to one control/input channel.
+    struct SineComponent
+    {
+        int component_number;  // Used to restore the intended component ordering.
+        int harmonic_bin;      // Harmonic number, k.
+        double amplitude;      // Read from amplitude_deg; used directly as in MATLAB.
+        double phase_rad;      // Phase offset in radians.
+    };
+    // Defines all sine components for a single SID_AXIS input.
+    struct MultisineInput
+    {
+        int8_t sid_axis;                   // Input name from the SID_AXIS column.
+        SineComponent components[10];
+    };
+
+    float _multisine_sample[4];  // Current sample of the multisine waveform for each of the four axes.
+
+    MultisineInput _multisine_inputs[4];  // All sine components for a single SID_AXIS input. Allow one for each of the four axes.
+
+    float multisine_create(SineComponent *parameters, float maneuver_time_s, float time_s);
+
 };
 
 class ModeThrow : public Mode {

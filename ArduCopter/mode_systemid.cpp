@@ -1,5 +1,6 @@
 #include "Copter.h"
 #include <AP_Math/control.h>
+#include <AP_Filesystem/AP_Filesystem.h>
 
 #if MODE_SYSTEMID_ENABLED
 
@@ -13,7 +14,7 @@ const AP_Param::GroupInfo ModeSystemId::var_info[] = {
     // @DisplayName: System identification axis
     // @Description: Controls which axis are being excited.  Set to non-zero to see more parameters
     // @User: Standard
-    // @Values: 0:None, 1:Input Roll Angle, 2:Input Pitch Angle, 3:Input Yaw Angle, 4:Recovery Roll Angle, 5:Recovery Pitch Angle, 6:Recovery Yaw Angle, 7:Rate Roll, 8:Rate Pitch, 9:Rate Yaw, 10:Mixer Roll, 11:Mixer Pitch, 12:Mixer Yaw, 13:Mixer Thrust, 14:Measured Lateral Position, 15:Measured Longitudinal Position, 16:Measured Lateral Velocity, 17:Measured Longitudinal Velocity, 18:Input Lateral Velocity, 19:Input Longitudinal Velocity
+    // @Values: 0:None, 1:Input Roll Angle, 2:Input Pitch Angle, 3:Input Yaw Angle, 4:Recovery Roll Angle, 5:Recovery Pitch Angle, 6:Recovery Yaw Angle, 7:Rate Roll, 8:Rate Pitch, 9:Rate Yaw, 10:Mixer Roll, 11:Mixer Pitch, 12:Mixer Yaw, 13:Mixer Thrust, 14:Measured Lateral Position, 15:Measured Longitudinal Position, 16:Measured Lateral Velocity, 17:Measured Longitudinal Velocity, 18:Input Lateral Velocity, 19:Input Longitudinal Velocity, 20:Multisine Input
     AP_GROUPINFO_FLAGS("_AXIS", 1, ModeSystemId, axis, 0, AP_PARAM_FLAG_ENABLE),
 
     // @Param: _MAGNITUDE
@@ -76,6 +77,99 @@ ModeSystemId::ModeSystemId(void) : Mode()
 bool ModeSystemId::enabled() const
 {
     return axis != 0;
+}
+
+bool ModeSystemId::load_multisine(char *multisine_name)
+{
+    const char *path = "./scripts/multisine.txt";
+    const int f = AP::FS().open(path, O_RDONLY);
+    if (f == -1) {
+        return false;
+    }
+
+    char line[50];
+    // Read the first line of the file to get the multisine name
+    if (AP::FS().fgets(line, sizeof(line), f)) {
+        char *saveptr = nullptr;
+        const char *multisine_str = strtok_r(line, "\"", &saveptr);
+        if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+            strncpy(multisine_name, multisine_str, sizeof(multisine_str) + 1);
+            multisine_name[sizeof(multisine_name)] = '\0';
+            _multisine_name = multisine_name;
+        }
+    }
+    // Read the second line of the file to get the multisine time
+    if (AP::FS().fgets(line, sizeof(line), f)) {
+        char *saveptr = nullptr;
+        const char *multisine_str = strtok_r(line, ",", &saveptr);
+        if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+            _multisine_time = atof(multisine_str);
+        }
+    }
+    // Third line is the header line, so we can skip it
+    if (AP::FS().fgets(line, sizeof(line), f)) {
+        char *saveptr = nullptr;
+        const char *multisine_str = strtok_r(line, ",", &saveptr);
+        if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+            // improperly formatted file, return false
+            if (!strcmp(multisine_str, "SID_AXIS")) {
+//                AP::FS().close(f);
+//                return false;
+            }
+        }
+    }
+    // set up component index for each axis
+    int8_t component_index[4] = {0, 0, 0, 0};
+    // Read the remaining lines of the file to get the multisine frequencies and amplitudes
+    while (AP::FS().fgets(line, sizeof(line), f)) {
+        char *saveptr = nullptr;
+        int8_t multisine_axis = 0;
+        const char *multisine_str = strtok_r(line, ",", &saveptr);
+        if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+            // Roll axis multisine inputs
+            if (atoi(multisine_str) == 1 || atoi(multisine_str) == 4 ||atoi(multisine_str) == 7 || atoi(multisine_str) == 10) {
+                _multisine_inputs[0].sid_axis = atoi(multisine_str);
+                multisine_axis = 0;
+            }
+            // pitch axis multisine inputs
+            if (atoi(multisine_str) == 2 || atoi(multisine_str) == 5 ||atoi(multisine_str) == 8 || atoi(multisine_str) == 11) {
+                _multisine_inputs[1].sid_axis = atoi(multisine_str);
+                multisine_axis = 1;
+            }
+            // yaw axis multisine inputs
+            if (atoi(multisine_str) == 3 || atoi(multisine_str) == 6 ||atoi(multisine_str) == 9 || atoi(multisine_str) == 12) {
+                _multisine_inputs[2].sid_axis = atoi(multisine_str);
+                multisine_axis = 2;
+            }
+            // vertical axis multisine inputs
+            if (atoi(multisine_str) == 13) {
+                _multisine_inputs[3].sid_axis = atoi(multisine_str);
+                multisine_axis = 3;
+            }
+            multisine_str = strtok_r(nullptr, ",", &saveptr);
+            if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+                _multisine_inputs[multisine_axis].components[component_index[multisine_axis]].component_number = atoi(multisine_str);
+            }
+            multisine_str = strtok_r(nullptr, ",", &saveptr);
+            if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+                _multisine_inputs[multisine_axis].components[component_index[multisine_axis]].harmonic_bin = atoi(multisine_str);
+            }
+            multisine_str = strtok_r(nullptr, ",", &saveptr);
+            if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+                _multisine_inputs[multisine_axis].components[component_index[multisine_axis]].amplitude = atof(multisine_str);
+            }
+            multisine_str = strtok_r(nullptr, ",", &saveptr);
+            if (multisine_str != nullptr || strlen(multisine_str) != 0) {
+                _multisine_inputs[multisine_axis].components[component_index[multisine_axis]].phase_rad = atof(multisine_str);
+            }
+            component_index[multisine_axis]++;
+        }
+    }
+     
+    AP::FS().close(f);
+
+    return true;
+
 }
 
 // systemId_init - initialise systemId controller
@@ -148,7 +242,9 @@ bool ModeSystemId::init(bool ignore_checks)
     gcs().send_text(MAV_SEVERITY_INFO, "SystemID Starting: axis=%d", (unsigned)axis);
 
 #if HAL_LOGGING_ENABLED
-    copter.Log_Write_SysID_Setup(axis, waveform_magnitude, frequency_start, frequency_stop, time_fade_in, time_const_freq, time_record, time_fade_out);
+    if (axis != 20) {
+        copter.Log_Write_SysID_Setup(axis, waveform_magnitude, frequency_start, frequency_stop, time_fade_in, time_const_freq, time_record, time_fade_out);
+    }
 #endif
 
     return true;
@@ -344,6 +440,59 @@ void ModeSystemId::run()
                     input_vel_ne_ms.y = 0.0f;
                     input_vel_ne_ms.rotate(attitude_control->get_att_target_euler_rad().z);
                     break;
+                case AxisType::MULTISINE:
+                    for (int8_t index = 0; index < 4; index++) {
+                        _multisine_sample[index] = 0.0f;
+                        if (_multisine_inputs[index].sid_axis != 0) {
+                            float multisine_sample = multisine_create(_multisine_inputs[index].components, _multisine_time, waveform_time - SYSTEM_ID_DELAY);
+                            _multisine_sample[index] = multisine_sample;
+                            switch (_multisine_inputs[index].sid_axis) {
+                                case 1:
+                                    target_roll_rad += radians(multisine_sample);
+                                    break;
+                                case 2:
+                                    target_pitch_rad += radians(multisine_sample);
+                                    break;
+                                case 3:
+                                    target_yaw_rate_rads += radians(multisine_sample);
+                                    break;
+                                case 4:
+                                    target_roll_rad += radians(multisine_sample);
+                                    attitude_control->bf_feedforward(false);
+                                    break;
+                                case 5:
+                                    target_pitch_rad += radians(multisine_sample);
+                                    attitude_control->bf_feedforward(false);
+                                    break;
+                                case 6:
+                                    target_yaw_rate_rads += radians(multisine_sample);
+                                    attitude_control->bf_feedforward(false);
+                                    break;
+                                case 7:
+                                    attitude_control->rate_bf_roll_sysid_rads(radians(multisine_sample));
+                                    break;
+                                case 8:
+                                    attitude_control->rate_bf_pitch_sysid_rads(radians(multisine_sample));
+                                    break;
+                                case 9:
+                                    attitude_control->rate_bf_yaw_sysid_rads(radians(multisine_sample));
+                                    break;
+                                case 10:
+                                    attitude_control->actuator_roll_sysid(multisine_sample);
+                                    break;
+                                case 11:
+                                    attitude_control->actuator_pitch_sysid(multisine_sample);
+                                    break;
+                                case 12:
+                                    attitude_control->actuator_yaw_sysid(multisine_sample);
+                                    break;
+                                case 13:
+                                    pilot_throttle_scaled += multisine_sample;
+                                    break;
+                            }
+                        }
+                    }
+                    break;
             }
             break;
     }
@@ -411,7 +560,11 @@ void ModeSystemId::log_data() const
     copter.ins.get_delta_velocity(delta_velocity, delta_velocity_dt);
 
     if (is_positive(delta_angle_dt) && is_positive(delta_velocity_dt)) {
-        copter.Log_Write_SysID_Data(waveform_time, waveform_sample, waveform_freq_rads / (2 * M_PI), degrees(delta_angle.x / delta_angle_dt), degrees(delta_angle.y / delta_angle_dt), degrees(delta_angle.z / delta_angle_dt), delta_velocity.x / delta_velocity_dt, delta_velocity.y / delta_velocity_dt, delta_velocity.z / delta_velocity_dt);
+        if (axis == 20) {
+            copter.Log_Write_SysID_Multisine_Data(waveform_time, _multisine_sample[0], _multisine_sample[1], _multisine_sample[2], _multisine_sample[3], waveform_freq_rads / (2 * M_PI), degrees(delta_angle.x / delta_angle_dt), degrees(delta_angle.y / delta_angle_dt), degrees(delta_angle.z / delta_angle_dt), delta_velocity.x / delta_velocity_dt, delta_velocity.y / delta_velocity_dt, delta_velocity.z / delta_velocity_dt);
+        } else {
+            copter.Log_Write_SysID_Data(waveform_time, waveform_sample, waveform_freq_rads / (2 * M_PI), degrees(delta_angle.x / delta_angle_dt), degrees(delta_angle.y / delta_angle_dt), degrees(delta_angle.z / delta_angle_dt), delta_velocity.x / delta_velocity_dt, delta_velocity.y / delta_velocity_dt, delta_velocity.z / delta_velocity_dt);
+        }
     }
 
     // Full rate logging of attitude, rate and pid loops
@@ -445,6 +598,24 @@ bool ModeSystemId::is_poscontrol_axis_type() const
         }
 
     return ret;
+}
+
+float ModeSystemId::multisine_create(SineComponent *parameters, float maneuver_time_s, float time_s)
+{
+
+    float input_value = 0.0;
+    if (time_s < 0.0f || time_s > maneuver_time_s) {
+        return input_value;
+    }
+
+    for (u_int8_t index = 1; index <= sizeof(parameters); index++)
+    {
+        const float angle = (2.0 * M_PI * static_cast<float>(parameters[index].harmonic_bin) * time_s / maneuver_time_s) + parameters[index].phase_rad;
+
+        input_value += parameters[index].amplitude * sinf(angle);
+    }
+
+    return input_value;
 }
 
 #endif

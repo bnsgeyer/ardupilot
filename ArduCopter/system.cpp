@@ -190,6 +190,12 @@ void Copter::init_ardupilot()
     pos_variance_filt.set_cutoff_frequency(g2.fs_ekf_filt_hz);
     vel_variance_filt.set_cutoff_frequency(g2.fs_ekf_filt_hz);
 
+    char multisine_name[30] = {0};
+    if (mode_systemid.load_multisine(multisine_name)) {
+        // if multisine loaded, set mode to SYSTEMID
+        gcs().send_text(MAV_SEVERITY_INFO, "SYSTEMID: Multisine loaded: %s", multisine_name);
+    }
+
     // flag that initialisation has completed
     ap.initialised = true;
 }

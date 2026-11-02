@@ -246,6 +246,47 @@ void Copter::Log_Video_Stabilisation()
     ahrs.write_video_stabilisation();
 }
 
+struct PACKED log_SysIdM {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float    waveform_time;
+    float    waveform_axis0;
+    float    waveform_axis1;
+    float    waveform_axis2;
+    float    waveform_axis3;
+    float    waveform_freq_hz;
+    float    angle_x_degs;
+    float    angle_y_degs;
+    float    angle_z_degs;
+    float    accel_x_mss;
+    float    accel_y_mss;
+    float    accel_z_mss;
+};
+
+// Write an rate packet
+void Copter::Log_Write_SysID_Multisine_Data(float waveform_time, float waveform_axis0, float waveform_axis1, float waveform_axis2, float waveform_axis3, float waveform_freq_hz, float angle_x_degs, float angle_y_degs, float angle_z_degs, float accel_x_mss, float accel_y_mss, float accel_z_mss)
+{
+#if MODE_SYSTEMID_ENABLED
+    struct log_SysIdM pkt_sidm = {
+        LOG_PACKET_HEADER_INIT(LOG_SYSIDM_MSG),
+        time_us         : AP_HAL::micros64(),
+        waveform_time   : waveform_time,
+        waveform_axis0  : waveform_axis0,
+        waveform_axis1  : waveform_axis1,
+        waveform_axis2  : waveform_axis2,
+        waveform_axis3  : waveform_axis3,
+        waveform_freq_hz : waveform_freq_hz,
+        angle_x_degs    : angle_x_degs,
+        angle_y_degs    : angle_y_degs,
+        angle_z_degs    : angle_z_degs,
+        accel_x_mss     : accel_x_mss,
+        accel_y_mss     : accel_y_mss,
+        accel_z_mss     : accel_z_mss
+    };
+    logger.WriteBlock(&pkt_sidm, sizeof(pkt_sidm));
+#endif
+}
+
 struct PACKED log_SysIdD {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -495,6 +536,25 @@ const struct LogStructure Copter::log_structure[] = {
       "DU32",  "QBI",         "TimeUS,Id,Value", "s--", "F--" },
     { LOG_DATA_FLOAT_MSG, sizeof(log_Data_Float),         
       "DFLT",  "QBf",         "TimeUS,Id,Value", "s--", "F--" },
+
+// @LoggerMessage: SIDM
+// @Description: System ID Mulitsine data
+// @Field: TimeUS: Time since system startup
+// @Field: Time: Time reference for waveform
+// @Field: Tar0: Current waveform sample for axis 0
+// @Field: Tar1: Current waveform sample for axis 1
+// @Field: Tar2: Current waveform sample for axis 2
+// @Field: Tar3: Current waveform sample for axis 3
+// @Field: F: Instantaneous waveform frequency
+// @Field: Gx: Delta angle, X-Axis
+// @Field: Gy: Delta angle, Y-Axis
+// @Field: Gz: Delta angle, Z-Axis
+// @Field: Ax: Delta velocity, X-Axis
+// @Field: Ay: Delta velocity, Y-Axis
+// @Field: Az: Delta velocity, Z-Axis
+
+    { LOG_SYSIDM_MSG, sizeof(log_SysIdM),
+      "SIDM", "Qffffffffffff",  "TimeUS,Time,Tar0,Tar1,Tar2,Tar3,F,Gx,Gy,Gz,Ax,Ay,Az", "ss----zkkkooo", "F------------" , true },
 
 // @LoggerMessage: SIDD
 // @Description: System ID data
