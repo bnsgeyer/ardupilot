@@ -1890,7 +1890,7 @@ private:
     struct MultisineInput
     {
         int8_t sid_axis;                   // Input name from the SID_AXIS column.
-        SineComponent components[10];
+        SineComponent components[50];
     };
 
     float _multisine_sample[4];  // Current sample of the multisine waveform for each of the four axes.
